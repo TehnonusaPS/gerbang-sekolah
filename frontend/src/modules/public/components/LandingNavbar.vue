@@ -51,19 +51,19 @@ const navLinks = [
           :src="currentLogo"
           alt="Gerbang Sekolah"
           :class="[
-            'h-9 sm:h-10 md:h-11 w-auto object-contain shrink-0 transition-transform duration-200 group-hover:scale-105',
+            'h-7 sm:h-8 md:h-[34px] w-auto object-contain shrink-0 transition-transform duration-200 group-hover:scale-105',
             isScrolled ? '' : 'brightness-0 invert'
           ]"
         />
         <div
           :class="[
-            'flex flex-col gap-2 font-montserrat font-extrabold uppercase select-none shrink-0 transition-colors',
+            'flex flex-col gap-1 font-montserrat font-extrabold uppercase select-none shrink-0 transition-colors',
             isScrolled ? 'text-[#0071FF] dark:text-white' : 'text-white'
           ]"
         >
-          <span class="text-xs sm:text-[16px] md:text-[22px] leading-none">GERBANG</span>
+          <span class="text-[11px] sm:text-[13px] md:text-[15px] leading-none">GERBANG</span>
           <span
-            class="text-xs sm:text-[16px] md:text-[22px] tracking-[0.04em] leading-none -mt-1 sm:-mt-1.5 md:-mt-2"
+            class="text-[11px] sm:text-[13px] md:text-[15px] tracking-[0.04em] leading-none -mt-0.5 sm:-mt-1"
             >SEKOLAH</span
           >
         </div>
