@@ -61,7 +61,7 @@ const plans = [
         >
           <span
             v-if="plan.featured"
-            class="absolute -top-3 left-7 rounded-full bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground"
+            class="absolute -top-3 left-7 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground shadow-sm"
           >
             Paling Populer
           </span>
@@ -86,10 +86,10 @@ const plans = [
             </li>
           </ul>
           <button
-            class="mt-7 w-full rounded-full px-5 py-3 text-sm font-semibold transition"
+            class="mt-7 w-full rounded-full px-5 py-3 text-sm font-semibold transition cursor-pointer"
             :class="
               plan.featured
-                ? 'bg-secondary text-secondary-foreground hover:opacity-90'
+                ? 'bg-primary text-primary-foreground hover:opacity-90 shadow-md shadow-primary/25'
                 : 'bg-foreground text-background hover:opacity-90'
             "
             type="button"

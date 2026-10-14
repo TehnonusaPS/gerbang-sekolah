@@ -2,6 +2,7 @@
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { GraduationCap } from 'lucide-vue-next'
+import { currentLogo } from '@/config/logo'
 
 const emit = defineEmits(['scrollTo'])
 const auth = useAuthStore()
@@ -27,11 +28,12 @@ const navLinks = [
       <div class="grid md:grid-cols-3 gap-8 mb-8">
         <!-- Brand -->
         <div>
-          <div class="flex items-center gap-2 mb-3">
-            <div class="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center">
-              <GraduationCap class="w-5 h-5 text-white" />
+          <div class="flex items-center gap-2.5 sm:gap-3 group mb-4">
+            <img :src="currentLogo" alt="Gerbang Sekolah" class="h-9 sm:h-10 md:h-11 w-auto object-contain shrink-0 transition-transform duration-200 group-hover:scale-105" />
+            <div class="flex flex-col gap-2 font-montserrat font-extrabold uppercase text-[#0071FF] dark:text-white select-none shrink-0">
+              <span class="text-xs sm:text-[16px] md:text-[22px] leading-none">GERBANG</span>
+              <span class="text-xs sm:text-[16px] md:text-[22px] tracking-[0.04em] leading-none -mt-1 sm:-mt-1.5 md:-mt-2">SEKOLAH</span>
             </div>
-            <div class="font-extrabold text-lg">CerdasBangsa</div>
           </div>
           <p class="text-blue-300 text-sm leading-relaxed">
             Platform manajemen pendidikan untuk yayasan. Daftarkan yayasan Anda dan kelola semua

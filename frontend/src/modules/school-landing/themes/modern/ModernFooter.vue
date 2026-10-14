@@ -153,7 +153,7 @@ const props = defineProps({
           <p>
             &copy; {{ new Date().getFullYear() }} {{ data?.meta_title || (branding?.entityName || 'Instansi') }}. Hak Cipta Dilindungi.
           </p>
-          <p>Powered by <span class="font-semibold text-gray-400">App School Tehnonusa</span></p>
+          <p>Powered by <span class="font-semibold text-gray-400">Gerbang Sekolah</span></p>
         </div>
       </div>
     </div>

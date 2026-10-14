@@ -1,20 +1,20 @@
 export const rawYayasanItem = {
-  kode: 'YCB001',
-  nama: 'Yayasan Cerdas Bangsa',
+  kode: 'YGS001',
+  nama: 'Yayasan Gerbang Sekolah',
   tanggal_berdiri: '15 Januari 2005',
   status: 'Aktif',
 
   alamat: 'Jl. Pendidikan No. 88, Bandung, Jawa Barat',
-  email: 'info@yayasancerdasbangsa.id',
+  email: 'info@yayasan.gerbangsekolah.id',
   no_hp: '022-1234567',
-  website: 'www.yayasancerdasbangsa.id',
+  website: 'www.yayasan.gerbangsekolah.id',
 
   no_akta: 'AHU-0012345.AH.01.04.Tahun 2005',
   tanggal_akta: '15 Januari 2005',
   no_sk: 'AHU-0023456.AH.01.07.Tahun 2005',
   tanggal_sk: '20 Januari 2005',
 
-  emailLogin: 'admin@yayasancerdasbangsa.id',
+  emailLogin: 'admin@yayasan.gerbangsekolah.id',
   noHpLogin: '081234567890',
 
   logo: '/defaults/sd/logo.png'

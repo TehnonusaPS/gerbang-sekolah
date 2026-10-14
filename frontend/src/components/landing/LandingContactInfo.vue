@@ -5,7 +5,7 @@ const contactItems = [
   {
     icon: Mail,
     title: 'Email',
-    value: 'info@cerdasbangsa.id'
+    value: 'info@gerbangsekolah.id'
   },
   {
     icon: Phone,

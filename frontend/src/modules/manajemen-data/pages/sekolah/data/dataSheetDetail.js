@@ -1,17 +1,17 @@
 export const rawSekolahItem = {
-  nama: 'SMA Cerdas Bangsa',
+  nama: 'SMA Gerbang Sekolah',
   npsn: '20212345',
-  yayasan: 'Yayasan Cerdas Bangsa',
+  yayasan: 'Yayasan Gerbang Sekolah',
   jenjang: 'SMA',
   tanggal_berdiri: '15 Januari 2005',
   status: 'Aktif',
 
   alamat: 'Jl. Pendidikan No. 88, Bandung',
-  email: 'info@smacerdasbangsa.sch.id',
+  email: 'info@smagerbangsekolah.sch.id',
   no_hp: '022-1234567',
-  website: 'www.smacerdasbangsa.sch.id',
-  instagram: '@smacerdasbangsa',
-  facebook: 'SMA Cerdas Bangsa',
+  website: 'www.smagerbangsekolah.sch.id',
+  instagram: '@smagerbangsekolah',
+  facebook: 'SMA Gerbang Sekolah',
 
   no_sk: '421.3/1234/DISDIK',
   tanggal_sk: '20 Januari 2005',
@@ -21,7 +21,7 @@ export const rawSekolahItem = {
   tanggal_akreditasi: '15 Oktober 2023',
   no_akreditasi: 'BAN-SM/A/2023/001',
 
-  emailLogin: 'admin@smacerdasbangsa.sch.id',
+  emailLogin: 'admin@smagerbangsekolah.sch.id',
   noHpLogin: '081234567890',
 
   logo: '/defaults/sd/logo.png'

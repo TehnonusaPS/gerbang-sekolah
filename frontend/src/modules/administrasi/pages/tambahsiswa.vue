@@ -69,7 +69,7 @@ const submitPendaftaran = () => {
   <div class="flex-1 space-y-8 relative z-10 w-full p-2 sm:p-4">
     <PageHeader
       title="Pendaftaran Baru"
-      description="Lengkapi formulir pendaftaran di bawah ini secara akurat. Data yang Anda masukkan akan diproses oleh tim administrasi CerdasBangsa."
+      description="Lengkapi formulir pendaftaran di bawah ini secara akurat. Data yang Anda masukkan akan diproses oleh tim administrasi Gerbang Sekolah."
       :back="true"
       @back="router.push('/administrasi/loket')"
       :actions="[

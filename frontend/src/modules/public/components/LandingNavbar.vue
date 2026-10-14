@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { GraduationCap, Menu, X, LayoutDashboard, User, LogOut } from 'lucide-vue-next'
+import { currentLogo } from '@/config/logo'
 
 const props = defineProps({
   isScrolled: Boolean
@@ -44,18 +45,27 @@ const navLinks = [
       <a
         href="#"
         @click.prevent="scrollTo('home')"
-        class="flex items-center gap-2"
+        class="flex items-center gap-2.5 sm:gap-3 group py-1"
       >
-        <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg">
-          <GraduationCap class="w-6 h-6 text-white" />
-        </div>
-        <div class="leading-tight">
-          <div :class="['font-extrabold text-base', isScrolled ? 'text-blue-700' : 'text-white']">
-            CerdasBangsa
-          </div>
-          <div :class="['text-xs', isScrolled ? 'text-gray-400' : 'text-blue-100']">
-            Platform Manajemen Yayasan & Sekolah
-          </div>
+        <img
+          :src="currentLogo"
+          alt="Gerbang Sekolah"
+          :class="[
+            'h-7 sm:h-8 md:h-[34px] w-auto object-contain shrink-0 transition-transform duration-200 group-hover:scale-105',
+            isScrolled ? '' : 'brightness-0 invert'
+          ]"
+        />
+        <div
+          :class="[
+            'flex flex-col gap-1 font-montserrat font-extrabold uppercase select-none shrink-0 transition-colors',
+            isScrolled ? 'text-[#0071FF] dark:text-white' : 'text-white'
+          ]"
+        >
+          <span class="text-[11px] sm:text-[13px] md:text-[15px] leading-none">GERBANG</span>
+          <span
+            class="text-[11px] sm:text-[13px] md:text-[15px] tracking-[0.04em] leading-none -mt-0.5 sm:-mt-1"
+            >SEKOLAH</span
+          >
         </div>
       </a>
 

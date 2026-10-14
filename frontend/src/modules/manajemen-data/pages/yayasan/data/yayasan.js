@@ -145,7 +145,7 @@ export const items = computed(() => [
   },
   {
     id: 4,
-    nama: 'Yayasan Cerdas Bangsa',
+    nama: 'Yayasan Gerbang Sekolah',
     jmlSekolah: '3',
     alamat: 'Jl. Lorem Ipsum Dolor Sit No. 123, Kel. Lorem, Kec. Lorem Ipsum, Lorem Ipsum 123456',
     jmlPengguna: '625',

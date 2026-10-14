@@ -119,7 +119,7 @@ const props = defineProps({ branding: Object, contact: Object, social: Object, d
           class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm font-semibold text-white/90"
         >
           <p>&copy; {{ new Date().getFullYear() }} {{ data?.meta_title || (branding?.entityName || 'Instansi') }}. All rights reserved.</p>
-          <p>Powered by <span class="text-white font-extrabold underline decoration-2">App School Tehnonusa</span></p>
+          <p>Powered by <span class="text-white font-extrabold underline decoration-2">Gerbang Sekolah</span></p>
         </div>
       </div>
     </div>
