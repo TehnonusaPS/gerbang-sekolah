@@ -106,7 +106,7 @@ const props = defineProps({ branding: Object, contact: Object, social: Object, d
           class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500"
         >
           <p>&copy; {{ new Date().getFullYear() }} {{ data?.meta_title || (branding?.entityName || 'Instansi') }}</p>
-          <p>Powered by <span class="text-secondary font-semibold">App School Tehnonusa</span></p>
+          <p>Powered by <span class="text-secondary font-semibold">Gerbang Sekolah</span></p>
         </div>
       </div>
     </div>

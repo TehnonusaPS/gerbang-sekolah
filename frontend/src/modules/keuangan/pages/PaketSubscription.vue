@@ -151,7 +151,7 @@ const formatCurrency = (val) => {
       <div>
         <h1 class="text-3xl font-bold tracking-tight">Status Paket Langganan</h1>
         <p class="text-muted-foreground mt-2 text-sm">
-          Informasi paket langganan dan lisensi aktif aplikasi CerdasBangsa untuk yayasan Anda.
+          Informasi paket langganan dan lisensi aktif aplikasi Gerbang Sekolah untuk yayasan Anda.
         </p>
       </div>
 
@@ -250,7 +250,7 @@ const formatCurrency = (val) => {
         <h2 class="text-xl font-bold text-foreground">Tidak Ada Paket Langganan Aktif</h2>
         <p class="text-muted-foreground text-sm mt-2 leading-relaxed">
           Yayasan Anda belum memiliki paket langganan aktif, atau masa aktif paket langganan Anda telah berakhir.
-          Silakan hubungi administrator sistem (Super Admin) untuk membeli atau memperbarui paket langganan Anda agar dapat mengakses modul penuh aplikasi CerdasBangsa.
+          Silakan hubungi administrator sistem (Super Admin) untuk membeli atau memperbarui paket langganan Anda agar dapat mengakses modul penuh aplikasi Gerbang Sekolah.
         </p>
       </Card>
     </template>
@@ -261,7 +261,7 @@ const formatCurrency = (val) => {
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 class="text-3xl font-bold tracking-tight">Manajemen Paket Langganan</h1>
-          <p class="text-muted-foreground mt-2 text-sm">Kelola produk, harga, limitasi, dan fitur paket lisensi CerdasBangsa.</p>
+          <p class="text-muted-foreground mt-2 text-sm">Kelola produk, harga, limitasi, dan fitur paket lisensi Gerbang Sekolah.</p>
         </div>
         <Button @click="openAddModal" class="h-10 bg-primary text-primary-foreground font-semibold flex items-center gap-2">
           <Plus class="w-4 h-4" /> Buat Paket Baru

@@ -1,4 +1,4 @@
-# 🏫 School App — Sistem Informasi Manajemen Sekolah
+# 🏫 Gerbang Sekolah — Sistem Informasi Manajemen Sekolah
 
 > Platform terpadu untuk pengelolaan administrasi, akademik, keuangan, dan komunikasi sekolah.
 

@@ -31,7 +31,7 @@ import { Mail, Phone, MapPin, ArrowRight } from 'lucide-vue-next'
             </div>
             <div>
               <div class="font-semibold text-gray-900 text-sm">Email</div>
-              <div class="text-gray-500 text-sm">info@cerdasbangsa.id</div>
+              <div class="text-gray-500 text-sm">info@gerbangsekolah.id</div>
             </div>
           </div>
 

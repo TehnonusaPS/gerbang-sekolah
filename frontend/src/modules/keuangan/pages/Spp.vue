@@ -333,7 +333,7 @@ onMounted(() => {
               <p class="text-xs text-muted-foreground font-semibold uppercase tracking-wider">
                 {{ isOrangTua ? 'Wali dari Siswa' : 'Akun Siswa' }}
               </p>
-              <h2 class="text-xl font-bold text-foreground">{{ studentName || 'Siswa CerdasBangsa' }}</h2>
+              <h2 class="text-xl font-bold text-foreground">{{ studentName || 'Siswa Gerbang Sekolah' }}</h2>
             </div>
           </div>
           <Badge 

@@ -70,7 +70,7 @@ const marqueeItems = [...yayasan, ...yayasan]
         >.
       </h1>
       <p class="mx-auto mt-6 max-w-2xl text-base sm:text-lg text-muted-foreground md:text-xl leading-relaxed">
-        Sekolahku menyatukan akademik, keuangan, kesiswaan, dan komunikasi orang tua untuk semua
+        Gerbang Sekolah menyatukan akademik, keuangan, kesiswaan, dan komunikasi orang tua untuk semua
         unit sekolah di bawah yayasan Anda - modern, aman, dan mudah dipakai guru.
       </p>
  
