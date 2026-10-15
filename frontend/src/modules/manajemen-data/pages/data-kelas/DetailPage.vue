@@ -17,13 +17,21 @@ import Separator from '@/components/ui/separator/Separator.vue'
 import Avatar from '@/components/ui/avatar/Avatar.vue'
 import AvatarImage from '@/components/ui/avatar/AvatarImage.vue'
 import AvatarFallback from '@/components/ui/avatar/AvatarFallback.vue'
-import router from '@/router'
+import { useRoute, useRouter } from 'vue-router'
+
+const route = useRoute()
+const router = useRouter()
 
 const perPage = ref(10)
 const tableItems = ref([...allItems.value])
 
 const goToManageStudent = () => {
-  router.push('/manajemen-data/kelas/detail/manage')
+  const classId = route.params.id
+  if (classId) {
+    router.push(`/manajemen-data/kelas/detail/${classId}/manage`)
+  } else {
+    router.push('/manajemen-data/kelas')
+  }
 }
 
 const headerAction = [

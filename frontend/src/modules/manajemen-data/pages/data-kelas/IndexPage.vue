@@ -221,7 +221,7 @@ const rowActions = [
   {
     label: 'Kelola',
     icon: Users,
-    click: item => router.push(`/manajemen-data/kelas/detail`)
+    click: item => router.push(`/manajemen-data/kelas/detail/${item.id}`)
   },
   {
     label: 'Hapus',
