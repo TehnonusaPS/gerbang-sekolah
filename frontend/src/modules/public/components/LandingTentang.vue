@@ -33,7 +33,7 @@ const whyUs = [
           <span
             class="inline-block px-3 py-1 rounded-full bg-white/15 text-blue-100 text-sm font-semibold mb-4"
           >
-            Mengapa CerdasBangsa?
+            Mengapa Gerbang Sekolah?
           </span>
           <h2 class="text-3xl md:text-4xl font-extrabold mb-8 leading-tight">
             Teknologi yang <span class="text-yellow-400">Memudahkan</span><br />Bukan Menyulitkan

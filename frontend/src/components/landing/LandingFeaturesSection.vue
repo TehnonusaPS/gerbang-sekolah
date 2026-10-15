@@ -52,7 +52,7 @@ const features = [
           Semua yang dibutuhkan yayasan modern
         </h2>
         <p class="mt-4 text-sm sm:text-base text-muted-foreground leading-relaxed">
-          Dari ruang kelas hingga ruang yayasan - Sekolahku menyatukan operasional pendidikan Anda.
+          Dari ruang kelas hingga ruang yayasan - Gerbang Sekolah menyatukan operasional pendidikan Anda.
         </p>
       </div>
 

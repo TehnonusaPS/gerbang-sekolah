@@ -2,13 +2,14 @@
 import { ref } from 'vue'
 import { School, Menu, X, Download } from 'lucide-vue-next'
 import { usePwa } from '@/composables/usePwa'
+import { currentLogo } from '@/config/logo'
 
 const { triggerInstall } = usePwa()
 
 defineProps({
   brandName: {
     type: String,
-    default: 'Sekolahku'
+    default: 'Gerbang Sekolah'
   },
   loginPath: {
     type: String,
@@ -46,18 +47,23 @@ const closeMobileMenu = () => {
         <!-- Logo -->
         <router-link
           to="/"
-          class="flex items-center gap-2 min-w-0 shrink"
+          class="flex items-center gap-2.5 sm:gap-3 min-w-0 shrink group py-1"
           @click="closeMobileMenu"
         >
+          <img
+            :src="currentLogo"
+            alt="Gerbang Sekolah"
+            class="h-7 sm:h-8 md:h-[34px] w-auto object-contain shrink-0 transition-transform duration-200 group-hover:scale-105"
+          />
           <div
-            class="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shrink-0"
+            class="flex flex-col gap-1 font-montserrat font-extrabold uppercase text-[#0071FF] dark:text-white select-none shrink-0"
           >
-            <School class="h-4 w-4 sm:h-5 sm:w-5" />
+            <span class="text-[11px] sm:text-[13px] md:text-[15px] leading-none">GERBANG</span>
+            <span
+              class="text-[11px] sm:text-[13px] md:text-[15px] tracking-[0.04em] leading-none -mt-0.5 sm:-mt-1"
+              >SEKOLAH</span
+            >
           </div>
-          <span
-            class="font-display text-base sm:text-lg font-bold tracking-tight text-foreground truncate"
-            >{{ brandName }}</span
-          >
         </router-link>
 
         <!-- Desktop Navigation Links -->
@@ -86,7 +92,7 @@ const closeMobileMenu = () => {
           <!-- "Masuk" Button - Always visible -->
           <router-link
             :to="loginPath"
-            class="rounded-full bg-secondary px-3.5 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-secondary-foreground shadow-sm hover:bg-secondary/90 transition duration-200 whitespace-nowrap"
+            class="rounded-full bg-primary px-4 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm font-semibold text-primary-foreground shadow-sm hover:opacity-90 transition duration-200 whitespace-nowrap"
             @click="closeMobileMenu"
           >
             Masuk
@@ -123,7 +129,12 @@ const closeMobileMenu = () => {
         <div class="space-y-1">
           <!-- PWA Install Mobile Action -->
           <button
-            @click="() => { closeMobileMenu(); triggerInstall(); }"
+            @click="
+              () => {
+                closeMobileMenu()
+                triggerInstall()
+              }
+            "
             class="w-full flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-base font-medium text-muted-foreground hover:bg-primary/5 hover:text-primary transition text-left cursor-pointer"
           >
             <Download class="h-5 w-5 text-primary" />

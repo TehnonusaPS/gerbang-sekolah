@@ -41,14 +41,8 @@ onMounted(() => {
     }
   })
 
-  // Gunakan tema yang tersimpan di localStorage (default biru)
-  const savedThemeStyle = localStorage.getItem('themeStyle') || 'blue'
-  const mappedStyle = savedThemeStyle === 'tahoe' ? 'blue' : savedThemeStyle
-  document.body.classList.add(`theme-${mappedStyle}`)
-
-  // Terapkan juga background style yang tersimpan
-  const savedBgStyle = localStorage.getItem('backgroundStyle') || 'animated'
-  document.body.classList.add(`bg-${savedBgStyle}`)
+  // Kunci tema Landing Page agar selalu biru konsisten sesuai identitas resmi logo (#0071FF)
+  document.body.classList.add('theme-blue')
 })
 </script>
 

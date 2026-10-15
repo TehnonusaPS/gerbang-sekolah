@@ -1,13 +1,14 @@
 <script setup>
 import { ref } from 'vue'
 import { School, Send, X } from 'lucide-vue-next'
+import { currentLogoSquare } from '@/config/logo'
 
 const open = ref(false)
 const msg = ref('')
 const phone = '6281234567890'
 
 const handleSend = () => {
-  const text = msg.value.trim() || 'Halo, saya tertarik dengan App School Tehnonusa.'
+  const text = msg.value.trim() || 'Halo, saya tertarik dengan Gerbang Sekolah.'
   window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank')
 }
 </script>
@@ -29,15 +30,15 @@ const handleSend = () => {
         </button>
         <div class="flex items-center gap-3">
           <div class="relative">
-            <div class="flex h-11 w-11 items-center justify-center rounded-full bg-white/15">
-              <School class="h-5 w-5" />
+            <div class="flex h-11 w-11 items-center justify-center rounded-full bg-white p-1 overflow-hidden shadow-sm">
+              <img :src="currentLogoSquare" alt="Gerbang Sekolah" class="w-full h-full object-contain" />
             </div>
             <span
               class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-secondary ring-2 ring-[oklch(0.55_0.16_150)]"
             />
           </div>
           <div>
-            <div class="text-sm font-semibold">Tim Sekolahku</div>
+            <div class="text-sm font-semibold">Tim Gerbang Sekolah</div>
             <div class="text-xs text-white/80">Online - Balas dalam menit</div>
           </div>
         </div>

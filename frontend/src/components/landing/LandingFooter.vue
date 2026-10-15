@@ -1,10 +1,11 @@
 <script setup>
 import { School, MapPin, Phone, Mail, ChevronRight } from 'lucide-vue-next'
+import { currentLogo } from '@/config/logo'
 
 defineProps({
   brandName: {
     type: String,
-    default: 'Sekolahku'
+    default: 'Gerbang Sekolah'
   },
   year: {
     type: [String, Number],
@@ -37,14 +38,22 @@ defineProps({
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
         <!-- Kolom 1: Brand & Deskripsi -->
         <div class="space-y-6">
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2.5 sm:gap-3 group py-1">
+            <img
+              :src="currentLogo"
+              alt="Gerbang Sekolah"
+              class="h-9 sm:h-10 md:h-11 w-auto object-contain shrink-0 transition-transform duration-200 group-hover:scale-105"
+            />
             <div
-              class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/20 p-2"
+              class="flex flex-col gap-2 font-montserrat font-extrabold uppercase text-[#0071FF] dark:text-white select-none shrink-0"
             >
-              <School class="h-8 w-8" />
-            </div>
-            <div class="font-bold text-xl tracking-tight leading-tight text-white">
-              {{ brandName }}<br /><span class="text-primary">App</span>
+              <span class="text-xs text-white sm:text-[16px] md:text-[22px] leading-none"
+                >GERBANG</span
+              >
+              <span
+                class="text-xs text-white sm:text-[16px] md:text-[22px] tracking-[0.04em] leading-none -mt-1 sm:-mt-1.5 md:-mt-2"
+                >SEKOLAH</span
+              >
             </div>
           </div>
           <p class="text-slate-400 text-sm leading-relaxed max-w-sm font-medium">

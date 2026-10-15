@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sekolahku-pwa-v1';
+const CACHE_NAME = 'gerbang-sekolah-pwa-v1';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();

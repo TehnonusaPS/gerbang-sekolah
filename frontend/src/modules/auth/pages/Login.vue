@@ -6,6 +6,7 @@ import { GraduationCap, Eye, EyeOff } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/stores/authStore'
+import { currentLogo } from '@/config/logo'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -113,10 +114,8 @@ onMounted(async () => {
     }
   })
 
-  // Gunakan tema yang tersimpan di localStorage (default biru)
-  const savedThemeStyle = localStorage.getItem('themeStyle') || 'blue'
-  const mappedStyle = savedThemeStyle === 'tahoe' ? 'blue' : savedThemeStyle
-  document.body.classList.add(`theme-${mappedStyle}`)
+  // Kunci tema Halaman Login agar selalu biru konsisten sesuai identitas logo
+  document.body.classList.add('theme-blue')
 
   // Terapkan juga background style yang tersimpan
   const savedBgStyle = localStorage.getItem('backgroundStyle') || 'animated'
@@ -162,23 +161,33 @@ onUnmounted(() => {
         <div class="absolute inset-0 bg-primary/80 backdrop-blur-[3px] mix-blend-multiply"></div>
       </div>
 
-      <!-- Header Logo -->
-      <div class="flex justify-center gap-2 md:justify-start z-10">
-        <a
-          href="#"
-          class="flex items-center gap-2 font-bold text-xl sm:text-2xl text-white lg:text-primary min-w-0 transition-colors"
+      <!-- Header Logo (Centered in the space between top of screen and Sistem Informasi Sekolah, with equal top/bottom gap) -->
+      <div class="flex-[1.4] flex flex-col items-center justify-center text-center z-10 w-full min-h-[180px] py-4">
+        <router-link
+          to="/"
+          class="flex flex-col items-center justify-center text-center group py-1"
         >
-          <div
-            class="bg-white/10 border border-white/20 lg:bg-primary lg:border-none text-white lg:text-primary-foreground flex size-8 sm:size-10 shrink-0 items-center justify-center rounded-lg shadow-lg"
-          >
-            <GraduationCap class="size-5 sm:size-6" />
+          <div class="inline-flex flex-col items-center justify-center text-center">
+            <img
+              :src="currentLogo"
+              alt="Gerbang Sekolah"
+              class="w-[72px] sm:w-[84px] md:w-[98px] h-auto object-contain shrink-0 transition-transform duration-300 group-hover:scale-105 max-lg:brightness-0 max-lg:invert mb-2 sm:mb-2.5 drop-shadow-sm"
+            />
+            <div
+              class="flex flex-col items-center gap-2 font-montserrat font-extrabold uppercase text-[#0071FF] dark:text-white max-lg:text-white select-none text-center shrink-0"
+            >
+              <span class="text-xs sm:text-[15px] md:text-[20px] leading-none">GERBANG</span>
+              <span
+                class="text-xs sm:text-[15px] md:text-[20px] tracking-[0.04em] leading-none -mt-1 sm:-mt-1.5 md:-mt-2"
+                >SEKOLAH</span
+              >
+            </div>
           </div>
-          <span class="truncate">CerdasBangsa</span>
-        </a>
+        </router-link>
       </div>
 
       <!-- Main Login Card / Form Container -->
-      <div class="flex flex-1 items-center justify-center min-w-0 py-6 sm:py-8 z-20">
+      <div class="flex-none w-full max-w-sm mx-auto z-20 py-1">
         <div
           class="w-full max-w-sm p-6 sm:p-8 rounded-2xl border border-white/10 bg-white/10 backdrop-blur-md shadow-2xl lg:border-none lg:bg-transparent lg:backdrop-blur-none lg:shadow-none lg:p-0 transition-all duration-300"
         >
@@ -197,32 +206,35 @@ onUnmounted(() => {
               </p>
             </div>
 
-            <div class="grid gap-4">
-              <div class="grid gap-2 text-left">
+            <div class="grid gap-3.5 sm:gap-4">
+              <div class="grid gap-1.5 text-left">
                 <label
                   for="email"
-                  class="text-sm font-medium leading-none text-white lg:text-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >Email</label
+                  class="text-xs sm:text-sm font-semibold text-white lg:text-foreground/90"
                 >
+                  Email
+                </label>
                 <Input
                   id="email"
                   type="email"
                   v-model="email"
                   placeholder="Masukkan Email Anda"
                   required
-                  class="bg-white/95 text-slate-900 border-white/20 focus:ring-primary lg:bg-background lg:text-foreground"
+                  class="h-10 px-3 text-sm rounded-lg border-input bg-white/95 text-slate-900 lg:bg-background lg:text-foreground shadow-xs focus-visible:ring-2 focus-visible:ring-[#0071FF]/30 focus-visible:border-[#0071FF] transition-all"
                 />
               </div>
-              <div class="grid gap-2 text-left">
-                <div class="flex flex-wrap items-center justify-between gap-2">
+
+              <div class="grid gap-1.5 text-left">
+                <div class="flex items-center justify-between">
                   <label
                     for="password"
-                    class="text-sm font-medium leading-none text-white lg:text-foreground peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >Password</label
+                    class="text-xs sm:text-sm font-semibold text-white lg:text-foreground/90"
                   >
+                    Password
+                  </label>
                   <a
                     href="#"
-                    class="text-xs sm:text-sm text-primary-foreground/90 hover:text-white lg:text-primary lg:hover:underline shrink-0"
+                    class="text-xs font-semibold text-[#0071FF] hover:underline shrink-0 max-lg:text-white/90"
                   >
                     Lupa sandi?
                   </a>
@@ -234,7 +246,7 @@ onUnmounted(() => {
                     placeholder="Masukkan Password Anda"
                     v-model="password"
                     required
-                    class="pr-10 bg-white/95 text-slate-900 border-white/20 focus:ring-primary lg:bg-background lg:text-foreground"
+                    class="h-10 pl-3 pr-10 text-sm rounded-lg border-input bg-white/95 text-slate-900 lg:bg-background lg:text-foreground shadow-xs focus-visible:ring-2 focus-visible:ring-[#0071FF]/30 focus-visible:border-[#0071FF] transition-all"
                   />
                   <button
                     type="button"
@@ -256,10 +268,10 @@ onUnmounted(() => {
               <!-- Akun Demo Quick Fill -->
               <div
                 id="demo-dropdown-container"
-                class="grid gap-2 text-left relative"
+                class="grid gap-1.5 text-left relative"
               >
                 <label
-                  class="text-sm font-medium leading-none text-primary-foreground/90 lg:text-muted-foreground"
+                  class="text-xs sm:text-sm font-semibold text-white lg:text-foreground/90"
                 >
                   Uji Coba dengan Akun Demo
                 </label>
@@ -267,7 +279,7 @@ onUnmounted(() => {
                   <button
                     type="button"
                     @click="toggleDemoDropdown"
-                    class="flex h-10 w-full items-center justify-between rounded-md border border-white/10 bg-white/95 text-slate-900 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50 lg:border-input lg:bg-background lg:text-foreground transition-all cursor-pointer shadow-sm"
+                    class="flex h-10 w-full items-center justify-between rounded-lg border border-input bg-white/95 text-slate-900 px-3 text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-[#0071FF]/30 focus:border-[#0071FF] disabled:cursor-not-allowed disabled:opacity-50 lg:border-input lg:bg-background lg:text-foreground transition-all cursor-pointer"
                   >
                     <span class="truncate font-medium">{{
                       selectedDemoRole || '-- Pilih Akun Demo --'
@@ -278,7 +290,7 @@ onUnmounted(() => {
                   <!-- Custom Dropdown Options Menu -->
                   <div
                     v-if="isDemoDropdownOpen"
-                    class="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-md border border-slate-200/80 bg-white shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none"
+                    class="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-slate-200/80 bg-white shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none"
                   >
                     <div class="py-1">
                       <button
@@ -286,7 +298,7 @@ onUnmounted(() => {
                         v-for="acc in demoAccounts"
                         :key="acc.email"
                         @click="selectDemoAccount(acc)"
-                        class="flex w-full items-center px-4 py-2.5 text-sm text-slate-700 hover:bg-primary/10 hover:text-primary font-semibold transition-colors text-left cursor-pointer border-b border-slate-100 last:border-0"
+                        class="flex w-full items-center px-4 py-2 text-sm text-slate-700 hover:bg-[#0071FF]/10 hover:text-[#0071FF] font-semibold transition-colors text-left cursor-pointer border-b border-slate-100 last:border-0"
                       >
                         {{ acc.role }}
                       </button>
@@ -297,14 +309,14 @@ onUnmounted(() => {
 
               <p
                 v-if="error"
-                class="text-sm text-destructive lg:text-destructive font-medium break-words bg-destructive/10 px-2 py-1 rounded"
+                class="text-sm text-destructive lg:text-destructive font-medium break-words bg-destructive/10 px-3 py-1.5 rounded-lg"
               >
                 {{ error }}
               </p>
 
               <Button
                 type="submit"
-                class="w-full h-10 sm:h-11 text-sm sm:text-md font-semibold mt-2 bg-primary hover:bg-primary/90 text-primary-foreground lg:bg-primary lg:hover:bg-primary/95 lg:text-primary-foreground"
+                class="w-full h-10 text-sm font-semibold mt-1 !bg-[#0071FF] hover:!bg-[#0060db] active:!bg-[#0052bd] !text-white rounded-lg shadow-md shadow-[#0071FF]/25 transition-all [&::after]:!hidden [&::before]:!hidden !border-none cursor-pointer"
                 :disabled="isLoading"
               >
                 {{ isLoading ? 'Memproses...' : 'Masuk Sekarang' }}
@@ -316,9 +328,9 @@ onUnmounted(() => {
 
       <!-- Footer Copyright -->
       <div
-        class="text-center text-[10px] sm:text-xs text-primary-foreground/70 lg:text-muted-foreground mt-auto px-4 z-10"
+        class="flex-[0.7] flex items-end justify-center text-center text-[10px] sm:text-xs text-primary-foreground/70 lg:text-muted-foreground pb-4 px-4 z-10 min-h-[36px]"
       >
-        &copy; {{ new Date().getFullYear() }} CerdasBangsa - Sistem Manajemen Sekolah Terintegrasi
+        &copy; {{ new Date().getFullYear() }} Gerbang Sekolah. Sistem Manajemen Sekolah Terintegrasi.
       </div>
     </div>
 
@@ -330,7 +342,7 @@ onUnmounted(() => {
         !isTransitioning ? 'login-right-entrance' : ''
       ]"
     >
-      <!-- Menggunakan gambar sekolah Indonesia yang hangat dan familiar -->
+      <!-- Menggunakan gambar sekolah Indonesia yang hangat dan natural -->
       <img
         src="@/assets/images/login-bg.png"
         alt="Suasana Sekolah Indonesia"
@@ -338,13 +350,13 @@ onUnmounted(() => {
         decoding="sync"
         class="absolute inset-0 h-full w-full object-cover"
       />
-      <!-- Gradient hanya di bagian bawah untuk keterbacaan teks, foto terlihat natural di atas -->
+      <!-- Gradasi Hitam (Kuat di paling bawah, memudar halus ke atas melintasi baris teks, tidak over) -->
       <div
-        class="absolute inset-0"
-        style="background: linear-gradient(to top, color-mix(in srgb, var(--primary) 92%, transparent) 0%, color-mix(in srgb, var(--primary) 55%, transparent) 20%, color-mix(in srgb, var(--primary) 18%, transparent) 40%, transparent 62%);"
+        class="absolute inset-x-0 bottom-0 h-[52%] pointer-events-none"
+        style="background: linear-gradient(to top, rgba(0, 0, 0, 0.96) 0%, rgba(0, 0, 0, 0.82) 20%, rgba(0, 0, 0, 0.48) 50%, rgba(0, 0, 0, 0.15) 78%, transparent 100%);"
       ></div>
 
-      <div class="absolute inset-0 flex items-end p-8 xl:p-12 z-10">
+      <div class="absolute inset-0 flex items-end p-8 xl:p-12 z-10 pointer-events-none">
         <div class="text-white max-w-lg min-w-0">
           <h2 class="text-3xl xl:text-4xl font-bold leading-tight drop-shadow-md">
             Membangun Masa Depan Melalui Teknologi

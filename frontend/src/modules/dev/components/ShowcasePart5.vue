@@ -301,7 +301,7 @@ const rangeCalendarValue = ref({
                       </div>
                       <div class="grid flex-1 text-left text-sm leading-tight">
                         <span class="truncate font-extrabold text-sidebar-foreground tracking-tight"
-                          >CerdasBangsa</span
+                          >Gerbang Sekolah</span
                         >
                         <span
                           class="truncate text-[10px] capitalize text-sidebar-foreground/70 font-medium"

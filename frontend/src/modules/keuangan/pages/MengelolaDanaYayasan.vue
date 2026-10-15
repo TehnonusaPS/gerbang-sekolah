@@ -73,16 +73,16 @@ const defaultPengeluaran = [
 const pengeluaranList = ref([])
 
 onMounted(() => {
-  const stored = localStorage.getItem('cerdasbangsa_dana_yayasan_pengeluaran')
+  const stored = localStorage.getItem('gerbangsekolah_dana_yayasan_pengeluaran') || localStorage.getItem('cerdasbangsa_dana_yayasan_pengeluaran')
   if (stored) {
     pengeluaranList.value = JSON.parse(stored)
   } else {
     pengeluaranList.value = [...defaultPengeluaran]
-    localStorage.setItem(
-      'cerdasbangsa_dana_yayasan_pengeluaran',
-      JSON.stringify(pengeluaranList.value)
-    )
   }
+  localStorage.setItem(
+    'gerbangsekolah_dana_yayasan_pengeluaran',
+    JSON.stringify(pengeluaranList.value)
+  )
 })
 
 const formatDateWithBr = dateStr => {

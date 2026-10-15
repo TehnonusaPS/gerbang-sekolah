@@ -7,7 +7,7 @@ const { showInstallModal, installProgress, installState } = usePwa()
 
 const statusText = computed(() => {
   const progress = installProgress.value
-  if (progress < 25) return 'Menghubungkan ke server Sekolahku ERP...'
+  if (progress < 25) return 'Menghubungkan ke server Gerbang Sekolah...'
   if (progress < 55) return 'Mengunduh paket data PWA offline...'
   if (progress < 80) return 'Mengonfigurasi cache & basis data lokal...'
   if (progress < 100) return 'Menyelesaikan pemasangan ikon aplikasi...'
@@ -70,7 +70,7 @@ const closeModal = () => {
             {{ installState === 'installing' ? 'Memasang Aplikasi' : 'Pemasangan Selesai' }}
           </h3>
           <p class="text-xs text-muted-foreground mt-1 px-4">
-            Sekolahku ERP kini dapat diakses langsung dari home screen komputer atau HP Anda.
+            Gerbang Sekolah kini dapat diakses langsung dari home screen komputer atau HP Anda.
           </p>
 
           <!-- INSTALLING STATE -->

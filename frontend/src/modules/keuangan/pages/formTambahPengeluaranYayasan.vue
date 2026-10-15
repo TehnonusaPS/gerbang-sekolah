@@ -108,7 +108,7 @@ const handleSubmit = () => {
   isSubmitting.value = true
 
   setTimeout(() => {
-    const stored = localStorage.getItem('cerdasbangsa_dana_yayasan_pengeluaran')
+    const stored = localStorage.getItem('gerbangsekolah_dana_yayasan_pengeluaran') || localStorage.getItem('cerdasbangsa_dana_yayasan_pengeluaran')
     let list = stored ? JSON.parse(stored) : [...defaultPengeluaran]
 
     const newExpense = {
@@ -128,7 +128,7 @@ const handleSubmit = () => {
     // Insert at the beginning of the list
     list.unshift(newExpense)
 
-    localStorage.setItem('cerdasbangsa_dana_yayasan_pengeluaran', JSON.stringify(list))
+    localStorage.setItem('gerbangsekolah_dana_yayasan_pengeluaran', JSON.stringify(list))
 
     // Update the "Dana Terpakai" calculations locally if they exist
     // (Since we are using standard localStorage, we can keep the sum updated or let it load dynamically)

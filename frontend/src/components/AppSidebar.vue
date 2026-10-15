@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
+import { currentLogoSquare } from '@/config/logo'
 import {
   Sidebar,
   SidebarContent,
@@ -31,13 +32,13 @@ const currentUser = computed(() => ({
 const tenantName = computed(() => {
   if (auth.user?.school?.name) return auth.user.school.name
   if (auth.user?.foundation?.name) return auth.user.foundation.name
-  return 'CerdasBangsa'
+  return 'Gerbang Sekolah'
 })
 
 const tenantLogo = computed(() => {
   if (auth.user?.school?.logo) return auth.user.school.logo
   if (auth.user?.foundation?.logo) return auth.user.foundation.logo
-  return null
+  return currentLogoSquare
 })
 
 // Struktur RBAC Dinamis

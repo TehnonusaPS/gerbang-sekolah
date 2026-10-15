@@ -256,24 +256,20 @@ function sanitizeRfidUid(val) {
   return str
 }
 
-watch(rfidInput, (newVal) => {
-  if (!newVal) return
-  const clean = sanitizeRfidUid(newVal)
-  if (clean !== newVal) {
-    rfidInput.value = clean
-  }
-})
+function focusRfidInput() {
+  nextTick(() => {
+    const inputEl = rfidInputRef.value?.$el?.querySelector?.('input') || rfidInputRef.value?.$el || rfidInputRef.value
+    inputEl?.focus?.()
+    inputEl?.select?.()
+  })
+}
 
 function openRfidRegistration(student) {
   selectedStudentForRfid.value = student
   // Start with empty input so tapping replaces cleanly instead of appending to existing text
   rfidInput.value = ''
   isRfidRegisterModalOpen.value = true
-  nextTick(() => {
-    const inputEl = rfidInputRef.value?.$el?.querySelector?.('input') || rfidInputRef.value?.$el || rfidInputRef.value
-    inputEl?.focus?.()
-    inputEl?.select?.()
-  })
+  focusRfidInput()
 }
 
 function closeRfidRegistration() {
@@ -318,6 +314,8 @@ async function handleRfidRegistrationSubmit() {
   } catch (err) {
     const msg = err.response?.data?.message || 'Gagal mendaftarkan kartu RFID.'
     toast.error('Registrasi RFID Gagal', { description: msg })
+    rfidInput.value = ''
+    focusRfidInput()
   } finally {
     isSubmittingRfid.value = false
   }

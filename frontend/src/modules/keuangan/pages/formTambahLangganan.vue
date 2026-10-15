@@ -316,7 +316,7 @@ const handleSubmit = async () => {
   >
     <PageHeader
       :title="isEditMode ? 'Edit Detail Langganan' : 'Tambah Langganan Baru'"
-      description="Lengkapi formulir di bawah ini untuk mendaftarkan institusi/tenant baru ke dalam lisensi CerdasBangsa melalui backend."
+      description="Lengkapi formulir di bawah ini untuk mendaftarkan institusi/tenant baru ke dalam lisensi Gerbang Sekolah melalui backend."
       back
       @back="router.push('/keuangan/subscription')"
     />
@@ -640,7 +640,7 @@ const handleSubmit = async () => {
                 <div class="border-t border-white/10 pt-2 min-w-0">
                   <span class="text-[8px] uppercase text-primary-foreground/60 block">Admin Sekolah</span>
                   <span class="text-[10px] font-semibold truncate block mt-0.5 text-white/90">
-                    {{ form.emailAdmin || 'admin.sekolah@cerdasbangsa.id' }}
+                    {{ form.emailAdmin || 'admin.sekolah@gerbangsekolah.id' }}
                   </span>
                 </div>
               </div>

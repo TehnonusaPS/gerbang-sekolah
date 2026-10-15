@@ -42,7 +42,7 @@ const scrollTo = id => emit('scrollTo', id)
         </h1>
 
         <p class="text-lg text-blue-100 mb-8 leading-relaxed max-w-xl">
-          CerdasBangsa adalah platform manajemen pendidikan untuk yayasan. Daftarkan yayasan Anda,
+          Gerbang Sekolah adalah platform manajemen pendidikan untuk yayasan. Daftarkan yayasan Anda,
           tambahkan unit sekolah sebanyak apapun, dan kelola seluruh operasional dari satu dasbor
           terpusat.
         </p>

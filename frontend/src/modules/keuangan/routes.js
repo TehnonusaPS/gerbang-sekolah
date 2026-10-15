@@ -77,7 +77,7 @@ export default [
     meta: {
       title: 'Paket Subcription',
       parent: 'Keuangan',
-      description: 'Kelola paket langganan dan tagihan lisensi aplikasi CerdasBangsa.'
+      description: 'Kelola paket langganan dan tagihan lisensi aplikasi Gerbang Sekolah.'
     }
   },
   {

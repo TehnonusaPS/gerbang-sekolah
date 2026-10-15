@@ -1,4 +1,4 @@
-# 🏫 School App — Sistem Informasi Manajemen Sekolah
+# 🏫 Gerbang Sekolah — Sistem Informasi Manajemen Sekolah
 
 > Platform terpadu untuk pengelolaan administrasi, akademik, keuangan, dan komunikasi sekolah.
 
@@ -96,7 +96,7 @@ Pastikan sudah terinstal di komputer Anda:
 ## 📁 Struktur Proyek
 
 ```
-school-app/
+gerbang-sekolah/
 ├── frontend/                           ← Aplikasi Vue 3 (SPA)
 │   ├── src/
 │   │   ├── App.vue                     ← Root component
@@ -148,8 +148,8 @@ Ikuti langkah-langkah berikut **secara berurutan** setelah melakukan `git clone`
 ### Langkah 1 — Clone Repository
 
 ```bash
-git clone https://github.com/<username>/school-app.git
-cd school-app
+git clone https://github.com/TehnonusaPS/gerbang-sekolah.git
+cd gerbang-sekolah
 ```
 
 ---

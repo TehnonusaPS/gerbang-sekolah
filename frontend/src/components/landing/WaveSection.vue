@@ -57,7 +57,7 @@ const waveClip =
               Pengalaman sekolah yang menyenangkan, dari hari pertama.
             </h2>
             <p class="mt-4 text-sm sm:text-base text-foreground/70">
-              Sekolahku dirancang agar guru fokus mengajar dan orang tua tenang memantau, sementara
+              Gerbang Sekolah dirancang agar guru fokus mengajar dan orang tua tenang memantau, sementara
               yayasan punya kontrol penuh.
             </p>
 
