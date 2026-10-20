@@ -112,6 +112,11 @@ export async function getClassrooms(params) {
   return response.data
 }
 
+export async function getClassroom(id) {
+  const response = await api.get(`/management/classrooms/${id}`)
+  return response.data
+}
+
 export async function createClassroom(data) {
   const response = await api.post('/management/classrooms', data)
   return response.data
@@ -124,6 +129,13 @@ export async function updateClassroom(id, data) {
 
 export async function deleteClassroom(id) {
   const response = await api.delete(`/management/classrooms/${id}`)
+  return response.data
+}
+
+export async function assignClassroomStudents(classroomId, studentIds) {
+  const response = await api.post(`/management/classrooms/${classroomId}/assign-students`, {
+    student_ids: studentIds
+  })
   return response.data
 }
 

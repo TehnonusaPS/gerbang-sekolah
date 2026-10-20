@@ -301,6 +301,10 @@ class StudentController extends Controller
             }
         }
 
+        if (isset($inputs['foto']) && is_string($inputs['foto'])) {
+            unset($inputs['foto']);
+        }
+
         $validator = Validator::make($inputs, [
             'nama_depan'     => 'required|string|max:100',
             'nama_belakang'  => 'nullable|string|max:100',
@@ -565,6 +569,10 @@ class StudentController extends Controller
             if ($value === '') {
                 $inputs[$key] = null;
             }
+        }
+
+        if (isset($inputs['foto']) && is_string($inputs['foto'])) {
+            unset($inputs['foto']);
         }
 
         $validator = Validator::make($inputs, [
