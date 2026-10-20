@@ -163,4 +163,57 @@ class StudentControllerTest extends TestCase
             'name' => 'Fajar Setiawan',
         ]);
     }
+    public function test_school_admin_can_update_student_with_photo_multipart(): void
+    {
+        \Illuminate\Support\Facades\Http::fake([
+            "*/api/represent" => \Illuminate\Support\Facades\Http::response([
+                "success" => true,
+                "embedding" => array_fill(0, 512, 0.05),
+            ], 200),
+        ]);
+
+        $studentUser = User::create([
+            "name" => "Budi Santoso",
+            "email" => "budi.santoso@mail.com",
+            "password" => bcrypt("123456"),
+            "role_id" => Role::where("name", "siswa")->first()->id,
+            "school_id" => $this->adminSekolah->school_id,
+        ]);
+
+        $profile = StudentProfile::create([
+            "user_id" => $studentUser->id,
+            "classroom_id" => $this->classroom->id,
+            "nisn" => "5544332211",
+            "gender" => "male",
+            "status" => "active",
+            "birth_date" => "2015-08-15",
+            "enrollment_date" => "2026-07-01",
+        ]);
+
+        $fakePhoto = \Illuminate\Http\UploadedFile::fake()->image("budi.jpg", 200, 200);
+
+        $payload = [
+            "_method"        => "PUT",
+            "nama_depan"     => "Budi",
+            "nama_belakang"  => "Santoso",
+            "nisn"           => "5544332211",
+            "kelas"          => $this->classroom->id,
+            "status"         => "1",
+            "jenis_kelamin"  => "JK01",
+            "tanggal_lahir"  => "2015-08-15",
+            "email"          => "budi.santoso@mail.com",
+            "foto"           => $fakePhoto,
+        ];
+
+        $response = $this->actingAs($this->adminSekolah, "sanctum")
+            ->post("/api/management/students/{$studentUser->id}", $payload);
+
+        $response->assertStatus(200)
+            ->assertJsonPath("status", "success");
+
+        $studentUser->refresh();
+        $this->assertNotNull($studentUser->photo);
+        $profile->refresh();
+        $this->assertTrue($profile->is_face_registered);
+    }
 }
