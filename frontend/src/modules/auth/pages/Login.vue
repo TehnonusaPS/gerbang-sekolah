@@ -266,7 +266,7 @@ onUnmounted(() => {
               </div>
 
               <!-- Akun Demo Quick Fill -->
-              <div
+              <!-- <div
                 id="demo-dropdown-container"
                 class="grid gap-1.5 text-left relative"
               >
@@ -287,7 +287,7 @@ onUnmounted(() => {
                     <span class="text-slate-500 pointer-events-none ml-2 text-xs">▼</span>
                   </button>
 
-                  <!-- Custom Dropdown Options Menu -->
+                 
                   <div
                     v-if="isDemoDropdownOpen"
                     class="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-slate-200/80 bg-white shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none"
@@ -305,7 +305,7 @@ onUnmounted(() => {
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> -->
 
               <p
                 v-if="error"
