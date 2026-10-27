@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('teacher_agendas', function (Blueprint $table) {
             $table->id();
             $table->foreignId('school_id')->constrained('schools')->onDelete('cascade');
-            $table->foreignId('teacher_id')->constrained('users')->onDelete('cascade');
+            $table->foreignUuid('teacher_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('classroom_id')->nullable()->constrained('classrooms')->onDelete('cascade');
             $table->foreignId('subject_id')->nullable()->constrained('subjects')->onDelete('set null');
             $table->foreignId('academic_year_id')->constrained('academic_years')->onDelete('cascade');
