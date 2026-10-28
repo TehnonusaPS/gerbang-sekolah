@@ -13,10 +13,14 @@ const store = usePerpustakaanStore()
 const bookData = ref(null)
 const isLoading = ref(true)
 
-onMounted(() => {
+onMounted(async () => {
   const targetId = route.params.id
 
-  setTimeout(() => {
+  try {
+    if (store.items.length === 0) {
+      await store.fetchItems()
+    }
+
     const foundData = store.getById(targetId)
 
     if (foundData) {
@@ -25,15 +29,22 @@ onMounted(() => {
       toast.error('Data buku tidak ditemukan')
       router.push('/lainnya/perpustakaan')
     }
-
+  } catch (error) {
+    toast.error('Gagal memuat data buku')
+  } finally {
     isLoading.value = false
-  }, 500)
+  }
 })
 
-function handleSubmit(formData) {
-  store.update(route.params.id, formData)
-  toast.success('Perubahan buku berhasil disimpan!')
-  router.push('/lainnya/perpustakaan')
+async function handleSubmit(formData) {
+  try {
+    await store.update(route.params.id, formData)
+    toast.success('Perubahan buku berhasil disimpan!')
+    router.push('/lainnya/perpustakaan')
+  } catch (error) {
+    toast.error('Gagal menyimpan perubahan buku')
+    console.error(error)
+  }
 }
 
 function handleCancel() {

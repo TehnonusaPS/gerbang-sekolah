@@ -63,6 +63,7 @@ function triggerFileInput() {
 function handleFileUpload(event) {
   const file = event.target.files[0]
   if (file && (file.type === 'image/jpeg' || file.type === 'image/png')) {
+    form.value.photo = file // Store the actual File object
     photoPreview.value = URL.createObjectURL(file)
   }
 }
@@ -70,12 +71,14 @@ function handleFileUpload(event) {
 function handleDrop(event) {
   const file = event.dataTransfer.files[0]
   if (file && (file.type === 'image/jpeg' || file.type === 'image/png')) {
+    form.value.photo = file // Store the actual File object
     photoPreview.value = URL.createObjectURL(file)
   }
 }
 
 function removePhoto() {
   photoPreview.value = null
+  form.value.photo = null // Clear the File object
   if (fileInput.value) {
     fileInput.value.value = ''
   }
@@ -86,7 +89,7 @@ function cancel() {
 }
 
 function submit() {
-  emit('submit', { ...form.value, photo: photoPreview.value })
+  emit('submit', { ...form.value })
 }
 </script>
 

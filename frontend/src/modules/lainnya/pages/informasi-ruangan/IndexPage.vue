@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { toast } from 'vue-sonner'
 import { useAuthStore } from '@/stores/authStore'
@@ -21,9 +21,14 @@ import RuanganTable from '../../components/RuanganTable.vue'
 import { useRuanganStore } from '@/stores/ruanganStore'
 import PageHeader from '@/components/page-header/PageHeader.vue'
 
+
 const router = useRouter()
 const auth = useAuthStore()
 const store = useRuanganStore()
+
+onMounted(() => {
+  store.fetchItems()
+})
 
 const isYayasan = computed(() => auth.user?.role === 'admin_yayasan')
 
@@ -52,12 +57,243 @@ function handleView(id) {
   }
 }
 
-function handleExportExcel() {
-  toast.info('Mengunduh data ruangan dalam format Excel...')
+function handleExportExcel(customItems) {
+  const targetRooms = Array.isArray(customItems) ? customItems : rooms.value
+  if (!targetRooms || targetRooms.length === 0) {
+    toast.error('Tidak ada data ruangan untuk diekspor')
+    return
+  }
+
+  const currentDate = new Date().toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  })
+
+  const totalRooms = targetRooms.length
+  const totalCapacity = targetRooms.reduce((acc, curr) => acc + (Number(curr.capacity) || 0), 0)
+  const totalArea = targetRooms.reduce((acc, curr) => acc + (Number(curr.area) || 0), 0)
+
+  const formatFacilitiesText = facs => {
+    if (!facs || !Array.isArray(facs) || facs.length === 0) return '-'
+    return facs
+      .map(f => f.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '))
+      .join(', ')
+  }
+
+  let html = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; }
+        .title { font-size: 16pt; font-weight: bold; text-align: center; color: #0f172a; margin-bottom: 4px; }
+        .subtitle { font-size: 10pt; text-align: center; color: #64748b; margin-bottom: 16px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+        th { background-color: #1e293b; color: #ffffff; border: 1px solid #334155; padding: 10px 8px; font-weight: bold; font-size: 10pt; text-align: center; }
+        td { border: 1px solid #cbd5e1; padding: 7px 8px; font-size: 9.5pt; color: #1e293b; vertical-align: middle; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+        .badge-kategori { background-color: #f1f5f9; font-weight: 600; text-align: center; }
+        .footer-total { background-color: #f1f5f9; font-weight: bold; font-size: 10pt; }
+      </style>
+    </head>
+    <body>
+      <div class="title">LAPORAN DATA RUANGAN & FASILITAS SEKOLAH</div>
+      <div class="subtitle">Dicetak pada: ${currentDate} | Total: ${totalRooms} Ruangan (Kapasitas: ${totalCapacity} Orang)</div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 40px;">No</th>
+            ${isYayasan.value ? '<th>Cabang Sekolah</th>' : ''}
+            <th>Kode Ruang</th>
+            <th>Nama Ruangan</th>
+            <th>Kategori</th>
+            <th>Gedung / Lokasi</th>
+            <th>Kapasitas</th>
+            <th>Luas (m²)</th>
+            <th>Fasilitas</th>
+          </tr>
+        </thead>
+        <tbody>
+  `
+
+  targetRooms.forEach((room, index) => {
+    html += `
+      <tr>
+        <td class="text-center">${index + 1}</td>
+        ${isYayasan.value ? `<td>${room.school_name || '-'}</td>` : ''}
+        <td class="text-center" style="mso-number-format:'\\@';">${room.code || '-'}</td>
+        <td class="text-left" style="font-weight: 600;">${room.name || '-'}</td>
+        <td class="badge-kategori">${room.category || '-'}</td>
+        <td class="text-left">${room.building || '-'}</td>
+        <td class="text-center">${room.capacity ? `${room.capacity} Orang` : '-'}</td>
+        <td class="text-center">${room.area ? `${room.area} m²` : '-'}</td>
+        <td class="text-left">${formatFacilitiesText(room.facilities)}</td>
+      </tr>
+    `
+  })
+
+  const colSpanCount = isYayasan.value ? 6 : 5
+  html += `
+        </tbody>
+        <tfoot>
+          <tr class="footer-total">
+            <td colspan="${colSpanCount}" class="text-right" style="padding: 10px;">TOTAL:</td>
+            <td class="text-center" style="padding: 10px; color: #047857;">${totalCapacity} Orang</td>
+            <td class="text-center" style="padding: 10px; color: #2563eb;">${totalArea} m²</td>
+            <td class="text-center" style="padding: 10px;">${totalRooms} Ruangan</td>
+          </tr>
+        </tfoot>
+      </table>
+    </body>
+    </html>
+  `
+
+  const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', `Laporan_Data_Ruangan_${new Date().toISOString().slice(0, 10)}.xls`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+
+  toast.success('Ekspor Excel Berhasil!', {
+    description: `Data ${totalRooms} ruangan sekolah berhasil diunduh.`
+  })
 }
 
-function handleExportPdf() {
-  toast.info('Mengunduh data ruangan dalam format PDF...')
+function handleExportPdf(customItems) {
+  const targetRooms = Array.isArray(customItems) ? customItems : rooms.value
+  if (!targetRooms || targetRooms.length === 0) {
+    toast.error('Tidak ada data ruangan untuk diekspor')
+    return
+  }
+
+  const currentDate = new Date().toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  })
+
+  const totalRooms = targetRooms.length
+  const totalCapacity = targetRooms.reduce((acc, curr) => acc + (Number(curr.capacity) || 0), 0)
+  const totalArea = targetRooms.reduce((acc, curr) => acc + (Number(curr.area) || 0), 0)
+
+  const formatFacilitiesText = facs => {
+    if (!facs || !Array.isArray(facs) || facs.length === 0) return '-'
+    return facs
+      .map(f => f.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '))
+      .join(', ')
+  }
+
+  const printWindow = window.open('', '_blank')
+  if (!printWindow) {
+    toast.error('Popup diblokir oleh browser. Izinkan popup untuk mencetak/export PDF.')
+    return
+  }
+
+  let rowsHtml = ''
+  targetRooms.forEach((room, index) => {
+    rowsHtml += `
+      <tr>
+        <td style="text-align: center;">${index + 1}</td>
+        ${isYayasan.value ? `<td>${room.school_name || '-'}</td>` : ''}
+        <td style="font-family: monospace; font-weight: bold; text-align: center;">${room.code || '-'}</td>
+        <td style="font-weight: 600;">${room.name || '-'}</td>
+        <td style="text-align: center;">${room.category || '-'}</td>
+        <td>${room.building || '-'}</td>
+        <td style="text-align: center; font-weight: bold;">${room.capacity ? `${room.capacity} Orang` : '-'}</td>
+        <td style="text-align: center;">${room.area ? `${room.area} m²` : '-'}</td>
+        <td>${formatFacilitiesText(room.facilities)}</td>
+      </tr>
+    `
+  })
+
+  const colSpanCount = isYayasan.value ? 6 : 5
+  const printContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Laporan Data Ruangan & Fasilitas Sekolah</title>
+      <meta charset="utf-8">
+      <style>
+        @page { size: A4 landscape; margin: 15mm; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 20px; color: #1e293b; font-size: 10pt; }
+        .header { text-align: center; margin-bottom: 24px; border-bottom: 2px solid #0f172a; padding-bottom: 12px; }
+        .header h1 { margin: 0 0 6px 0; font-size: 18pt; text-transform: uppercase; letter-spacing: 0.5px; }
+        .header p { margin: 0; color: #64748b; font-size: 10pt; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th { background-color: #f1f5f9; border: 1px solid #cbd5e1; padding: 8px 6px; font-weight: 700; font-size: 9pt; text-align: center; text-transform: uppercase; }
+        td { border: 1px solid #cbd5e1; padding: 7px 6px; font-size: 9pt; vertical-align: middle; }
+        .total-row { background-color: #f8fafc; font-weight: bold; }
+        @media print {
+          body { padding: 0; }
+        }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1>Laporan Data Ruangan & Fasilitas Sekolah</h1>
+        <p>Tanggal Cetak: ${currentDate} | Total: ${totalRooms} Ruangan (Kapasitas: ${totalCapacity} Orang)</p>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 30px;">No</th>
+            ${isYayasan.value ? '<th>Cabang</th>' : ''}
+            <th>Kode</th>
+            <th>Nama Ruangan</th>
+            <th>Kategori</th>
+            <th>Gedung</th>
+            <th>Kapasitas</th>
+            <th>Luas</th>
+            <th>Fasilitas</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+        <tfoot>
+          <tr class="total-row">
+            <td colspan="${colSpanCount}" style="text-align: right; padding: 8px;">TOTAL KESELURUHAN:</td>
+            <td style="text-align: center; padding: 8px; color: #047857; font-weight: bold;">${totalCapacity} Orang</td>
+            <td style="text-align: center; padding: 8px; color: #2563eb; font-weight: bold;">${totalArea} m²</td>
+            <td style="text-align: center; padding: 8px;">${totalRooms} Ruangan</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div style="margin-top: 40px; display: table; width: 100%; page-break-inside: avoid;">
+        <div style="display: table-cell; width: 50%; text-align: center;">
+          <p>Petugas Sarana & Prasarana,</p>
+          <div style="height: 60px;"></div>
+          <p><strong>( .................................................. )</strong></p>
+        </div>
+        <div style="display: table-cell; width: 50%; text-align: center;">
+          <p>Mengetahui,<br>Kepala Sekolah</p>
+          <div style="height: 60px;"></div>
+          <p><strong>( .................................................. )</strong></p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `
+
+  printWindow.document.write(printContent)
+  printWindow.document.close()
+  printWindow.focus()
+  setTimeout(() => {
+    printWindow.print()
+  }, 300)
+
+  toast.success('Mempersiapkan Dokumen PDF...', {
+    description: 'Pilih opsi "Save as PDF" / "Simpan sebagai PDF" pada dialog cetak.'
+  })
 }
 </script>
 

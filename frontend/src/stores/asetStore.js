@@ -1,32 +1,98 @@
 import { defineStore } from 'pinia'
-import { mockAset } from '@/modules/lainnya/data/mockAset'
+import * as asetService from '@/services/asetService'
+import { useAuthStore } from '@/stores/authStore'
 
 export const useAsetStore = defineStore('aset', {
   state: () => ({
-    items: [...mockAset]
+    items: [],
+    isLoading: false,
+    error: null,
   }),
   actions: {
-    add(item) {
-      const newItem = {
-        ...item,
-        id: Date.now().toString()
+    async fetchItems() {
+      this.isLoading = true
+      this.error = null
+      try {
+        const data = await asetService.getAsets()
+        this.items = data.map(item => ({
+          id: item.id,
+          code: item.code,
+          name: item.name,
+          category: item.category,
+          brand: item.brand,
+          building: item.building,
+          floor: item.floor,
+          room: item.room,
+          condition: item.condition,
+          date: item.date,
+          value: item.value,
+          photo: item.foto ? `http://127.0.0.1:8000/storage/${item.foto}` : null,
+          school_id: item.school_id,
+          school_name: item.school ? item.school.name : null
+        }))
+      } catch (err) {
+        console.error('Failed to fetch aset:', err)
+        this.error = 'Gagal mengambil data aset'
+      } finally {
+        this.isLoading = false
       }
-      this.items.unshift(newItem)
-      return newItem
     },
-    update(id, updatedItem) {
-      const index = this.items.findIndex(item => item.id === id)
-      if (index !== -1) {
-        this.items[index] = { ...this.items[index], ...updatedItem }
-        return this.items[index]
+    
+    async add(item) {
+      const auth = useAuthStore()
+      
+      const formData = new FormData()
+      formData.append('school_id', auth.user.school_id)
+      formData.append('code', item.code || '')
+      formData.append('name', item.name || '')
+      if (item.category) formData.append('category', item.category)
+      if (item.brand) formData.append('brand', item.brand)
+      if (item.building) formData.append('building', item.building)
+      if (item.floor) formData.append('floor', item.floor)
+      if (item.room) formData.append('room', item.room)
+      if (item.condition) formData.append('condition', item.condition)
+      if (item.date) formData.append('date', item.date)
+      if (item.value) formData.append('value', item.value)
+      
+      if (item.photo && item.photo instanceof File) {
+        formData.append('foto', item.photo)
       }
-      return null
+
+      const response = await asetService.createAset(formData)
+      await this.fetchItems()
+      return response
     },
-    delete(id) {
+    
+    async update(id, updatedItem) {
+      const formData = new FormData()
+      
+      formData.append('code', updatedItem.code || '')
+      formData.append('name', updatedItem.name || '')
+      if (updatedItem.category) formData.append('category', updatedItem.category)
+      if (updatedItem.brand) formData.append('brand', updatedItem.brand)
+      if (updatedItem.building) formData.append('building', updatedItem.building)
+      if (updatedItem.floor) formData.append('floor', updatedItem.floor)
+      if (updatedItem.room) formData.append('room', updatedItem.room)
+      if (updatedItem.condition) formData.append('condition', updatedItem.condition)
+      if (updatedItem.date) formData.append('date', updatedItem.date)
+      if (updatedItem.value) formData.append('value', updatedItem.value)
+      
+      if (updatedItem.photo && updatedItem.photo instanceof File) {
+        formData.append('foto', updatedItem.photo)
+      }
+
+      const response = await asetService.updateAset(id, formData)
+      await this.fetchItems()
+      return response
+    },
+    
+    async delete(id) {
+      await asetService.deleteAset(id)
       this.items = this.items.filter(item => item.id !== id)
     },
+    
     getById(id) {
-      return this.items.find(item => item.id === id)
+      return this.items.find(item => String(item.id) === String(id))
     }
   }
 })

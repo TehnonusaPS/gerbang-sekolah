@@ -734,5 +734,125 @@ class DatabaseSeeder extends Seeder
         $this->call(ActivityNewsSeeder::class);
         $this->call(SppSeeder::class);
 
+        // ─────────────────────────────────────────────
+        //  13. Perpustakaan
+        // ─────────────────────────────────────────────
+        \App\Models\Perpustakaan::create([
+            'school_id' => $school1->id,
+            'name' => 'Buku Fisika Dasar',
+            'isbn' => '978-602-8256-07-0',
+            'category' => 'Sains',
+            'stock' => 36,
+            'rack_location' => 'Rak A1',
+            'publication_year' => 2021,
+            'author' => 'Prof. Yohanes Surya',
+            'publisher' => 'Bentang Pustaka',
+            'description' => 'Buku pegangan wajib untuk siswa SMA tentang konsep dasar fisika.',
+        ]);
+
+        \App\Models\Perpustakaan::create([
+            'school_id' => $school1->id,
+            'name' => 'Sejarah Indonesia Modern',
+            'isbn' => '978-979-1234-56-7',
+            'category' => 'Sejarah',
+            'stock' => 15,
+            'rack_location' => 'Rak C3',
+            'publication_year' => 2019,
+            'author' => 'Ricklefs',
+            'publisher' => 'Serambi',
+            'description' => 'Buku yang membahas perkembangan sejarah Indonesia dari awal hingga masa modern.',
+        ]);
+
+        \App\Models\Perpustakaan::create([
+            'school_id' => $school1->id,
+            'name' => 'Belajar Coding dengan Python',
+            'isbn' => '978-602-8888-99-9',
+            'category' => 'TIK',
+            'stock' => 24,
+            'rack_location' => 'Rak B1',
+            'publication_year' => 2023,
+            'author' => 'Budi Raharjo',
+            'publisher' => 'Informatika',
+            'description' => 'Panduan lengkap belajar bahasa pemrograman Python untuk pemula.',
+        ]);
+        // ─────────────────────────────────────────────
+        //  14. Aset
+        // ─────────────────────────────────────────────
+        \App\Models\Aset::create([
+            'school_id' => $school1->id,
+            'code'      => 'INV-ELK-001',
+            'name'      => 'Proyektor Epson EB-X400',
+            'category'  => 'Elektronik',
+            'brand'     => 'Epson',
+            'building'  => 'Gedung A',
+            'floor'     => '1',
+            'room'      => 'Ruang Kelas 2-D',
+            'condition' => 'Baik',
+            'date'      => '2023-01-10',
+            'value'     => 4500000,
+        ]);
+
+        \App\Models\Aset::create([
+            'school_id' => $school1->id,
+            'code'      => 'INV-FURN-001',
+            'name'      => 'Meja Guru Kayu Jati',
+            'category'  => 'Furniture',
+            'brand'     => 'Olympic',
+            'building'  => 'Gedung Utama',
+            'floor'     => '1',
+            'room'      => 'Ruang Guru',
+            'condition' => 'Rusak Ringan',
+            'date'      => '2020-05-15',
+            'value'     => 1200000,
+        ]);
+
+        \App\Models\Aset::create([
+            'school_id' => $school1->id,
+            'code'      => 'INV-LAB-001',
+            'name'      => 'Mikroskop Binokuler',
+            'category'  => 'Peralatan Laboratorium',
+            'brand'     => 'Olympus',
+            'building'  => 'Gedung Laboratorium',
+            'floor'     => '2',
+            'room'      => 'Lab Biologi',
+            'condition' => 'Baik',
+            'date'      => '2024-02-20',
+            'value'     => 8500000,
+        ]);
+        // ─────────────────────────────────────────────
+        //  15. Ruangan
+        // ─────────────────────────────────────────────
+        \App\Models\Ruangan::create([
+            'school_id' => $school1->id,
+            'code'      => 'LAB-01',
+            'name'      => 'LAB BAHASA',
+            'category'  => 'Laboratorium',
+            'building'  => 'Gedung B',
+            'capacity'  => 30,
+            'area'      => 60,
+            'facilities'=> ['ac', 'proyektor'],
+        ]);
+
+        \App\Models\Ruangan::create([
+            'school_id' => $school1->id,
+            'code'      => 'R-01',
+            'name'      => 'KELAS 8A',
+            'category'  => 'Ruang Kelas',
+            'building'  => 'Gedung A',
+            'capacity'  => 30,
+            'area'      => 50,
+            'facilities'=> ['ac', 'proyektor'],
+        ]);
+
+        \App\Models\Ruangan::create([
+            'school_id' => $school1->id,
+            'code'      => 'R-02',
+            'name'      => 'RUANG MUSIK',
+            'category'  => 'Ruang Fasilitas',
+            'building'  => 'Gedung C',
+            'capacity'  => 25,
+            'area'      => 45,
+            'facilities'=> ['ac', 'sound_system'],
+        ]);
     }
 }

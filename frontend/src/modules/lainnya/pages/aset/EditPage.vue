@@ -13,10 +13,14 @@ const store = useAsetStore()
 const asetData = ref(null)
 const isLoading = ref(true)
 
-onMounted(() => {
+onMounted(async () => {
   const targetId = route.params.id
 
-  setTimeout(() => {
+  try {
+    if (store.items.length === 0) {
+      await store.fetchItems()
+    }
+
     const foundData = store.getById(targetId)
 
     if (foundData) {
@@ -25,15 +29,26 @@ onMounted(() => {
       toast.error('Data aset tidak ditemukan')
       router.push('/lainnya/aset')
     }
-
+  } catch (error) {
+    toast.error('Gagal memuat data aset')
+  } finally {
     isLoading.value = false
-  }, 500)
+  }
 })
 
-function handleSubmit(formData) {
-  store.update(route.params.id, formData)
-  toast.success('Perubahan berhasil disimpan!')
-  router.push('/lainnya/aset')
+const isSubmitting = ref(false)
+
+async function handleSubmit(formData) {
+  isSubmitting.value = true
+  try {
+    await store.update(route.params.id, formData)
+    toast.success('Perubahan berhasil disimpan!')
+    router.push('/lainnya/aset')
+  } catch (err) {
+    toast.error('Gagal menyimpan perubahan')
+  } finally {
+    isSubmitting.value = false
+  }
 }
 
 function handleCancel() {
