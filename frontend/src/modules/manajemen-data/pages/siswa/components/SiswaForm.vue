@@ -50,7 +50,7 @@ const handleImageChange = file => {
         <FormInput
           v-model="form.no_hp"
           label="No. Telp"
-          placeholder="Contoh: 081289170180"
+          placeholder="Contoh: 081234567890"
           :error="errors.no_hp"
         />
       </FormSection>

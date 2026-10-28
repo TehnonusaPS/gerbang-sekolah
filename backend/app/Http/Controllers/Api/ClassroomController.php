@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Classroom;
 use App\Models\AcademicYear;
+use App\Models\StudentProfile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class ClassroomController extends Controller
@@ -332,5 +334,95 @@ class ClassroomController extends Controller
             'status'  => 'success',
             'message' => 'Classroom deleted successfully.',
         ]);
+    }
+
+    /**
+     * Menempatkan atau memindahkan siswa ke kelas secara transaksional dengan locking.
+     */
+    public function assignStudents(Request $request, string $id): JsonResponse
+    {
+        $user = $request->user();
+
+        $validator = Validator::make($request->all(), [
+            'student_ids'   => 'required|array|min:1',
+            'student_ids.*' => 'required|uuid|distinct',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Validasi gagal.',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        $rawIds = $request->input('student_ids');
+
+        return DB::transaction(function () use ($user, $id, $rawIds) {
+            // Pessimistic lock pada kelas tujuan
+            $classroom = Classroom::lockForUpdate()->find($id);
+            if (!$classroom) {
+                return response()->json(['status' => 'error', 'message' => 'Kelas tidak ditemukan.'], 404);
+            }
+
+            // Otorisasi Scope Sekolah
+            if (!$user->isSuperAdmin()) {
+                if ($user->hasRole('admin_yayasan')) {
+                    if (!$classroom->school || $classroom->school->foundation_id != $user->foundation_id) {
+                        return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+                    }
+                } else {
+                    if ($classroom->school_id != $user->school_id) {
+                        return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+                    }
+                }
+            }
+
+            // Verifikasi profil siswa: harus role siswa, sekolah yang sama, akun aktif, dan status aktif
+            $validProfiles = StudentProfile::whereHas('user', function ($q) use ($classroom) {
+                $q->where('school_id', $classroom->school_id)
+                  ->where('is_active', true)
+                  ->whereHas('role', fn($rq) => $rq->where('name', 'siswa'));
+            })
+            ->whereIn('user_id', $rawIds)
+            ->where('status', 'active')
+            ->lockForUpdate()
+            ->get();
+
+            if ($validProfiles->count() !== count($rawIds)) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Satu atau lebih siswa tidak valid, tidak aktif, atau tidak terdaftar di sekolah ini.',
+                ], 422);
+            }
+
+            // Sisihkan siswa yang belum terdaftar di kelas tujuan
+            $studentsToMove = $validProfiles->filter(fn($sp) => $sp->classroom_id != $classroom->id);
+            if ($studentsToMove->isEmpty()) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Semua siswa yang dipilih sudah berada di kelas ini.',
+                ], 422);
+            }
+
+            // Validasi Kapasitas
+            $currentCount = StudentProfile::where('classroom_id', $classroom->id)->where('status', 'active')->count();
+            $incomingCount = $studentsToMove->count();
+            if ($classroom->capacity && ($currentCount + $incomingCount) > $classroom->capacity) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => "Kapasitas kelas tidak mencukupi. Kapasitas: {$classroom->capacity}, Terisi: {$currentCount}, Penambahan: {$incomingCount}.",
+                ], 422);
+            }
+
+            // Eksekusi pemindahan siswa
+            StudentProfile::whereIn('id', $studentsToMove->pluck('id'))
+                ->update(['classroom_id' => $classroom->id]);
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => "{$incomingCount} siswa berhasil ditempatkan ke kelas {$classroom->name}.",
+            ]);
+        });
     }
 }

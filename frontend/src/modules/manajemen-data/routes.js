@@ -36,7 +36,7 @@ export default [
     }
   },
   {
-    path: 'manajemen-data/kelas/detail',
+    path: 'manajemen-data/kelas/detail/:id',
     component: () => import('./pages/data-kelas/DetailPage.vue'),
     meta: {
       title: 'Detail Kelas',
@@ -45,7 +45,7 @@ export default [
     }
   },
   {
-    path: 'manajemen-data/kelas/detail/manage',
+    path: 'manajemen-data/kelas/detail/:id/manage',
     component: () => import('./pages/data-kelas/ManagePage.vue'),
     meta: {
       title: 'Kelola',

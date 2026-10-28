@@ -1,0 +1,56 @@
+name: Auto Database Migrate & Seed
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+  workflow_dispatch:
+
+jobs:
+  migrate-and-seed:
+    name: Run Migrations & Seeders
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP Environment
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo, pdo_pgsql, pgsql
+          coverage: none
+
+      - name: Cache Composer Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: ${{ runner.os }}-composer-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install Composer Dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+
+      - name: Execute Database Migrations & Seeders
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: ${{ secrets.SUPABASE_DB_HOST }}
+          DB_PORT: ${{ secrets.SUPABASE_DB_PORT || '5432' }}
+          DB_DATABASE: ${{ secrets.SUPABASE_DB_DATABASE || 'postgres' }}
+          DB_USERNAME: ${{ secrets.SUPABASE_DB_USERNAME || 'postgres' }}
+          DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          DB_SSLMODE: require
+        run: |
+          echo "==> Running php artisan migrate --force <=="
+          php artisan migrate --force
+
+          echo "==> Running idempotent seeders <=="
+          php artisan db:seed --class=RoleSeeder --force

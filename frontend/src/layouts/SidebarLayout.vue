@@ -164,17 +164,64 @@ const breadcrumbs = computed(() => {
 
   let parentTitle = current.meta.parent
   while (parentTitle) {
-    const parentRoute = router.getRoutes().find(r => r.meta.title === parentTitle)
+    const candidateRoutes = router.getRoutes().filter(r => r.meta && r.meta.title === parentTitle)
+    let parentRoute = null
+    if (candidateRoutes.length === 1) {
+      parentRoute = candidateRoutes[0]
+    } else if (candidateRoutes.length > 1) {
+      parentRoute = candidateRoutes.find(r => {
+        const basePath = r.path.split('/:')[0].replace(/\/$/, '')
+        return basePath && route.path.startsWith(basePath)
+      }) || candidateRoutes[0]
+    }
+
     if (parentRoute) {
+      let resolved = null
+      if (parentRoute.name) {
+        try {
+          const res = router.resolve({ name: parentRoute.name, params: route.params })
+          if (res && res.matched.length > 0) {
+            resolved = res
+          }
+        } catch {
+          resolved = null
+        }
+      } else if (parentRoute.path) {
+        let targetPath = parentRoute.path
+        if (route.params) {
+          targetPath = targetPath.replace(/:([a-zA-Z0-9_]+)(?:\(.*?\))?[?*+]?/g, (match, key) => {
+            const val = route.params[key]
+            if (val === undefined || val === null) return match
+            return Array.isArray(val)
+              ? val.map(encodeURIComponent).join('/')
+              : encodeURIComponent(String(val))
+          })
+        }
+        if (!targetPath.includes(':')) {
+          try {
+            const normalized = targetPath.startsWith('/') ? targetPath : '/' + targetPath
+            const res = router.resolve(normalized)
+            if (res && res.matched.length > 0) {
+              resolved = res
+            }
+          } catch {
+            resolved = null
+          }
+        }
+      }
+
       crumbs.unshift({
         title: parentRoute.meta.title,
-        path: parentRoute.path,
+        path: resolved ? resolved.fullPath : null,
+        href: resolved ? resolved.href : null,
         active: false
       })
       parentTitle = parentRoute.meta.parent
     } else {
       crumbs.unshift({
         title: parentTitle,
+        path: null,
+        href: null,
         active: false
       })
       parentTitle = null
@@ -183,6 +230,18 @@ const breadcrumbs = computed(() => {
 
   return crumbs
 })
+
+const handleCrumbClick = (e, path) => {
+  if (!path) {
+    e.preventDefault()
+    return
+  }
+  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+    return
+  }
+  e.preventDefault()
+  router.push(path)
+}
 </script>
 
 <template>
@@ -207,9 +266,19 @@ const breadcrumbs = computed(() => {
               <BreadcrumbList>
                 <template v-for="(crumb, index) in breadcrumbs" :key="index">
                   <BreadcrumbItem>
-                    <BreadcrumbLink v-if="!crumb.active" :href="crumb.path || '#'">
+                    <BreadcrumbLink
+                      v-if="!crumb.active && crumb.path"
+                      :href="crumb.href || crumb.path"
+                      @click="handleCrumbClick($event, crumb.path)"
+                    >
                       {{ crumb.title }}
                     </BreadcrumbLink>
+                    <span
+                      v-else-if="!crumb.active"
+                      class="text-muted-foreground text-sm font-normal cursor-default select-none"
+                    >
+                      {{ crumb.title }}
+                    </span>
                     <BreadcrumbPage v-else>
                       {{ crumb.title }}
                     </BreadcrumbPage>

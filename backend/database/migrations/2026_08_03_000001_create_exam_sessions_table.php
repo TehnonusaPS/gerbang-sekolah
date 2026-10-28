@@ -20,7 +20,7 @@ return new class extends Migration
             $table->time('start_time');
             $table->time('end_time');
             $table->text('notes')->nullable();
-            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
+            $table->foreignUuid('created_by')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
 
             $table->unique(['academic_calendar_event_id', 'exam_date', 'session_number'], 'exam_session_event_date_num_unique');

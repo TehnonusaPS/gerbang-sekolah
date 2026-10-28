@@ -178,6 +178,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('/schools', SchoolController::class);
         Route::apiResource('/users', UserController::class);
         Route::apiResource('/students', StudentController::class);
+        Route::post('/classrooms/{id}/assign-students', [ClassroomController::class, 'assignStudents']);
         Route::apiResource('/classrooms', ClassroomController::class);
         Route::apiResource('/teachers', TeacherController::class);
         Route::apiResource('/extracurriculars', ExtracurricularController::class);
