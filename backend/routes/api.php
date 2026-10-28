@@ -348,5 +348,12 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/hr', [\App\Http\Controllers\Api\Reports\ReportFoundationController::class, 'hr']);
             Route::get('/students', [\App\Http\Controllers\Api\Reports\ReportFoundationController::class, 'students']);
         });
+
+    // Perpustakaan & Aset Routes
+    Route::middleware('role:superadmin,admin_yayasan,admin_sekolah,kepala_sekolah')->group(function () {
+        Route::apiResource('perpustakaans', \App\Http\Controllers\Api\PerpustakaanController::class);
+        Route::apiResource('asets', \App\Http\Controllers\Api\AsetController::class);
+        Route::apiResource('ruangans', \App\Http\Controllers\RuanganController::class);
+    });
 });
 

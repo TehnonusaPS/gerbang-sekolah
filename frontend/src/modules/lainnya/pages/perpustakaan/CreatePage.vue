@@ -8,10 +8,15 @@ import PageHeader from '@/components/page-header/PageHeader.vue'
 const router = useRouter()
 const store = usePerpustakaanStore()
 
-function handleSubmit(formData) {
-  store.add(formData)
-  toast.success('Buku berhasil ditambahkan!')
-  router.push('/lainnya/perpustakaan')
+async function handleSubmit(formData) {
+  try {
+    await store.add(formData)
+    toast.success('Buku berhasil ditambahkan!')
+    router.push('/lainnya/perpustakaan')
+  } catch (error) {
+    toast.error('Gagal menambahkan buku')
+    console.error(error)
+  }
 }
 
 function handleCancel() {

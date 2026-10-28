@@ -91,7 +91,17 @@ function cancel() {
 }
 
 function submit() {
-  emit('submit', { ...form.value, photo: photoPreview.value })
+  const payload = { ...form.value }
+  const file = fileInput.value?.files?.[0]
+  
+  if (file) {
+    payload.photo = file
+  } else if (!photoPreview.value) {
+    payload.photo = null
+  }
+  // If photoPreview exists but no new file, we don't send 'photo' field so backend doesn't overwrite it
+  
+  emit('submit', payload)
 }
 </script>
 

@@ -93,22 +93,20 @@ const filters = computed(() => {
 const actions = computed(() => {
   const list = []
 
-  if (props.isYayasan || props.readonly) {
-    list.push({
-      label: 'Export Excel',
-      icon: FileSpreadsheet,
-      variant: 'outline',
-      class: 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10',
-      click: () => emit('export-excel')
-    })
-    list.push({
-      label: 'Export PDF',
-      icon: FileText,
-      variant: 'outline',
-      class: 'border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10',
-      click: () => emit('export-pdf')
-    })
-  }
+  list.push({
+    label: 'Export Excel',
+    icon: FileSpreadsheet,
+    variant: 'outline',
+    class: 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10',
+    click: () => emit('export-excel', filteredItems.value)
+  })
+  list.push({
+    label: 'Export PDF',
+    icon: FileText,
+    variant: 'outline',
+    class: 'border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10',
+    click: () => emit('export-pdf', filteredItems.value)
+  })
 
   if (!props.readonly && !props.isYayasan) {
     list.push({
@@ -196,8 +194,9 @@ const conditionBadgeClass = condition => {
 }
 
 // Handlers for Row Actions
-const handleEdit = item => {
-  router.push(`/lainnya/aset/edit/${item.id}`)
+const handleEdit = (id, item) => {
+  const targetId = typeof id === 'object' ? id?.id : (id || item?.id)
+  router.push(`/lainnya/aset/edit/${targetId}`)
 }
 
 const handleDelete = id => {

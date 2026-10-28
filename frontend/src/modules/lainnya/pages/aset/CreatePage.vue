@@ -1,4 +1,5 @@
 <script setup>
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAsetStore } from '@/stores/asetStore'
 import { toast } from 'vue-sonner'
@@ -8,10 +9,19 @@ import PageHeader from '@/components/page-header/PageHeader.vue'
 const router = useRouter()
 const store = useAsetStore()
 
-function handleSubmit(formData) {
-  store.add(formData)
-  toast.success('Aset berhasil ditambahkan!')
-  router.push('/lainnya/aset')
+const isSubmitting = ref(false)
+
+async function handleSubmit(formData) {
+  isSubmitting.value = true
+  try {
+    await store.add(formData)
+    toast.success('Aset berhasil ditambahkan!')
+    router.push('/lainnya/aset')
+  } catch (err) {
+    toast.error('Gagal menambahkan aset')
+  } finally {
+    isSubmitting.value = false
+  }
 }
 
 function handleCancel() {

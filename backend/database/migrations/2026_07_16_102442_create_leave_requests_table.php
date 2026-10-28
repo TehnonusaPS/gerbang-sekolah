@@ -13,14 +13,14 @@ return new class extends Migration
     {
         Schema::create('leave_requests', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('school_id')->constrained('schools')->cascadeOnDelete();
             $table->enum('type', ['Izin', 'Cuti']);
             $table->date('start_date');
             $table->date('end_date');
             $table->text('reason');
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
-            $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignUuid('approved_by')->nullable()->constrained('users')->nullOnDelete();
             $table->text('rejection_reason')->nullable();
             $table->timestamps();
         });

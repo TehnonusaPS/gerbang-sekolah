@@ -77,22 +77,20 @@ const filters = computed(() => {
 const actions = computed(() => {
   const list = []
 
-  if (props.isYayasan || props.readonly) {
-    list.push({
-      label: 'Export Excel',
-      icon: FileSpreadsheet,
-      variant: 'outline',
-      class: 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10',
-      click: () => emit('export-excel')
-    })
-    list.push({
-      label: 'Export PDF',
-      icon: FileText,
-      variant: 'outline',
-      class: 'border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10',
-      click: () => emit('export-pdf')
-    })
-  }
+  list.push({
+    label: 'Export Excel',
+    icon: FileSpreadsheet,
+    variant: 'outline',
+    class: 'border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10',
+    click: () => emit('export-excel', filteredItems.value)
+  })
+  list.push({
+    label: 'Export PDF',
+    icon: FileText,
+    variant: 'outline',
+    class: 'border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10',
+    click: () => emit('export-pdf', filteredItems.value)
+  })
 
   if (!props.readonly && !props.isYayasan) {
     list.push({
@@ -195,7 +193,7 @@ const formatFacilities = facilities => {
     :to="Math.min(page * perPage, filteredItems.length)"
     @update:page="page = $event"
     @update:perPage="perPage = $event"
-    :on-edit="!readonly ? item => router.push(`/lainnya/ruangan/edit/${item.id}`) : undefined"
+    :on-edit="!readonly ? (id, item) => router.push(`/lainnya/ruangan/edit/${typeof id === 'object' ? id?.id : (id || item?.id)}`) : undefined"
     :on-delete="!readonly ? id => emit('delete', id) : undefined"
     :on-view="id => emit('view', id)"
   >

@@ -390,12 +390,12 @@ export const navMain = [
         roles: ['superadmin']
       },
       {
-        title: 'Ruangan Sekolah',
+        title: 'Ruangan',
         url: '/lainnya/informasi-ruangan',
         roles: ['admin_yayasan', 'kepala_sekolah']
       },
       {
-        title: 'Aset Sekolah',
+        title: 'Aset',
         url: '/lainnya/informasi-aset',
         roles: ['admin_yayasan', 'kepala_sekolah']
       },
