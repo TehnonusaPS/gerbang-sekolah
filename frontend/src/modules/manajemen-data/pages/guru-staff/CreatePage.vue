@@ -9,6 +9,8 @@ import { defaultForm } from './data/defaultForm'
 import { useAuthStore } from '@/stores/authStore'
 import GuruStaffForm from './components/GuruStaffForm.vue'
 import { agamaOptions, jabatanOptions, kelaminOptions, pendidikanOptions, statusKepegawaianOptions, statusOptions, statusPernikahanOptions } from './data/guruStaff'
+import { createGuruStaffSchema } from './data/guruStaffSchema'
+import { useZodForm } from '@/composables/useZodForm'
 import SuccessAccountDialog from '@/components/dialogs/SuccessAccountDialog.vue'
 import { createTeacher, getFoundation, getSchools } from '@/services/managementService'
 import { toast } from 'vue-sonner'
@@ -20,7 +22,10 @@ const isLoading = ref(false)
 const unitOptions = ref([])
 const subjectOptions = ref([])
 
+const isAdminSekolah = computed(() => auth.user?.role === 'admin_sekolah')
+
 const loadUnitOptions = async () => {
+  if (isAdminSekolah.value) return
   try {
     const resSchools = await getSchools()
     const options = resSchools.data.data.map(s => ({
@@ -53,13 +58,21 @@ onMounted(() => {
   loadSubjectOptions()
 })
 
-const form = ref({ ...defaultForm})
+const form = ref({
+  ...defaultForm,
+  unit_kerja: [],
+  subject_ids: []
+})
 
 const imagePreview = ref('')
 
 const handleImage = (file) => {
   form.value.foto = file
-  imagePreview.value = URL.createObjectURL(file)
+  if (file instanceof File) {
+    imagePreview.value = URL.createObjectURL(file)
+  } else {
+    imagePreview.value = ''
+  }
 }
 
 const showSuccessModal = ref(false)
@@ -70,7 +83,11 @@ const generatedAccount = ref({
   password: ''
 })
 
-const formErrors = ref({})
+const {
+  errors: formErrors,
+  validate,
+  setServerErrors
+} = useZodForm(() => createGuruStaffSchema({ isAdminSekolah: isAdminSekolah.value }), form)
 
 const mapValueToAgama = (value) => {
   const map = {
@@ -115,7 +132,8 @@ const mapValueToJabatan = (value) => {
     'J002': 'Staff Yayasan',
     'J003': 'Kepala Sekolah',
     'J004': 'Guru',
-    'J005': 'Staff Sekolah'
+    'J005': 'Staff Sekolah',
+    'J006': 'Admin Sekolah'
   }
   return map[value] || value
 }
@@ -136,85 +154,20 @@ const mapValueToKelamin = (value) => {
   }
   return map[value] || value
 }
+
 const handleSubmit = async () => {
-  formErrors.value = {}
-
-  // Client-side Validation: All fields must be filled
-  const errors = {}
-  if (!form.value.nama_depan) {
-    errors.first_name = 'Nama depan harus diisi'
-  }
-  if (!form.value.nik) {
-    errors.nik = 'NIK harus diisi'
-  }
-  if (!form.value.nip_nuptk) {
-    errors.nip_nuptk = 'NIP/NUPTK harus diisi'
-  }
-  if (!form.value.tempat_lahir) {
-    errors.tempat_lahir = 'Tempat lahir harus diisi'
-  }
-  if (!form.value.tanggal_lahir) {
-    errors.tanggal_lahir = 'Tanggal lahir harus diisi'
-  }
-  if (!form.value.jenis_kelamin) {
-    errors.jenis_kelamin = 'Jenis kelamin harus diisi'
-  }
-  if (!form.value.agama) {
-    errors.agama = 'Agama harus diisi'
-  }
-  if (!form.value.status_pernikahan) {
-    errors.status_pernikahan = 'Status pernikahan harus diisi'
-  }
-  if (!form.value.pendidikan_terakhir) {
-    errors.pendidikan_terakhir = 'Pendidikan terakhir harus diisi'
-  }
-  if (!form.value.email) {
-    errors.email = 'E-mail sekolah harus diisi'
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
-    errors.email = 'Format e-mail tidak valid'
-  }
-  if (!form.value.no_hp) {
-    errors.phone = 'No. Telp harus diisi'
-  }
-  if (!form.value.alamat) {
-    errors.address = 'Alamat lengkap harus diisi'
-  }
-  if (!form.value.unit_kerja) {
-    errors.unit_kerja = 'Unit kerja harus diisi'
-  }
-  if (!form.value.status_aktif) {
-    errors.status_aktif = 'Status aktif harus diisi'
-  }
-  if (!form.value.join_date) {
-    errors.join_date = 'Tanggal bergabung harus diisi'
-  }
-  if (!form.value.status_kepegawaian) {
-    errors.status_kepegawaian = 'Status kepegawaian harus diisi'
-  }
-  if (!form.value.jabatan) {
-    errors.jabatan = 'Jabatan harus diisi'
-  }
-  if (!form.value.emailLogin) {
-    errors.emailLogin = 'E-mail login administrator harus diisi'
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.emailLogin)) {
-    errors.emailLogin = 'Format e-mail login tidak valid'
-  }
-  if (!form.value.noHpLogin) {
-    errors.noHpLogin = 'No. HP login administrator harus diisi'
-  }
-
-  console.log(errors);
-
-  if (Object.keys(errors).length > 0) {
-    formErrors.value = errors
+  if (!validate()) {
     toast.error('Gagal Menyimpan', {
-      description: 'Harap lengkapi semua data formulir sebelum menyimpan.'
+      description: 'Harap periksa kembali kolom yang ditandai merah pada formulir.'
     })
     return
   }
 
+  const unitKerjaList = Array.isArray(form.value.unit_kerja)
+    ? form.value.unit_kerja
+    : (form.value.unit_kerja ? [form.value.unit_kerja] : [])
+
   isLoading.value = true
-  formErrors.value = {}
 
   const plainPassword = form.value.password || Math.random().toString(36).substring(2, 10) + 'A1!'
 
@@ -234,26 +187,23 @@ const handleSubmit = async () => {
     pendidikan_terakhir: mapValueToPendidikan(form.value.pendidikan_terakhir),
     gelar_depan: form.value.gelar_depan,
     gelar_belakang: form.value.gelar_belakang,
-    email: form.value.email,
-    no_hp: form.value.no_hp,
     alamat: form.value.alamat,
     jabatan: mapValueToJabatan(form.value.jabatan),
     status_kepegawaian: mapValueToStatusKepegawaian(form.value.status_kepegawaian),
-    unit_kerja: form.value.unit_kerja,
-    status_aktif: form.value.status_aktif === 'Aktif' ? 'aktif' : 'nonaktif'
+    unit_kerja: unitKerjaList,
+    status_aktif: form.value.status_aktif === 'Aktif' ? 'aktif' : 'nonaktif',
+    join_date: form.value.join_date,
+    subject_ids: form.value.subject_ids || []
   }
 
   try {
     const formData = new FormData()
-    const rawForm = form.value
-    Object.keys(rawForm).forEach(key => {
-      const value = rawForm[key]
-      if (key === 'foto') return // handle separately
+    Object.keys(postData).forEach(key => {
+      const value = postData[key]
       if (Array.isArray(value)) {
         value.forEach(item => {
           formData.append(`${key}[]`, item)
         })
-
         return
       }
 
@@ -261,8 +211,8 @@ const handleSubmit = async () => {
         formData.append(key, value)
       }
     })
-    if (rawForm.foto instanceof File) {
-      formData.append('foto', rawForm.foto)
+    if (form.value.foto instanceof File) {
+      formData.append('foto', form.value.foto)
     }
     const res = await createTeacher(formData)
     if (res.status === 'success') {
@@ -275,15 +225,8 @@ const handleSubmit = async () => {
     } else {
       toast.error(res.message || 'Gagal menyimpan data')
     }
-    showSuccessModal.value = true
   } catch (err) {
-    if (err.response?.status === 422 && err.response?.data?.errors) {
-      const serverErrors = err.response.data.errors
-      const localErrors = {}
-      Object.keys(serverErrors).forEach(key => {
-        localErrors[key] = serverErrors[key][0]
-      })
-      formErrors.value = localErrors
+    if (setServerErrors(err)) {
       toast.error('Gagal', { description: 'Terdapat kesalahan validasi pada data guru/staff.' })
     } else {
       const errorMsg = err.response?.data?.message || 'Gagal menyimpan data guru/staff.'
@@ -319,8 +262,6 @@ const loadSubjectOptions = async () => {
         label: subject.name,
         value: String(subject.id)
       }))
-
-    console.log('Subject options:', subjectOptions.value)
   } catch (error) {
     console.error('Gagal memuat mata pelajaran:', error)
     subjectOptions.value = []
@@ -359,7 +300,7 @@ const loadSubjectOptions = async () => {
   <SuccessAccountDialog
     v-model:open="showSuccessModal"
     title="Guru/Staff Berhasil Ditambahkan"
-    description="Data guru/staff berhasil disimpan dan akun administrator telah dibuat."
+    description="Data guru/staff berhasil disimpan dan akun pengguna telah dibuat."
     :email="generatedAccount.email"
     :phone="generatedAccount.phone"
     :password="generatedAccount.password"

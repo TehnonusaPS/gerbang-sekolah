@@ -61,6 +61,10 @@ const props = defineProps({
   options: {
     type: Array,
     default: () => []
+  },
+  itemName: {
+    type: String,
+    default: 'mata pelajaran'
   }
 })
 
@@ -78,6 +82,13 @@ const selectedOptions = computed(() => {
   )
 })
 
+const capitalizedItemName = computed(() => {
+  return props.itemName
+    .split(' ')
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
+})
+
 const selectedLabel = computed(() => {
   const total = selectedOptions.value.length
 
@@ -90,10 +101,10 @@ const selectedLabel = computed(() => {
   }
 
   if (total === props.options.length && props.options.length > 0) {
-    return 'Semua mata pelajaran dipilih'
+    return `Semua ${props.itemName} dipilih`
   }
 
-  return `${total} mata pelajaran dipilih`
+  return `${total} ${props.itemName} dipilih`
 })
 
 const isSelected = value => {
@@ -189,18 +200,18 @@ const toggleSelectAll = () => {
           <Command class="rounded-xl">
             <CommandInput
               v-if="searchable"
-              placeholder="Cari mata pelajaran..."
+              :placeholder="`Cari ${itemName}...`"
             />
 
             <CommandList>
               <CommandEmpty>
-                Mata pelajaran tidak ditemukan.
+                Data {{ itemName }} tidak ditemukan.
               </CommandEmpty>
 
               <!-- Pilih Semua -->
               <CommandGroup v-if="showSelectAll && options.length > 0">
                 <CommandItem
-                  value="pilih-semua-mata-pelajaran"
+                  :value="`pilih-semua-${itemName}`"
                   class="cursor-pointer font-medium"
                   @select.prevent="toggleSelectAll"
                 >
@@ -219,7 +230,7 @@ const toggleSelectAll = () => {
                   </div>
 
                   <span>
-                    Pilih Semua Mata Pelajaran
+                    Pilih Semua {{ capitalizedItemName }}
                   </span>
                 </CommandItem>
               </CommandGroup>

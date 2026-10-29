@@ -37,25 +37,15 @@ export const guruStaffSheetSections = [
     fields: [
       { label: 'Nama Depan', key: 'nama_depan' },
       { label: 'Nama Belakang', key: 'nama_belakang' },
+      { label: 'Gelar Depan', key: 'gelar_depan' },
+      { label: 'Gelar Belakang', key: 'gelar_belakang' },
       { label: 'NIK', key: 'nik' },
-      { label: 'NIP / NUPTK', key: 'nip_nuptk' },
+      { label: 'Jenis Kelamin', key: 'jenis_kelamin' },
       { label: 'Tempat Lahir', key: 'tempat_lahir' },
       { label: 'Tanggal Lahir', key: 'tanggal_lahir' },
-      { label: 'Jenis Kelamin', key: 'jenis_kelamin' },
       { label: 'Agama', key: 'agama' },
       { label: 'Status Pernikahan', key: 'status_pernikahan' },
       { label: 'Pendidikan Terakhir', key: 'pendidikan_terakhir' },
-      { label: 'Gelar Depan', key: 'gelar_depan' },
-      { label: 'Gelar Belakang', key: 'gelar_belakang' }
-    ]
-  },
-
-  {
-    id: 'kontak',
-    title: 'Kontak & Alamat',
-    fields: [
-      { label: 'Email', key: 'email' },
-      { label: 'No. Telepon', key: 'no_hp' },
       { label: 'Alamat Lengkap', key: 'alamat', textarea: true }
     ]
   },
@@ -64,11 +54,12 @@ export const guruStaffSheetSections = [
     id: 'kepegawaian',
     title: 'Informasi Kepegawaian',
     fields: [
+      { label: 'Unit Kerja', key: 'unit_kerja' },
       { label: 'Jabatan', key: 'jabatan' },
       { label: 'Status Kepegawaian', key: 'status_kepegawaian' },
-      { label: 'Unit Kerja', key: 'unit_kerja' },
       { label: 'Status Aktif', key: 'status_aktif' },
-      { label: 'Tanggal Masuk', key: 'join_date' }
+      { label: 'Tanggal Bergabung', key: 'join_date' },
+      { label: 'NIP / NUPTK', key: 'nip_nuptk' }
     ]
   },
 
@@ -77,7 +68,7 @@ export const guruStaffSheetSections = [
     title: 'Akun Pengguna',
     fields: [
       { label: 'Email Login', key: 'emailLogin' },
-      { label: 'No. HP Login', key: 'noHpLogin' }
+      { label: 'No. HP / WhatsApp', key: 'noHpLogin' }
     ]
   }
 ]
