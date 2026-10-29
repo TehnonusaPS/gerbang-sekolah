@@ -6,7 +6,10 @@ import SuccessAccountDialog from '@/components/dialogs/SuccessAccountDialog.vue'
 import YayasanForm from './components/YayasanForm.vue'
 import { defaultForm } from './data/defaultForm'
 import { statusOptions } from './data/yayasan.js'
-import { Save, ArrowLeft, CheckCircle2, HelpCircle, Building2 } from 'lucide-vue-next'
+import { createYayasanSchema, fieldErrorMap } from './data/yayasanSchema.js'
+import { useZodForm } from '@/composables/useZodForm'
+import FormFooter from '@/components/forms/FormFooter.vue'
+import { CheckCircle2, HelpCircle } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -17,7 +20,7 @@ import {
   DialogFooter
 } from '@/components/ui/dialog'
 import { toast } from 'vue-sonner'
-import { createFoundation, getRoles, createUser } from '@/services/managementService'
+import { createFoundation } from '@/services/managementService'
 import { glassFade, glassSlide } from '@/config/motion'
 
 const router = useRouter()
@@ -29,36 +32,31 @@ const form = ref({ ...defaultForm })
 const imagePreview = ref('')
 const logoFile = ref(null)
 
+const {
+  errors: formErrors,
+  validate,
+  setServerErrors
+} = useZodForm(() => createYayasanSchema({ isEdit: false }), form, { fieldMap: fieldErrorMap })
+
 const handleImage = (file) => {
-  logoFile.value = file
-  imagePreview.value = URL.createObjectURL(file)
+  logoFile.value = file || null
+  form.value.logo = file || null
+  imagePreview.value = file ? URL.createObjectURL(file) : ''
 }
 
 const showSuccessModal = ref(false)
 
 const generatedAccount = ref({
   email: '',
-  phone: '',
   password: ''
 })
 
-const formErrors = ref({})
-
-// Trigger confirmation dialog before actual save
 function onClickSave() {
   if (isLoading.value) return
-  formErrors.value = {}
-  if (!form.value.nama?.trim()) formErrors.value.name = 'Nama yayasan wajib diisi.'
-  if (!form.value.kode?.trim()) formErrors.value.code = 'Kode yayasan wajib diisi.'
-  
-  const loginEmail = form.value.emailLogin?.trim() || form.value.email?.trim()
-  const loginPhone = form.value.noHpLogin?.trim() || form.value.no_hp?.trim()
-
-  if (!loginEmail) formErrors.value.emailLogin = 'Email login administrator wajib diisi.'
-  if (!loginPhone) formErrors.value.noHpLogin = 'No. HP login administrator wajib diisi.'
-
-  if (Object.keys(formErrors.value).length > 0) {
-    toast.error('Gagal Menyimpan', { description: 'Harap lengkapi semua isian wajib terlebih dahulu.' })
+  if (!validate()) {
+    toast.error('Gagal Menyimpan', {
+      description: formErrors.value.logo || 'Harap lengkapi semua isian wajib dan periksa format data terlebih dahulu.'
+    })
     return
   }
 
@@ -68,154 +66,53 @@ function onClickSave() {
 const handleSubmit = async () => {
   if (isLoading.value) return
   isConfirmOpen.value = false
+
+  if (!validate()) {
+    toast.error('Gagal Menyimpan', {
+      description: formErrors.value.logo || 'Harap periksa kembali isian formulir sebelum menyimpan.'
+    })
+    return
+  }
+
   isLoading.value = true
-  formErrors.value = {}
 
   try {
-    // Client-side Validation: All fields must be filled
-    const errors = {}
-    if (!logoFile.value) {
-      errors.logo = 'Logo yayasan harus diunggah'
-    }
-    if (!form.value.email) {
-      errors.email = 'E-mail yayasan harus diisi'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
-      errors.email = 'Format e-mail tidak valid'
-    }
-    if (!form.value.no_hp) {
-      errors.phone = 'No. Telp harus diisi'
-    }
-    if (!form.value.nama) {
-      errors.name = 'Nama yayasan harus diisi'
-    }
-    if (!form.value.kode) {
-      errors.code = 'Kode yayasan harus diisi'
-    }
-    if (!form.value.tanggal_berdiri) {
-      errors.established_date = 'Tanggal berdiri harus diisi'
-    }
-    if (!form.value.status) {
-      errors.status = 'Status harus dipilih'
-    }
-    if (!form.value.no_akta) {
-      errors.deed_number = 'No. Akta Pendirian harus diisi'
-    }
-    if (!form.value.tanggal_akta) {
-      errors.deed_date = 'Tanggal akta pendirian harus diisi'
-    }
-    if (!form.value.no_sk) {
-      errors.decree_number = 'No. SK Kemenkumham harus diisi'
-    }
-    if (!form.value.tanggal_sk) {
-      errors.decree_date = 'Tanggal SK Kemenkumham harus diisi'
-    }
-    if (!form.value.alamat) {
-      errors.address = 'Alamat lengkap harus diisi'
-    }
-    if (!form.value.emailLogin) {
-      errors.emailLogin = 'E-mail login administrator harus diisi'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.emailLogin)) {
-      errors.emailLogin = 'Format e-mail login tidak valid'
-    }
-    if (!form.value.noHpLogin) {
-      errors.noHpLogin = 'No. HP login administrator harus diisi'
+    const formData = new FormData()
+    formData.append('name', form.value.nama || '')
+    if (form.value.tanggal_berdiri) formData.append('established_date', form.value.tanggal_berdiri)
+    formData.append('status', form.value.status ? form.value.status.toLowerCase() : 'active')
+    if (form.value.alamat) formData.append('address', form.value.alamat)
+    if (form.value.email) formData.append('email', form.value.email)
+    if (form.value.no_hp) formData.append('phone', form.value.no_hp)
+    if (form.value.website) formData.append('website', form.value.website)
+    if (form.value.no_akta) formData.append('deed_number', form.value.no_akta)
+    if (form.value.tanggal_akta) formData.append('deed_date', form.value.tanggal_akta)
+    if (form.value.no_sk) formData.append('decree_number', form.value.no_sk)
+    if (form.value.tanggal_sk) formData.append('decree_date', form.value.tanggal_sk)
+    if (form.value.emailLogin) formData.append('emailLogin', form.value.emailLogin)
+    if (logoFile.value) {
+      formData.append('logo', logoFile.value)
     }
 
-    if (Object.keys(errors).length > 0) {
-      formErrors.value = errors
+    const resFoundation = await createFoundation(formData)
+    const adminAcc = resFoundation.admin_account || resFoundation.data?.admin_account
+
+    generatedAccount.value = {
+      email: adminAcc?.email || form.value.emailLogin,
+      password: adminAcc?.password || '-'
+    }
+
+    showSuccessModal.value = true
+  } catch (err) {
+    if (setServerErrors(err)) {
+      const serverErrors = err.response?.data?.errors || {}
+      const firstError = Object.values(serverErrors).flat()[0]
       toast.error('Gagal Menyimpan', {
-        description: 'Harap lengkapi semua data formulir sebelum menyimpan.'
+        description: firstError || 'Terdapat isian yang tidak valid. Silakan periksa kembali formulir.'
       })
-      return
-    }
-
-    let newFoundationId = null
-    const loginEmail = form.value.emailLogin?.trim() || form.value.email?.trim()
-    const loginPhone = form.value.noHpLogin?.trim() || form.value.no_hp?.trim()
-    const yayasanEmail = form.value.email?.trim() || loginEmail
-    const yayasanPhone = form.value.no_hp?.trim() || loginPhone
-
-    // 1. Create the foundation using FormData
-    try {
-      const formData = new FormData()
-      formData.append('code', form.value.kode || '')
-      formData.append('name', form.value.nama || '')
-      if (form.value.tanggal_berdiri) formData.append('established_date', form.value.tanggal_berdiri)
-      formData.append('status', form.value.status ? form.value.status.toLowerCase() : 'active')
-      if (form.value.alamat) formData.append('address', form.value.alamat)
-      if (yayasanEmail) formData.append('email', yayasanEmail)
-      if (yayasanPhone) formData.append('phone', yayasanPhone)
-      if (form.value.website) formData.append('website', form.value.website)
-      if (form.value.no_akta) formData.append('deed_number', form.value.no_akta)
-      if (form.value.tanggal_akta) formData.append('deed_date', form.value.tanggal_akta)
-      if (form.value.no_sk) formData.append('decree_number', form.value.no_sk)
-      if (form.value.tanggal_sk) formData.append('decree_date', form.value.tanggal_sk)
-      if (form.value.curriculum_id) formData.append('curriculum_id', form.value.curriculum_id)
-      if (logoFile.value) {
-        formData.append('logo', logoFile.value)
-      }
-
-      const resFoundation = await createFoundation(formData)
-      newFoundationId = resFoundation.data.id
-    } catch (err) {
-      if (err.response?.status === 422 && err.response?.data?.errors) {
-        const serverErrors = err.response.data.errors
-        const localErrors = {}
-        Object.keys(serverErrors).forEach(key => {
-          localErrors[key] = serverErrors[key][0]
-        })
-        formErrors.value = localErrors
-        toast.error('Gagal', { description: 'Terdapat kesalahan validasi pada data yayasan.' })
-      } else {
-        const errorMsg = err.response?.data?.message || 'Gagal menyimpan data yayasan.'
-        toast.error('Gagal', { description: errorMsg })
-      }
-      return
-    }
-
-    // 2. Retrieve Roles to find admin_yayasan role
-    let adminYayasanRole = null
-    try {
-      const resRoles = await getRoles()
-      adminYayasanRole = resRoles.data.find(r => r.name === 'admin_yayasan')
-    } catch (err) {
-      toast.error('Gagal mengambil data peran.')
-    }
-
-    // 3. Create administrator user for this foundation using emailLogin & noHpLogin
-    const generatedPassword = Math.random().toString(36).substring(2, 10) + 'A1!'
-    const userData = {
-      name: 'Admin ' + form.value.nama,
-      email: loginEmail,
-      phone: loginPhone,
-      password: generatedPassword,
-      role_id: adminYayasanRole ? adminYayasanRole.id : 2,
-      foundation_id: newFoundationId,
-      is_active: true
-    }
-
-    try {
-      await createUser(userData)
-
-      generatedAccount.value = {
-        email: loginEmail,
-        phone: loginPhone,
-        password: generatedPassword
-      }
-
-      showSuccessModal.value = true
-    } catch (err) {
-      if (err.response?.status === 422 && err.response?.data?.errors) {
-        const serverErrors = err.response.data.errors
-        const localErrors = {}
-        if (serverErrors.email) localErrors.emailLogin = serverErrors.email[0]
-        if (serverErrors.phone) localErrors.noHpLogin = serverErrors.phone[0]
-        formErrors.value = localErrors
-        toast.error('Gagal', { description: 'Terdapat kesalahan validasi pada akun administrator.' })
-      } else {
-        const errorMsg = err.response?.data?.message || 'Gagal membuat akun administrator.'
-        toast.error('Gagal', { description: errorMsg })
-      }
+    } else {
+      const errorMsg = err.response?.data?.message || err.message || 'Gagal menyimpan data yayasan.'
+      toast.error('Gagal Menyimpan', { description: errorMsg })
     }
   } finally {
     isLoading.value = false
@@ -232,7 +129,7 @@ const goToList = () => {
     v-motion
     :initial="glassFade.initial"
     :visible-once="glassFade.visible"
-    class="space-y-6 p-1 pb-24 text-left"
+    class="space-y-6 p-1 pb-16 text-left"
   >
     <!-- Header dengan Tombol Kembali -->
     <PageHeader
@@ -256,38 +153,11 @@ const goToList = () => {
       />
     </div>
 
-    <!-- Bottom Action Bar (Tombol Batal & Simpan di Bawah) -->
-    <div class="fixed bottom-0 left-0 right-0 z-20 backdrop-blur-md bg-background/80 dark:bg-zinc-900/80 border-t border-border dark:border-zinc-800 p-4 transition-all">
-      <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 px-4 sm:px-6">
-        <div class="hidden sm:flex items-center gap-2 text-xs text-muted-foreground dark:text-zinc-400">
-          <Building2 class="h-4 w-4 text-primary" />
-          <span>Pastikan seluruh data yayasan yang dimasukkan sudah benar.</span>
-        </div>
-
-        <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            @click="goToList"
-            :disabled="isLoading"
-            class="gap-1.5"
-          >
-            <ArrowLeft class="h-4 w-4" />
-            Batal
-          </Button>
-
-          <Button
-            type="button"
-            @click="onClickSave"
-            :disabled="isLoading"
-            class="gap-1.5 px-6 shadow-sm"
-          >
-            <Save class="h-4 w-4" />
-            {{ isLoading ? 'Menyimpan...' : 'Simpan Data Yayasan' }}
-          </Button>
-        </div>
-      </div>
-    </div>
+    <FormFooter
+      :loading="isLoading"
+      submit-label="Simpan Data Yayasan"
+      @submit="onClickSave"
+    />
   </div>
 
   <!-- Confirmation Dialog (Konfirmasi Sebelum Simpan) -->
@@ -313,7 +183,6 @@ const goToList = () => {
         <p>Apakah Anda yakin data <strong>{{ form.nama }}</strong> sudah sesuai?</p>
         <div class="p-3 rounded-lg bg-accent/40 dark:bg-zinc-800/50 border border-border/50 dark:border-zinc-800 text-xs space-y-1">
           <div><span class="text-muted-foreground">Email Administrator:</span> <span class="font-semibold text-foreground dark:text-zinc-100">{{ form.emailLogin }}</span></div>
-          <div><span class="text-muted-foreground">No. HP Administrator:</span> <span class="font-semibold text-foreground dark:text-zinc-100">{{ form.noHpLogin }}</span></div>
         </div>
       </div>
 
@@ -335,7 +204,6 @@ const goToList = () => {
     title="Yayasan Berhasil Ditambahkan"
     description="Data yayasan berhasil disimpan dan akun administrator yayasan telah dibuat."
     :email="generatedAccount.email"
-    :phone="generatedAccount.phone"
     :password="generatedAccount.password"
     @close="goToList"
   />

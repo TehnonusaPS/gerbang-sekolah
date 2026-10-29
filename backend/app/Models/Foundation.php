@@ -89,10 +89,19 @@ class Foundation extends Model
     }
 
     /**
-     * Get the logo URL.
+     * Get the logo path (returns relative path or original value, consistent with other models).
      */
     public function getLogoAttribute($value)
     {
+        return $value;
+    }
+
+    /**
+     * Get the full logo asset URL if explicitly needed.
+     */
+    public function getLogoUrlAttribute(): ?string
+    {
+        $value = $this->attributes['logo'] ?? null;
         if (!$value) {
             return null;
         }

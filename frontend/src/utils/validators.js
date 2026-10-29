@@ -425,6 +425,87 @@ export const v = {
     ),
 
   /**
+   * Nomor telepon kantor / umum opsional (mendukung telepon rumah/kantor dengan kode area atau HP).
+   * Boleh kosong, tapi jika diisi harus angka/simbol telepon standar (+, -, (), spasi) dan 8–20 digit angka.
+   */
+  optionalTelephone: (label = 'No. Telepon') =>
+    z
+      .preprocess(
+        toTrimmedString,
+        z.string().superRefine((val, ctx) => {
+          if (!val) return
+          if (!/^[0-9+\-\s()]{8,20}$/.test(val)) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: `Format ${label.toLowerCase()} tidak valid`
+            })
+            return
+          }
+          const digitsOnly = val.replace(/\D/g, '')
+          if (digitsOnly.length < 8 || digitsOnly.length > 20) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: `${label} harus terdiri dari 8–20 digit angka (saat ini ${digitsOnly.length} digit)`
+            })
+          }
+        })
+      )
+      .optional(),
+
+  /**
+   * Nomor telepon kantor / umum wajib diisi.
+   */
+  requiredTelephone: (label = 'No. Telepon') =>
+    z.preprocess(
+      toTrimmedString,
+      z.string().superRefine((val, ctx) => {
+        if (!val) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `${label} wajib diisi`
+          })
+          return
+        }
+        if (!/^[0-9+\-\s()]{8,20}$/.test(val)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Format ${label.toLowerCase()} tidak valid`
+          })
+          return
+        }
+        const digitsOnly = val.replace(/\D/g, '')
+        if (digitsOnly.length < 8 || digitsOnly.length > 20) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `${label} harus terdiri dari 8–20 digit angka (saat ini ${digitsOnly.length} digit)`
+          })
+        }
+      })
+    ),
+
+  /**
+   * URL / Website opsional (boleh kosong, tapi jika diisi formatnya harus valid).
+   */
+  optionalUrl: (label = 'Website') =>
+    z
+      .preprocess(
+        toTrimmedString,
+        z.string().superRefine((val, ctx) => {
+          if (!val) return
+          try {
+            const toTest = /^https?:\/\//i.test(val) ? val : `https://${val}`
+            new URL(toTest)
+          } catch {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: `Format ${label.toLowerCase()} tidak valid`
+            })
+          }
+        })
+      )
+      .optional(),
+
+  /**
    * Validasi file gambar opsional (maks ukuran dalam MB & tipe gambar).
    */
   optionalImage: ({ maxSizeMB = 2 } = {}) =>
@@ -444,5 +525,35 @@ export const v = {
         },
         { message: `Ukuran foto maksimal ${maxSizeMB}MB` }
       )
-      .optional()
+      .optional(),
+
+  /**
+   * Validasi file gambar wajib diunggah (maks ukuran dalam MB & tipe gambar).
+   */
+  requiredImage: (label = 'Logo / Foto', { maxSizeMB = 2 } = {}) =>
+    z
+      .any()
+      .refine(
+        file => {
+          if (!file) return false
+          if (file instanceof File) return true
+          if (typeof file === 'string' && file.trim().length > 0) return true
+          return false
+        },
+        { message: `${label} wajib diunggah` }
+      )
+      .refine(
+        file => {
+          if (!file || !(file instanceof File)) return true
+          return ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'].includes(file.type)
+        },
+        { message: `Format ${label.toLowerCase()} harus berupa JPG, PNG, atau WEBP` }
+      )
+      .refine(
+        file => {
+          if (!file || !(file instanceof File)) return true
+          return file.size <= maxSizeMB * 1024 * 1024
+        },
+        { message: `Ukuran ${label.toLowerCase()} tidak boleh lebih dari ${maxSizeMB} MB` }
+      )
 }

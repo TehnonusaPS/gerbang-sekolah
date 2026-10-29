@@ -70,11 +70,18 @@ class ManagementDataTest extends TestCase
             'code'             => 'Y9999',
             'established_date' => '2026-01-01',
             'status'           => 'trial',
+            'emailLogin'       => 'admin.baru.emailonly@example.com',
+            'logo'             => \Illuminate\Http\UploadedFile::fake()->image('logo.png'),
         ];
         $response = $this->actingAs($this->superAdmin, 'sanctum')
             ->postJson('/api/management/foundations', $newFoundationData);
         $response->assertStatus(201)
             ->assertJsonPath('data.name', 'Yayasan Baru');
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'admin.baru.emailonly@example.com',
+            'phone' => null,
+        ]);
 
         $foundationId = $response->json('data.id');
 
@@ -102,6 +109,106 @@ class ManagementDataTest extends TestCase
         $response->assertStatus(200);
 
         $this->assertSoftDeleted('foundations', ['id' => $foundationId]);
+    }
+
+    public function test_foundation_duplicate_admin_phone_is_rejected_on_create_and_update(): void
+    {
+        // 1. Duplicate phone rejected on create
+        $this->adminYayasan->update(['phone' => '081234567890']);
+        $existingPhone = '081234567890';
+
+        $resStore = $this->actingAs($this->superAdmin, 'sanctum')
+            ->postJson('/api/management/foundations', [
+                'name'       => 'Yayasan Gagal Duplikat HP',
+                'emailLogin' => 'admin.uniqfail@yayasan.org',
+                'noHpLogin'  => $existingPhone,
+                'logo'       => \Illuminate\Http\UploadedFile::fake()->image('logo.png'),
+            ]);
+
+        $resStore->assertStatus(422)
+            ->assertJsonValidationErrors(['noHpLogin']);
+        $this->assertEquals(
+            'No. HP login administrator sudah digunakan.',
+            $resStore->json('errors.noHpLogin.0')
+        );
+
+        // 2. Duplicate phone rejected on update
+        $resCreate = $this->actingAs($this->superAdmin, 'sanctum')
+            ->postJson('/api/management/foundations', [
+                'name'       => 'Yayasan Change Phone Test',
+                'emailLogin' => 'admin.changephone@yayasan.org',
+                'noHpLogin'  => '081299112233',
+                'logo'       => \Illuminate\Http\UploadedFile::fake()->image('logo.png'),
+            ]);
+        $resCreate->assertStatus(201);
+        $foundationId = $resCreate->json('data.id');
+
+        $resUpdate = $this->actingAs($this->superAdmin, 'sanctum')
+            ->putJson("/api/management/foundations/{$foundationId}", [
+                'name'      => 'Yayasan Should Not Change Phone',
+                'noHpLogin' => $existingPhone,
+            ]);
+
+        $resUpdate->assertStatus(422)
+            ->assertJsonValidationErrors(['noHpLogin']);
+        $this->assertEquals(
+            'No. HP login administrator sudah digunakan.',
+            $resUpdate->json('errors.noHpLogin.0')
+        );
+    }
+
+    public function test_store_foundation_requires_logo(): void
+    {
+        $response = $this->actingAs($this->superAdmin, 'sanctum')
+            ->postJson('/api/management/foundations', [
+                'name'       => 'Yayasan Tanpa Logo',
+                'emailLogin' => 'admin.nologo@yayasan.org',
+                'noHpLogin'  => '081233440001',
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['logo']);
+        $this->assertEquals(
+            'Logo yayasan wajib diunggah.',
+            $response->json('errors.logo.0')
+        );
+    }
+
+    public function test_store_foundation_rejects_invalid_logo_format_and_size(): void
+    {
+        // 1. Non-image format (PDF)
+        $fakePdf = \Illuminate\Http\UploadedFile::fake()->create('document.pdf', 500, 'application/pdf');
+        $resPdf = $this->actingAs($this->superAdmin, 'sanctum')
+            ->postJson('/api/management/foundations', [
+                'name'       => 'Yayasan Format Logo PDF',
+                'emailLogin' => 'admin.pdflogo@yayasan.org',
+                'noHpLogin'  => '081200003311',
+                'logo'       => $fakePdf,
+            ]);
+
+        $resPdf->assertStatus(422)
+            ->assertJsonValidationErrors(['logo']);
+        $this->assertEquals(
+            'Logo yayasan harus berupa berkas gambar JPG, JPEG, PNG, atau WEBP.',
+            $resPdf->json('errors.logo.0')
+        );
+
+        // 2. Oversized image (> 2MB)
+        $fakeLarge = \Illuminate\Http\UploadedFile::fake()->image('too_large.jpg')->size(3000);
+        $resLarge = $this->actingAs($this->superAdmin, 'sanctum')
+            ->postJson('/api/management/foundations', [
+                'name'       => 'Yayasan Logo Terlalu Besar',
+                'emailLogin' => 'admin.largelogo@yayasan.org',
+                'noHpLogin'  => '081200003322',
+                'logo'       => $fakeLarge,
+            ]);
+
+        $resLarge->assertStatus(422)
+            ->assertJsonValidationErrors(['logo']);
+        $this->assertEquals(
+            'Ukuran logo yayasan tidak boleh lebih dari 2 MB.',
+            $resLarge->json('errors.logo.0')
+        );
     }
 
     public function test_superadmin_can_search_and_filter_foundations(): void

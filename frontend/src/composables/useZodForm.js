@@ -33,7 +33,8 @@ function isSameValue(a, b) {
  * @param {import('zod').ZodSchema | import('vue').ComputedRef<import('zod').ZodSchema> | (() => import('zod').ZodSchema)} schemaSource
  * @param {import('vue').Ref<Record<string, any>>} formRef
  */
-export function useZodForm(schemaSource, formRef) {
+export function useZodForm(schemaSource, formRef, options = {}) {
+  const { fieldMap = null } = options
   const errors = ref({})
   const touchedFields = new Set()
   let previousSnapshot = cloneSnapshot(unref(formRef))
@@ -46,6 +47,13 @@ export function useZodForm(schemaSource, formRef) {
     return unref(schemaSource)
   }
 
+  const mapKey = rawKey => {
+    if (fieldMap && fieldMap[rawKey]) {
+      return fieldMap[rawKey]
+    }
+    return rawKey
+  }
+
   /**
    * Ekstrak map error { [fieldKey]: firstMessage } dari hasil safeParse Zod.
    */
@@ -54,7 +62,8 @@ export function useZodForm(schemaSource, formRef) {
     if (!zodError?.issues) return map
 
     for (const issue of zodError.issues) {
-      const key = issue.path?.[0]
+      const rawKey = issue.path?.[0]
+      const key = mapKey(rawKey)
       if (key && !map[key]) {
         map[key] = issue.message
       }
@@ -72,7 +81,10 @@ export function useZodForm(schemaSource, formRef) {
     if (!schema) return true
 
     const currentData = unref(formRef) || {}
-    Object.keys(currentData).forEach(k => touchedFields.add(k))
+    Object.keys(currentData).forEach(k => {
+      touchedFields.add(k)
+      touchedFields.add(mapKey(k))
+    })
 
     const result = schema.safeParse(currentData)
     if (result.success) {
@@ -91,13 +103,16 @@ export function useZodForm(schemaSource, formRef) {
    */
   const validateField = fieldKey => {
     touchedFields.add(fieldKey)
+    touchedFields.add(mapKey(fieldKey))
     const schema = resolveSchema()
     if (!schema) return true
 
     const result = schema.safeParse(unref(formRef))
+    const targetErrorKey = mapKey(fieldKey)
     if (result.success) {
-      if (errors.value[fieldKey]) {
+      if (errors.value[targetErrorKey] || errors.value[fieldKey]) {
         const next = { ...errors.value }
+        delete next[targetErrorKey]
         delete next[fieldKey]
         errors.value = next
       }
@@ -106,13 +121,14 @@ export function useZodForm(schemaSource, formRef) {
 
     const latestMap = extractErrorsMap(result.error)
     const next = { ...errors.value }
-    if (latestMap[fieldKey]) {
-      next[fieldKey] = latestMap[fieldKey]
+    if (latestMap[targetErrorKey]) {
+      next[targetErrorKey] = latestMap[targetErrorKey]
     } else {
+      delete next[targetErrorKey]
       delete next[fieldKey]
     }
     errors.value = next
-    return !latestMap[fieldKey]
+    return !latestMap[targetErrorKey]
   }
 
   /**
@@ -139,9 +155,11 @@ export function useZodForm(schemaSource, formRef) {
       const mapped = {}
       Object.keys(serverErrors).forEach(key => {
         const cleanKey = key.split('.')[0]
+        const targetKey = mapKey(cleanKey)
         touchedFields.add(cleanKey)
-        if (!mapped[cleanKey]) {
-          mapped[cleanKey] = Array.isArray(serverErrors[key])
+        touchedFields.add(targetKey)
+        if (!mapped[targetKey]) {
+          mapped[targetKey] = Array.isArray(serverErrors[key])
             ? serverErrors[key][0]
             : String(serverErrors[key])
         }
@@ -165,6 +183,7 @@ export function useZodForm(schemaSource, formRef) {
       for (const key of Object.keys(newVal)) {
         if (!isSameValue(newVal[key], previousSnapshot[key])) {
           touchedFields.add(key)
+          touchedFields.add(mapKey(key))
         }
       }
       previousSnapshot = cloneSnapshot(newVal)
@@ -190,8 +209,9 @@ export function useZodForm(schemaSource, formRef) {
       // Tampilkan error hanya untuk field yang sudah disentuh/diubah user atau yang sebelumnya sudah error
       const keysToCheck = new Set([...touchedFields, ...Object.keys(errors.value)])
       for (const key of keysToCheck) {
-        if (latestMap[key]) {
-          nextErrors[key] = latestMap[key]
+        const errorKey = mapKey(key)
+        if (latestMap[errorKey]) {
+          nextErrors[errorKey] = latestMap[errorKey]
         }
       }
 
