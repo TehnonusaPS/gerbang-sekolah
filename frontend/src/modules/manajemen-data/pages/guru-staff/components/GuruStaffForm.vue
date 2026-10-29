@@ -1,5 +1,5 @@
 <script setup>
-import { Phone, Image, SquareUserRound, BriefcaseBusiness, UserCog } from 'lucide-vue-next'
+import { Image, SquareUserRound, BriefcaseBusiness, UserCog } from 'lucide-vue-next'
 import { Separator } from '@/components/ui/separator'
 import ImageUpload from '@/components/forms/ImageUpload.vue'
 import FormInput from '@/components/forms/FormInput.vue'
@@ -8,7 +8,9 @@ import FormDate from '@/components/forms/FormDate.vue'
 import FormSection from '@/components/forms/FormSection.vue'
 import FormSelect from '@/components/forms/FormSelect.vue'
 import FormMultiSelect from '@/components/forms/FormMultiSelect.vue'
+import { useAuthStore } from '@/stores/authStore'
 import { computed, watch } from 'vue'
+
 const props = defineProps({
   form: { type: Object, required: true },
   imagePreview: { type: String, default: '' },
@@ -23,7 +25,18 @@ const props = defineProps({
   subjectOptions: { type: Array, default: () => [] },
   errors: { type: Object, default: () => ({}) }
 })
+
 const emit = defineEmits(['image-change'])
+const auth = useAuthStore()
+
+const isAdminSekolah = computed(() => auth.user?.role === 'admin_sekolah')
+
+const filteredJabatanOptions = computed(() => {
+  if (isAdminSekolah.value) {
+    return props.jabatanOptions.filter(opt => !['J001', 'J002'].includes(opt.value))
+  }
+  return props.jabatanOptions
+})
 
 const handleImageChange = file => {
   emit('image-change', file)
@@ -31,7 +44,6 @@ const handleImageChange = file => {
 
 const isTeacher = computed(() => {
   const jabatan = String(props.form.jabatan || '').toUpperCase()
-
   return jabatan === 'GURU' || jabatan === 'J004'
 })
 
@@ -46,83 +58,237 @@ watch(
 </script>
 
 <template>
-    <div class="grid gap-6 md:grid-cols-3">
-      <!-- Kolom Kiri: Data Logo & Kontak (Lebar 1 Kolom) -->
-      <div class="space-y-6">
-        <!-- Foto Profil -->
-        <FormSection title="Foto Profil" description="Upload foto profil dari guru/staff disini" :icon="Image">
-            <ImageUpload :preview="imagePreview" @change="handleImageChange" note="Format: JPG atau PNG. Maksimal 2MB. Dimensi rasio 1:1" :error="errors.foto"/>
-        </FormSection>
+  <div class="grid gap-6 md:grid-cols-3 items-start">
+    <!-- Kolom Kiri: Foto Profil & Akun Pengguna (1 Kolom) -->
+    <div class="space-y-6">
+      <!-- 1. Foto Profil -->
+      <FormSection title="Foto Profil (Opsional)" description="Upload foto profil formal guru atau staff" :icon="Image">
+        <ImageUpload
+          :preview="imagePreview"
+          note="Format: JPG atau PNG. Maksimal 2MB. Rasio 1:1"
+          :error="errors.foto"
+          @change="handleImageChange"
+        />
+      </FormSection>
 
-        <!-- Informasi Kontak -->
-        <FormSection title="Kontak & Alamat Guru/Staff" description="Informasi kontak dari guru/staff" :icon="Phone">
-            <FormInput v-model="form.email" label="E-mail" placeholder="Contoh: nama@sekolah.com" :error="errors.email"/>
-            <FormInput v-model="form.no_hp" label="No. Telp" placeholder="Contoh: 081289170180" :error="errors.no_hp"/>
-            <Separator class="my-4" />
-            <FormTextArea v-model="form.alamat" :rows="6" label="Alamat Lengkap" placeholder="Contoh: Nama Jalan, RT/RW, Kelurahan, Kecamatan, Kota" :error="errors.alamat"/>
-        </FormSection>
-      </div>
-      <!-- Kolom Kanan: Informasi Pribadi (Lebar 2 Kolom) -->
-      <div class="md:col-span-2 space-y-6">
-        <FormSection title="Informasi Pribadi" description="Informasi dasar mengenai guru/staff" :icon="SquareUserRound">
-          <div class="grid gap-4 md:grid-cols-2">
-<FormInput v-model="form.nama_depan" label="Nama Depan" placeholder="Contoh: John" :error="errors.nama_depan"/>
-              <FormInput v-model="form.nama_belakang" label="Nama Belakang" placeholder="Contoh: Doe" :error="errors.nama_belakang"/>
-          </div>
-          <div class="grid gap-4 md:grid-cols-2">
-              <FormInput v-model="form.nik" label="NIK" placeholder="Contoh: 1234567890" :error="errors.nik"/>
-              <FormInput v-model="form.nip_nuptk" label="NIP/NUPTK" placeholder="Contoh: 1234567890" :error="errors.nip_nuptk"/>
-          </div>
-          <div class="grid gap-4 md:grid-cols-2">
-              <FormInput v-model="form.tempat_lahir" label="Tempat Lahir" placeholder="Contoh: Jakarta" :error="errors.tempat_lahir"/>
-              <FormDate v-model="form.tanggal_lahir" label="Tanggal Lahir" :error="errors.tanggal_lahir"/>
-          </div>
-          <div class="grid gap-4 md:grid-cols-2">
-              <FormSelect v-model="form.jenis_kelamin" label="Jenis Kelamin" placeholder="Pilih jenis kelamin" :options="kelaminOptions" :error="errors.jenis_kelamin"/>
-              <FormSelect v-model="form.agama" label="Agama" placeholder="Pilih agama" :options="agamaOptions" :error="errors.agama"/>
-          </div>
-          <div class="grid gap-4 md:grid-cols-2">
-              <FormSelect v-model="form.status_pernikahan" label="Status Pernikahan" placeholder="Pilih status pernikahan" :options="statusPernikahanOptions" :error="errors.status_pernikahan"/>
-              <FormSelect v-model="form.pendidikan_terakhir" label="Pendidikan Terakhir" placeholder="Pilih pendidikan terakhir" :options="pendidikanOptions" :error="errors.pendidikan_terakhir"/>
-          </div>
-          <div class="grid gap-4 md:grid-cols-2">
-              <FormInput v-model="form.gelar_depan" label="Gelar Depan" placeholder="Contoh: Drs." :error="errors.gelar_depan"/>
-              <FormInput v-model="form.gelar_belakang" label="Gelar Belakang" placeholder="Contoh: S.Pd., M.Pd." :error="errors.gelar_belakang"/>
-          </div>
-        </FormSection>
-
-        <FormSection title="Informasi Kepegawaian" description="Informasi kepegawaian mengenai guru/staff" :icon="BriefcaseBusiness">
-          <div class="grid gap-4 md:grid-cols-2">
-            <FormSelect v-model="form.jabatan" label="Jabatan" placeholder="Pilih jabatan" :options="jabatanOptions" :error="errors.jabatan"/>
-            <FormSelect v-model="form.status_kepegawaian" label="Status Kepegawaian" placeholder="Pilih status kepegawaian" :options="statusKepegawaianOptions" :error="errors.status_kepegawaian"/>
-          </div>
-          <div class="grid gap-4 md:grid-cols-2">
-            <FormSelect v-model="form.unit_kerja" label="Unit Kerja" placeholder="Pilih unit kerja" :options="unitKerjaOptions" :error="errors.unit_kerja"/>
-            <FormSelect v-model="form.status_aktif" label="Status Aktif" placeholder="Pilih status" :options="statusOptions" :error="errors.status_aktif"/>
-          </div>
-          <div class="grid gap-4 md:grid-cols-2">
-            <FormDate v-model="form.join_date" label="Tanggal Bergabung" :error="errors.join_date"/>
-            <FormMultiSelect
-              v-if="isTeacher"
-              v-model="form.subject_ids"
-              label="Mata Pelajaran yang Diajarkan"
-              placeholder="Pilih mata pelajaran"
-              :options="subjectOptions"
-              :error="errors.subject_ids"
-              searchable
-              show-select-all
-              required
-            />
-          </div>
-        </FormSection>
-
-        <!-- Informasi Login -->
-        <FormSection title="Akun Pengguna" description="Informasi akun yang digunakan guru atau staff untuk mengakses sistem." :icon="UserCog">
-          <div class="grid gap-4 md:grid-cols-2">
-            <FormInput v-model="form.emailLogin" label="E-mail Login" placeholder="Contoh: admin@sekolah.sch.id" :error="errors.emailLogin"/>
-            <FormInput v-model="form.noHpLogin" label="No. HP Login" placeholder="Contoh: 081234567890" :error="errors.noHpLogin"/>
-          </div>
-        </FormSection>
-      </div>
+      <!-- 2. Akun Pengguna (Kredensial Login) -->
+      <FormSection title="Akun Pengguna" description="Kredensial yang digunakan untuk login ke sistem" :icon="UserCog">
+        <div class="space-y-4">
+          <FormInput
+            v-model="form.emailLogin"
+            type="email"
+            label="E-mail Login"
+            placeholder="Contoh: nama@sekolah.sch.id"
+            required
+            :error="errors.emailLogin"
+          />
+          <FormInput
+            v-model="form.noHpLogin"
+            label="No. HP / WhatsApp (Opsional)"
+            placeholder="Contoh: 081234567890"
+            numeric-only
+            :maxlength="15"
+            :error="errors.noHpLogin"
+          />
+        </div>
+      </FormSection>
     </div>
+
+    <!-- Kolom Kanan: Informasi Pribadi & Informasi Kepegawaian (2 Kolom) -->
+    <div class="md:col-span-2 space-y-6">
+      <!-- 1. Informasi Pribadi -->
+      <FormSection title="Informasi Pribadi" description="Identitas diri, data kelahiran, kualifikasi pendidikan, dan domisili" :icon="SquareUserRound">
+        <!-- Grup A: Nama & Gelar -->
+        <div class="grid gap-4 md:grid-cols-2">
+          <FormInput
+            v-model="form.nama_depan"
+            label="Nama Depan"
+            placeholder="Contoh: Ahmad"
+            required
+            :error="errors.nama_depan"
+          />
+          <FormInput
+            v-model="form.nama_belakang"
+            label="Nama Belakang (Opsional)"
+            placeholder="Contoh: Fauzi"
+            :error="errors.nama_belakang"
+          />
+          <FormInput
+            v-model="form.gelar_depan"
+            label="Gelar Depan (Opsional)"
+            placeholder="Contoh: Drs."
+            :error="errors.gelar_depan"
+          />
+          <FormInput
+            v-model="form.gelar_belakang"
+            label="Gelar Belakang (Opsional)"
+            placeholder="Contoh: S.Pd., M.Pd."
+            :error="errors.gelar_belakang"
+          />
+        </div>
+
+        <Separator class="my-2" />
+
+        <!-- Grup B: Identitas Kependudukan & Kelahiran -->
+        <div class="grid gap-4 md:grid-cols-2">
+          <FormInput
+            v-model="form.nik"
+            label="NIK (Nomor Induk Kependudukan)"
+            placeholder="16 digit NIK sesuai KTP"
+            numeric-only
+            :maxlength="16"
+            required
+            :error="errors.nik"
+          />
+          <FormSelect
+            v-model="form.jenis_kelamin"
+            label="Jenis Kelamin"
+            placeholder="Pilih jenis kelamin"
+            :options="kelaminOptions"
+            required
+            :error="errors.jenis_kelamin"
+          />
+          <FormInput
+            v-model="form.tempat_lahir"
+            label="Tempat Lahir"
+            placeholder="Contoh: Jakarta"
+            required
+            :error="errors.tempat_lahir"
+          />
+          <FormDate
+            v-model="form.tanggal_lahir"
+            label="Tanggal Lahir"
+            required
+            :error="errors.tanggal_lahir"
+          />
+          <FormSelect
+            v-model="form.agama"
+            label="Agama"
+            placeholder="Pilih agama"
+            :options="agamaOptions"
+            required
+            :error="errors.agama"
+          />
+          <FormSelect
+            v-model="form.status_pernikahan"
+            label="Status Pernikahan"
+            placeholder="Pilih status pernikahan"
+            :options="statusPernikahanOptions"
+            required
+            :error="errors.status_pernikahan"
+          />
+        </div>
+
+        <Separator class="my-2" />
+
+        <!-- Grup C: Kualifikasi Pendidikan & Domisili -->
+        <div class="grid gap-4 md:grid-cols-1">
+          <FormSelect
+            v-model="form.pendidikan_terakhir"
+            label="Pendidikan Terakhir"
+            placeholder="Pilih jenjang pendidikan terakhir"
+            :options="pendidikanOptions"
+            required
+            :error="errors.pendidikan_terakhir"
+          />
+          <FormTextArea
+            v-model="form.alamat"
+            :rows="3"
+            label="Alamat Lengkap"
+            placeholder="Contoh: Jl. Pendidikan No. 10, RT 01/RW 02, Kel. Sukamaju, Kec. Cimandiri, Kota Bandung"
+            required
+            :error="errors.alamat"
+          />
+        </div>
+      </FormSection>
+
+      <!-- 2. Informasi Kepegawaian -->
+      <FormSection title="Informasi Kepegawaian" description="Penempatan unit kerja, jabatan, status ikatan kerja, dan nomor induk pegawai" :icon="BriefcaseBusiness">
+        <!-- Grup A: Penempatan & Jabatan -->
+        <div class="grid gap-4 md:grid-cols-2">
+          <FormMultiSelect
+            v-if="!isAdminSekolah"
+            v-model="form.unit_kerja"
+            label="Unit Kerja"
+            placeholder="Pilih satu atau lebih unit kerja"
+            :options="unitKerjaOptions"
+            :error="errors.unit_kerja"
+            item-name="unit kerja"
+            searchable
+            show-select-all
+            required
+          />
+          <FormSelect
+            v-model="form.jabatan"
+            label="Jabatan"
+            placeholder="Pilih jabatan"
+            :options="filteredJabatanOptions"
+            required
+            :error="errors.jabatan"
+          />
+          <FormSelect
+            v-if="isAdminSekolah"
+            v-model="form.status_kepegawaian"
+            label="Status Kepegawaian"
+            placeholder="Pilih status kepegawaian"
+            :options="statusKepegawaianOptions"
+            required
+            :error="errors.status_kepegawaian"
+          />
+        </div>
+
+        <!-- Penugasan Mata Pelajaran (Muncul tepat di bawah Jabatan jika memilih Guru) -->
+        <div v-if="isTeacher" class="grid gap-4 md:grid-cols-1">
+          <FormMultiSelect
+            v-model="form.subject_ids"
+            label="Mata Pelajaran yang Diajarkan"
+            placeholder="Pilih mata pelajaran yang diampu"
+            :options="subjectOptions"
+            :error="errors.subject_ids"
+            item-name="mata pelajaran"
+            searchable
+            show-select-all
+            required
+          />
+        </div>
+
+        <Separator class="my-2" />
+
+        <!-- Grup B: Status Kepegawaian, Tanggal Bergabung & Nomor Induk -->
+        <div class="grid gap-4 md:grid-cols-2">
+          <FormSelect
+            v-if="!isAdminSekolah"
+            v-model="form.status_kepegawaian"
+            label="Status Kepegawaian"
+            placeholder="Pilih status kepegawaian"
+            :options="statusKepegawaianOptions"
+            required
+            :error="errors.status_kepegawaian"
+          />
+          <FormSelect
+            v-model="form.status_aktif"
+            label="Status Aktif"
+            placeholder="Pilih status aktif"
+            :options="statusOptions"
+            required
+            :error="errors.status_aktif"
+          />
+          <FormDate
+            v-model="form.join_date"
+            label="Tanggal Bergabung"
+            required
+            :error="errors.join_date"
+          />
+          <FormInput
+            v-model="form.nip_nuptk"
+            label="NIP / NUPTK (Opsional)"
+            placeholder="Kosongkan jika belum memiliki NIP/NUPTK"
+            numeric-only
+            :maxlength="18"
+            :error="errors.nip_nuptk"
+          />
+        </div>
+      </FormSection>
+    </div>
+  </div>
 </template>

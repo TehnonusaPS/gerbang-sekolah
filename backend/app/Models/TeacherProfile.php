@@ -23,6 +23,7 @@ class TeacherProfile extends Model
         'address',
         'position',
         'employment_status',
+        'unit_ids',
         'join_date',
     ];
 
@@ -31,6 +32,7 @@ class TeacherProfile extends Model
         return [
             'birth_date' => 'date',
             'join_date'  => 'date',
+            'unit_ids'   => 'array',
         ];
     }
 

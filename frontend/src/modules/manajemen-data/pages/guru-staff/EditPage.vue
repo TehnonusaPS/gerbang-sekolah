@@ -9,6 +9,8 @@ import { defaultForm } from './data/defaultForm'
 import { useAuthStore } from '@/stores/authStore'
 import GuruStaffForm from './components/GuruStaffForm.vue'
 import { agamaOptions, jabatanOptions, kelaminOptions, pendidikanOptions, statusKepegawaianOptions, statusOptions, statusPernikahanOptions } from './data/guruStaff'
+import { createGuruStaffSchema } from './data/guruStaffSchema'
+import { useZodForm } from '@/composables/useZodForm'
 import { toast } from 'vue-sonner'
 import { getTeacher, updateTeacher, getFoundation, getSchools } from '@/services/managementService'
 import { fetchAllSubjects } from '@/services/subjectService'
@@ -21,12 +23,23 @@ const teacherId = route.params.id || route.query.id
 const unitOptions = ref([])
 const subjectOptions = ref([])
 
-const form = ref({ ...defaultForm })
-const imagePreview = ref('')
-const formErrors = ref({})
+const isAdminSekolah = computed(() => auth.user?.role === 'admin_sekolah')
 
+const form = ref({
+  ...defaultForm,
+  unit_kerja: [],
+  subject_ids: []
+})
+const imagePreview = ref('')
+const {
+  errors: formErrors,
+  validate,
+  clearErrors,
+  setServerErrors
+} = useZodForm(() => createGuruStaffSchema({ isAdminSekolah: isAdminSekolah.value }), form)
 
 const loadUnitOptions = async () => {
+  if (isAdminSekolah.value) return
   try {
     const resSchools = await getSchools()
     const options = resSchools.data.data.map(s => ({
@@ -63,6 +76,12 @@ const mapAgamaToValue = (label) => {
     'Buddha': 'A04',
     'Hindu': 'A05',
     'Konghucu': 'A06',
+    'A01': 'A01',
+    'A02': 'A02',
+    'A03': 'A03',
+    'A04': 'A04',
+    'A05': 'A05',
+    'A06': 'A06',
   }
   return map[label] || ''
 }
@@ -74,6 +93,10 @@ const mapPernikahanToValue = (label) => {
     'Menikah': 'SP02',
     'Janda': 'SP03',
     'Duda': 'SP04',
+    'SP01': 'SP01',
+    'SP02': 'SP02',
+    'SP03': 'SP03',
+    'SP04': 'SP04',
   }
   return map[label] || ''
 }
@@ -85,6 +108,8 @@ const mapKelaminToValue = (label) => {
     'Perempuan': 'JK02',
     'male': 'JK01',
     'female': 'JK02',
+    'JK01': 'JK01',
+    'JK02': 'JK02',
   }
   return map[label] || ''
 }
@@ -107,7 +132,6 @@ const loadTeacher = async () => {
   isLoading.value = true
   try {
     const res = await getTeacher(currentId)
-    // Support either response wrapper or direct object
     const data = (res && res.data) ? res.data : (res || {})
 
     const user = data.user || data || {}
@@ -123,20 +147,17 @@ const loadTeacher = async () => {
     const isActiveVal = user.is_active !== undefined ? user.is_active : (data.status_aktif !== undefined ? data.status_aktif : true)
     const statusAktifVal = (isActiveVal === true || isActiveVal === 1 || isActiveVal === 'aktif' || isActiveVal === 'Aktif') ? 'Aktif' : 'Nonaktif'
 
-    const rawSubjects =
-      data.subjects ||
-      profile.subjects ||
-      data.teacher_subject_assignments ||
-      profile.teacher_subject_assignments ||
-      []
+    let loadedUnitIds = []
+    if (Array.isArray(data.unit_ids) && data.unit_ids.length > 0) {
+      loadedUnitIds = data.unit_ids.map(String)
+    } else if (data.unit_id) {
+      loadedUnitIds = [String(data.unit_id)]
+    } else if (user.school_id) {
+      loadedUnitIds = ['S' + String(user.school_id).padStart(4, '0')]
+    } else if (user.foundation_id) {
+      loadedUnitIds = ['Y' + String(user.foundation_id).padStart(4, '0')]
+    }
 
-    const selectedSubjectIds = rawSubjects
-      .map(item => {
-        return item.subject_id || item.subject?.id || item.id
-      })
-      .filter(Boolean)
-      .map(id => String(id))
-      
     form.value = {
       ...defaultForm,
       nama_depan: user.nama_depan || (user.name ? user.name.split(' ')[0] : ''),
@@ -151,18 +172,17 @@ const loadTeacher = async () => {
       pendidikan_terakhir: mapPendidikanToValue(rawPendidikan),
       gelar_depan: profile.front_title || profile.gelar_depan || '',
       gelar_belakang: profile.back_title || profile.gelar_belakang || '',
-      email: profile.email || user.email || '',
-      no_hp: profile.no_hp || profile.phone || user.phone || user.no_hp || '',
       alamat: profile.address || profile.alamat || '',
       jabatan: mapJabatanToValue(rawJabatan),
       status_kepegawaian: mapStatusKepegawaianToValue(rawKepegawaian),
-      unit_kerja: data.unit_id || (user.school_id ? 'S' + String(user.school_id).padStart(4, '0') : (user.foundation_id ? 'Y' + String(user.foundation_id).padStart(4, '0') : '')) || '',
+      unit_kerja: loadedUnitIds,
       status_aktif: statusAktifVal,
       emailLogin: user.email || user.emailLogin || data.emailLogin || '',
       noHpLogin: user.phone || user.noHpLogin || data.noHpLogin || '',
       join_date: formatDateString(profile.join_date || ''),
-      subject_ids: Array.isArray(data.subject_ids) ? data.subject_ids.map(id => String(id)): []
+      subject_ids: Array.isArray(data.subject_ids) ? data.subject_ids.map(id => String(id)) : []
     }
+    clearErrors()
 
     const photoPath = user.photo || data.foto
     if (photoPath) {
@@ -181,22 +201,31 @@ const mapPendidikanToValue = (label) => {
   const map = {
     'Sekolah Dasar (SD)': 'P01',
     'SD': 'P01',
+    'P01': 'P01',
     'Sekolah Menengah Pertama (SMP)': 'P02',
     'SMP': 'P02',
+    'P02': 'P02',
     'Sekolah Menengah Awal/Kejuruan (SMA/SMK)': 'P03',
     'SMA/SMK': 'P03',
+    'P03': 'P03',
     'Diploma I (D1)': 'P04',
     'D1': 'P04',
+    'P04': 'P04',
     'Diploma III (D3)': 'P05',
     'D3': 'P05',
+    'P05': 'P05',
     'Diploma IV (D4)': 'P06',
     'D4': 'P06',
+    'P06': 'P06',
     'Sarjana (S1)': 'P07',
     'S1': 'P07',
+    'P07': 'P07',
     'Magister (S2)': 'P08',
     'S2': 'P08',
+    'P08': 'P08',
     'Doktoral (S3)': 'P09',
-    'S3': 'P09'
+    'S3': 'P09',
+    'P09': 'P09'
   }
   return map[label] || ''
 }
@@ -204,10 +233,17 @@ const mapPendidikanToValue = (label) => {
 const mapJabatanToValue = (label) => {
   const map = {
     'Kepala Yayasan': 'J001',
+    'J001': 'J001',
     'Staff Yayasan': 'J002',
+    'J002': 'J002',
     'Kepala Sekolah': 'J003',
+    'J003': 'J003',
     'Guru': 'J004',
-    'Staff Sekolah': 'J005'
+    'J004': 'J004',
+    'Staff Sekolah': 'J005',
+    'J005': 'J005',
+    'Admin Sekolah': 'J006',
+    'J006': 'J006'
   }
   return map[label] || ''
 }
@@ -215,8 +251,11 @@ const mapJabatanToValue = (label) => {
 const mapStatusKepegawaianToValue = (label) => {
   const map = {
     'Tetap': 'SK01',
+    'SK01': 'SK01',
     'Kontrak': 'SK02',
-    'Honorer': 'SK03'
+    'SK02': 'SK02',
+    'Honorer': 'SK03',
+    'SK03': 'SK03'
   }
   return map[label] || ''
 }
@@ -264,7 +303,8 @@ const mapValueToJabatan = (value) => {
     'J002': 'Staff Yayasan',
     'J003': 'Kepala Sekolah',
     'J004': 'Guru',
-    'J005': 'Staff Sekolah'
+    'J005': 'Staff Sekolah',
+    'J006': 'Admin Sekolah'
   }
   return map[value] || value
 }
@@ -294,13 +334,24 @@ onMounted(async () => {
 
 const handleImage = (file) => {
   form.value.foto = file
-  imagePreview.value = URL.createObjectURL(file)
+  if (file instanceof File) {
+    imagePreview.value = URL.createObjectURL(file)
+  }
 }
 
-
 const handleSubmit = async () => {
+  if (!validate()) {
+    toast.error('Gagal Menyimpan', {
+      description: 'Harap periksa kembali kolom yang ditandai merah pada formulir.'
+    })
+    return
+  }
+
+  const unitKerjaList = Array.isArray(form.value.unit_kerja)
+    ? form.value.unit_kerja
+    : (form.value.unit_kerja ? [form.value.unit_kerja] : [])
+
   isLoading.value = true
-  formErrors.value = {}
 
   const postData = {
     nama_depan: form.value.nama_depan,
@@ -317,15 +368,16 @@ const handleSubmit = async () => {
     pendidikan_terakhir: mapValueToPendidikan(form.value.pendidikan_terakhir),
     gelar_depan: form.value.gelar_depan,
     gelar_belakang: form.value.gelar_belakang,
-    email: form.value.email,
-    no_hp: form.value.no_hp,
     alamat: form.value.alamat,
     jabatan: mapValueToJabatan(form.value.jabatan),
     status_kepegawaian: mapValueToStatusKepegawaian(form.value.status_kepegawaian),
-    unit_kerja: form.value.unit_kerja,
     status_aktif: form.value.status_aktif === 'Aktif' ? 'aktif' : 'nonaktif',
     join_date: form.value.join_date,
     subject_ids: form.value.subject_ids || []
+  }
+
+  if (!isAdminSekolah.value) {
+    postData.unit_kerja = unitKerjaList
   }
 
   if (form.value.password) {
@@ -341,7 +393,6 @@ const handleSubmit = async () => {
           value.forEach(item => {
             fd.append(`${key}[]`, item)
           })
-
           return
         }
 
@@ -356,26 +407,12 @@ const handleSubmit = async () => {
     } else {
       await updateTeacher(teacherId, postData)
     }
-    // if (form.value.foto instanceof File) {
-    //   const fd = new FormData()
-    //   Object.keys(postData).forEach(k => fd.append(k, postData[k]))
-    //   fd.append('foto', form.value.foto)
-    //   await updateTeacher(teacherId, fd)
-    // } else {
-    //   await updateTeacher(teacherId, postData)
-    // }
     toast.success('Data guru/staff berhasil diperbarui', {
       description: 'Perubahan data guru/staff telah berhasil disimpan.'
     })
     router.push('/manajemen-data/guru-staff')
   } catch (err) {
-    if (err.response?.status === 422 && err.response?.data?.errors) {
-      const serverErrors = err.response.data.errors
-      const localErrors = {}
-      Object.keys(serverErrors).forEach(key => {
-        localErrors[key] = serverErrors[key][0]
-      })
-      formErrors.value = localErrors
+    if (setServerErrors(err)) {
       toast.error('Gagal', { description: 'Terdapat kesalahan validasi pada data guru/staff.' })
     } else {
       const errorMsg = err.response?.data?.message || 'Gagal memperbarui data guru/staff.'
@@ -407,8 +444,6 @@ const loadSubjectOptions = async () => {
         label: subject.name,
         value: String(subject.id)
       }))
-
-    console.log('Subject options:', subjectOptions.value)
   } catch (error) {
     console.error('Gagal memuat mata pelajaran:', error)
     subjectOptions.value = []

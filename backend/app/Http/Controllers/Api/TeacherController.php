@@ -7,6 +7,9 @@ use App\Models\User;
 use App\Models\Role;
 use App\Models\TeacherProfile;
 use App\Models\School;
+use App\Models\Foundation;
+use App\Models\Classroom;
+use App\Models\Subject;
 use App\Models\AcademicYear;
 use App\Models\TeacherSubjectAssignment;
 use Illuminate\Validation\Rule;
@@ -35,28 +38,48 @@ class TeacherController extends Controller
     }
 
     /**
-     * Helper to get school and foundation scope.
+     * Helper to get school and foundation scope (supports single or multiple unit_kerja).
      */
     private function resolveTenantId(Request $request, $user)
     {
-        $schoolId = null;
+        $schoolIds = [];
+        $unitIds = [];
         $foundationId = null;
 
         // Frontend maps "unit_kerja" or "school_id"
-        // E.g. "Y0001" or "S0001" or raw integer
-        $unitVal = $request->input('unit_kerja') ?: $request->input('school_id');
+        // Can be array (e.g. ["Y0001", "S0001"]) or string ("S0001") or integer
+        $rawUnitVal = $request->input('unit_kerja') ?: $request->input('school_id');
+        $rawUnits = is_array($rawUnitVal) ? $rawUnitVal : ($rawUnitVal ? [$rawUnitVal] : []);
 
-        if ($unitVal) {
-            if (is_string($unitVal) && str_starts_with(strtoupper($unitVal), 'S')) {
-                $schoolId = (int) substr($unitVal, 1);
-            } elseif (is_string($unitVal) && str_starts_with(strtoupper($unitVal), 'Y')) {
-                $foundationId = (int) substr($unitVal, 1);
-            } else {
-                $schoolId = (int) $unitVal;
+        foreach ($rawUnits as $unitVal) {
+            if (!$unitVal) continue;
+            $strVal = trim((string) $unitVal);
+            if (str_starts_with(strtoupper($strVal), 'S')) {
+                $sId = (int) substr($strVal, 1);
+                if ($sId > 0) {
+                    $schoolIds[] = $sId;
+                    $unitIds[] = 'S' . str_pad((string) $sId, 4, '0', STR_PAD_LEFT);
+                }
+            } elseif (str_starts_with(strtoupper($strVal), 'Y')) {
+                $fId = (int) substr($strVal, 1);
+                if ($fId > 0) {
+                    $foundationId = $fId;
+                    $unitIds[] = 'Y' . str_pad((string) $fId, 4, '0', STR_PAD_LEFT);
+                }
+            } elseif (is_numeric($strVal)) {
+                $sId = (int) $strVal;
+                if ($sId > 0) {
+                    $schoolIds[] = $sId;
+                    $unitIds[] = 'S' . str_pad((string) $sId, 4, '0', STR_PAD_LEFT);
+                }
             }
         }
 
-        if ($schoolId) {
+        $schoolIds = array_values(array_unique($schoolIds));
+        $unitIds = array_values(array_unique($unitIds));
+        $schoolId = $schoolIds[0] ?? null;
+
+        if ($schoolId && !$foundationId) {
             $school = School::find($schoolId);
             if ($school) {
                 $foundationId = $school->foundation_id;
@@ -66,26 +89,75 @@ class TeacherController extends Controller
         // Scope verification
         if (!$user->isSuperAdmin()) {
             if ($user->hasRole('admin_yayasan')) {
-                if ($schoolId) {
-                    $school = School::find($schoolId);
-                    if (!$school || $school->foundation_id != $user->foundation_id) {
+                if (!empty($schoolIds)) {
+                    $validCount = School::whereIn('id', $schoolIds)
+                        ->where('foundation_id', $user->foundation_id)
+                        ->count();
+                    if ($validCount !== count($schoolIds)) {
                         return ['error' => 'Selected school does not belong to your foundation.'];
                     }
-                } else {
-                    $foundationId = $user->foundation_id;
                 }
-            } else { // admin_sekolah etc
+                $foundationId = $user->foundation_id;
+                if (empty($unitIds) && $foundationId) {
+                    $unitIds = ['Y' . str_pad((string) $foundationId, 4, '0', STR_PAD_LEFT)];
+                }
+            } else { // admin_sekolah etc: unit kerja otomatis mengikuti sekolah milik admin_sekolah
                 $schoolId = $user->school_id;
-                $school = School::find($schoolId);
-                if ($school) {
-                    $foundationId = $school->foundation_id;
-                }
+                $schoolIds = $schoolId ? [$schoolId] : [];
+                $unitIds = $schoolId ? ['S' . str_pad((string) $schoolId, 4, '0', STR_PAD_LEFT)] : [];
+                $school = $schoolId ? School::find($schoolId) : null;
+                $foundationId = $school ? $school->foundation_id : $user->foundation_id;
             }
         }
 
         return [
             'school_id'     => $schoolId,
+            'school_ids'    => $schoolIds,
             'foundation_id' => $foundationId,
+            'unit_ids'      => $unitIds,
+        ];
+    }
+
+    /**
+     * Format unit_kerja label, unit_id, and unit_ids array for frontend response.
+     */
+    private function formatUnitData($teacherProfile, $user, $schoolsMap = null, $foundationsMap = null): array
+    {
+        $unitIds = [];
+        if ($teacherProfile && !empty($teacherProfile->unit_ids) && is_array($teacherProfile->unit_ids)) {
+            $unitIds = array_values(array_filter($teacherProfile->unit_ids));
+        }
+
+        if (empty($unitIds)) {
+            if ($user->school_id) {
+                $unitIds = ['S' . str_pad((string) $user->school_id, 4, '0', STR_PAD_LEFT)];
+            } elseif ($user->foundation_id) {
+                $unitIds = ['Y' . str_pad((string) $user->foundation_id, 4, '0', STR_PAD_LEFT)];
+            }
+        }
+
+        $unitNames = [];
+        foreach ($unitIds as $code) {
+            $upper = strtoupper((string) $code);
+            if (str_starts_with($upper, 'S')) {
+                $sId = (int) substr($upper, 1);
+                $name = $schoolsMap ? ($schoolsMap[$sId] ?? null) : School::where('id', $sId)->value('name');
+                if ($name) $unitNames[] = $name;
+            } elseif (str_starts_with($upper, 'Y')) {
+                $fId = (int) substr($upper, 1);
+                $name = $foundationsMap ? ($foundationsMap[$fId] ?? null) : Foundation::where('id', $fId)->value('name');
+                if ($name) $unitNames[] = $name;
+            }
+        }
+
+        $unitKerjaLabel = !empty($unitNames)
+            ? implode(', ', $unitNames)
+            : ($user->school ? $user->school->name : ($user->foundation ? $user->foundation->name : '-'));
+
+        return [
+            'unit_kerja' => $unitKerjaLabel,
+            'unit_id'    => $unitIds[0] ?? null,
+            'unit_ids'   => $unitIds,
         ];
     }
 
@@ -178,8 +250,11 @@ class TeacherController extends Controller
                 });
             }
         } else { // admin_sekolah etc.
-            $query->whereHas('user', function ($q) use ($user) {
-                $q->where('school_id', $user->school_id);
+            $schoolCode = 'S' . str_pad((string) $user->school_id, 4, '0', STR_PAD_LEFT);
+            $query->where(function ($q) use ($user, $schoolCode) {
+                $q->whereHas('user', function ($uq) use ($user) {
+                    $uq->where('school_id', $user->school_id);
+                })->orWhereJsonContains('unit_ids', $schoolCode);
             });
         }
 
@@ -204,8 +279,10 @@ class TeacherController extends Controller
         }
 
         $teachers = $query->latest('updated_at')->get();
+        $schoolsMap = School::pluck('name', 'id')->all();
+        $foundationsMap = Foundation::pluck('name', 'id')->all();
 
-        $formatted = $teachers->map(function ($item) {
+        $formatted = $teachers->map(function ($item) use ($schoolsMap, $foundationsMap) {
             $u = $item->user;
             if (!$u) return null;
 
@@ -219,6 +296,8 @@ class TeacherController extends Controller
                     $masaKerja = '0 bulan';
                 }
             }
+
+            $unitData = $this->formatUnitData($item, $u, $schoolsMap, $foundationsMap);
 
             return [
                 'id'                 => $u->id,
@@ -243,8 +322,9 @@ class TeacherController extends Controller
                 'alamat'             => $item->address,
                 'jabatan'            => $this->mapJabatanToFe($item->position),
                 'status_kepegawaian' => $this->mapStatusKepegawaianToFe($item->employment_status),
-                'unit_kerja'         => $u->school ? $u->school->name : ($u->foundation ? $u->foundation->name : '-'),
-                'unit_id'            => $u->school_id ? 'S' . str_pad($u->school_id, 4, '0', STR_PAD_LEFT) : ($u->foundation_id ? 'Y' . str_pad($u->foundation_id, 4, '0', STR_PAD_LEFT) : null),
+                'unit_kerja'         => $unitData['unit_kerja'],
+                'unit_id'            => $unitData['unit_id'],
+                'unit_ids'           => $unitData['unit_ids'],
                 'status_aktif'       => $u->is_active ? 'Aktif' : 'Nonaktif',
                 'emailLogin'         => $u->email,
                 'noHpLogin'          => $u->phone,
@@ -331,8 +411,15 @@ class TeacherController extends Controller
                 'integer',
                 'distinct',
                 Rule::exists('subjects', 'id')->where(function ($query) use ($tenant) {
-                    $query->where('school_id', $tenant['school_id'])
-                        ->where('is_active', true);
+                    if (!empty($tenant['school_ids'])) {
+                        $query->whereIn('school_id', $tenant['school_ids']);
+                    } elseif ($tenant['school_id']) {
+                        $query->where('school_id', $tenant['school_id']);
+                    } elseif ($tenant['foundation_id']) {
+                        $schoolIds = School::where('foundation_id', $tenant['foundation_id'])->pluck('id');
+                        $query->whereIn('school_id', $schoolIds);
+                    }
+                    $query->where('is_active', true);
                 }),
             ],
         ]);
@@ -412,29 +499,32 @@ class TeacherController extends Controller
                 'address'           => $request->input('alamat'),
                 'position'          => $request->input('jabatan'),
                 'employment_status' => $request->input('status_kepegawaian'),
+                'unit_ids'          => $tenant['unit_ids'] ?? [],
                 'join_date'         => $request->input('join_date') ?: now(),
             ]);
 
             if ($isTeacher) {
-                $academicYearId = AcademicYear::where(
-                    'school_id',
-                    $tenant['school_id']
-                )
-                    ->where('is_active', true)
-                    ->value('id');
-
-                if (!$academicYearId) {
-                    throw new \Exception(
-                        'Tahun ajaran aktif belum tersedia untuk sekolah ini.'
-                    );
-                }
-
                 foreach ($request->input('subject_ids', []) as $subjectId) {
+                    $subject = Subject::find($subjectId);
+                    $subjSchoolId = $subject ? $subject->school_id : $tenant['school_id'];
+
+                    $academicYearId = AcademicYear::where('school_id', $subjSchoolId)
+                        ->where('is_active', true)
+                        ->value('id') ?: AcademicYear::where('school_id', $subjSchoolId)->latest('id')->value('id');
+
+                    if (!$academicYearId) {
+                        throw new \Exception(
+                            'Tahun ajaran aktif belum tersedia untuk sekolah ini.'
+                        );
+                    }
+
+                    $classroomId = Classroom::where('school_id', $subjSchoolId)->value('id') ?: 1;
+
                     TeacherSubjectAssignment::create([
-                        'school_id'        => $tenant['school_id'],
+                        'school_id'        => $subjSchoolId,
                         'teacher_id'       => $newUser->id,
                         'subject_id'       => $subjectId,
-                        'classroom_id'     => 1,
+                        'classroom_id'     => $classroomId,
                         'academic_year_id' => $academicYearId,
                         'is_active'        => true,
                     ]);
@@ -492,7 +582,9 @@ class TeacherController extends Controller
                     return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
                 }
             } else {
-                if ($u->school_id != $user->school_id) {
+                $schoolCode = 'S' . str_pad((string) $user->school_id, 4, '0', STR_PAD_LEFT);
+                $inUnitIds = is_array($teacher->unit_ids) && in_array($schoolCode, $teacher->unit_ids, true);
+                if ($u->school_id != $user->school_id && !$inUnitIds) {
                     return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
                 }
             }
@@ -505,6 +597,8 @@ class TeacherController extends Controller
             $months = $diff->m;
             $masaKerja = ($years > 0 ? "$years tahun " : '') . ($months > 0 ? "$months bulan" : ($years == 0 ? "0 bulan" : ''));
         }
+
+        $unitData = $this->formatUnitData($teacher, $u);
 
         return response()->json([
             'status' => 'success',
@@ -531,8 +625,9 @@ class TeacherController extends Controller
                 'alamat'             => $teacher->address,
                 'jabatan'            => $this->mapJabatanToFe($teacher->position),
                 'status_kepegawaian' => $this->mapStatusKepegawaianToFe($teacher->employment_status),
-                'unit_kerja'         => $u->school ? $u->school->name : ($u->foundation ? $u->foundation->name : '-'),
-                'unit_id'            => $u->school_id ? 'S' . str_pad($u->school_id, 4, '0', STR_PAD_LEFT) : ($u->foundation_id ? 'Y' . str_pad($u->foundation_id, 4, '0', STR_PAD_LEFT) : null),
+                'unit_kerja'         => $unitData['unit_kerja'],
+                'unit_id'            => $unitData['unit_id'],
+                'unit_ids'           => $unitData['unit_ids'],
                 'status_aktif'       => $u->is_active ? 'Aktif' : 'Nonaktif',
                 'emailLogin'         => $u->email,
                 'noHpLogin'          => $u->phone,
@@ -579,7 +674,9 @@ class TeacherController extends Controller
                     return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
                 }
             } else {
-                if ($u->school_id != $currentUser->school_id) {
+                $schoolCode = 'S' . str_pad((string) $currentUser->school_id, 4, '0', STR_PAD_LEFT);
+                $inUnitIds = is_array($teacher->unit_ids) && in_array($schoolCode, $teacher->unit_ids, true);
+                if ($u->school_id != $currentUser->school_id && !$inUnitIds) {
                     return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
                 }
             }
@@ -671,7 +768,9 @@ class TeacherController extends Controller
                 }
             }
 
-            if ($request->has('unit_kerja')) {
+            $profileData = [];
+
+            if ($request->has('unit_kerja') || !$currentUser->isSuperAdmin() && !$currentUser->hasRole('admin_yayasan')) {
                 $tenant = $this->resolveTenantId($request, $currentUser);
                 if (isset($tenant['error'])) {
                     return response()->json([
@@ -679,8 +778,13 @@ class TeacherController extends Controller
                         'message' => $tenant['error'],
                     ], 403);
                 }
-                $u->school_id = $tenant['school_id'];
-                $u->foundation_id = $tenant['foundation_id'];
+                if ($request->has('unit_kerja') || !$u->school_id) {
+                    $u->school_id = $tenant['school_id'];
+                    $u->foundation_id = $tenant['foundation_id'];
+                    if (!empty($tenant['unit_ids'])) {
+                        $profileData['unit_ids'] = $tenant['unit_ids'];
+                    }
+                }
             }
 
             // Handle Photo Upload
@@ -693,7 +797,6 @@ class TeacherController extends Controller
             $u->save();
 
             // Update Teacher Profile fields
-            $profileData = [];
             if ($request->has('nik')) $profileData['nik'] = $request->input('nik');
             if ($request->has('nip_nuptk')) $profileData['nip_nuptk'] = $request->input('nip_nuptk');
             if ($request->has('tempat_lahir')) $profileData['birth_place'] = $request->input('tempat_lahir');
@@ -711,31 +814,30 @@ class TeacherController extends Controller
 
             $teacher->update($profileData);
 
-            $academicYearId = AcademicYear::where(
-                'school_id',
-                $u->school_id
-            )
-                ->where('is_active', true)
-                ->value('id');
-
-            if ($isTeacher && !$academicYearId) {
-                throw new \Exception(
-                    'Tahun ajaran aktif belum tersedia untuk sekolah ini.'
-                );
-            }
-
-            /* Sementara classroom_id masih menggunakan default 1 */
-            TeacherSubjectAssignment::where('teacher_id', $u->id)
-                ->where('classroom_id', 1)
-                ->delete();
+            TeacherSubjectAssignment::where('teacher_id', $u->id)->delete();
 
             if ($isTeacher) {
                 foreach ($request->input('subject_ids', []) as $subjectId) {
+                    $subject = Subject::find($subjectId);
+                    $subjSchoolId = $subject ? $subject->school_id : $u->school_id;
+
+                    $academicYearId = AcademicYear::where('school_id', $subjSchoolId)
+                        ->where('is_active', true)
+                        ->value('id') ?: AcademicYear::where('school_id', $subjSchoolId)->latest('id')->value('id');
+
+                    if (!$academicYearId) {
+                        throw new \Exception(
+                            'Tahun ajaran aktif belum tersedia untuk sekolah ini.'
+                        );
+                    }
+
+                    $classroomId = Classroom::where('school_id', $subjSchoolId)->value('id') ?: 1;
+
                     TeacherSubjectAssignment::create([
-                        'school_id'        => $u->school_id,
+                        'school_id'        => $subjSchoolId,
                         'teacher_id'       => $u->id,
                         'subject_id'       => $subjectId,
-                        'classroom_id'     => 1,
+                        'classroom_id'     => $classroomId,
                         'academic_year_id' => $academicYearId,
                         'is_active'        => true,
                     ]);
