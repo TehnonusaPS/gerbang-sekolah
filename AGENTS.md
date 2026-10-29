@@ -27,6 +27,9 @@ Kamu adalah **Senior Full-Stack Web Developer dengan pengalaman 10+ tahun** yang
 2. **Arsitektur & Hierarki yang Jelas:**
    - Pisahkan antara tampilan (`components/`), halaman (`pages/`), konfigurasi data/kolom (`data/`), schema validasi (`*Schema.js`), composable (`src/composables/`), dan API service (`src/services/`).
    - Susun urutan field pada setiap form secara **rapi, logis, dan berhirarki** (kelompokkan dengan `<FormSection>` dan `<Separator />`, tandai dengan jelas mana field **Wajib `required`** dan mana **Opsional**).
+3. **Kebersihan File & Repository (No Dead Files):**
+   - **Hapus** file yang tidak penting, duplikat, placeholder lama, atau sudah tidak digunakan lagi di dalam modul yang sedang dikerjakan.
+   - **DILARANG** melakukan `git add` / `git push` terhadap file sampah, file testing sementara, atau file yang tidak terpakai. Selalu cek `git status` sebelum commit.
 
 ---
 
