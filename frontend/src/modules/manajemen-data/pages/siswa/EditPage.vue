@@ -130,6 +130,9 @@ const goToList = () => {
     <FormFooter
       :loading="isLoading"
       submit-label="Simpan Perubahan"
+      confirm-title="Konfirmasi Perubahan Data Siswa"
+      confirm-button-label="Ya, Simpan Perubahan"
+      :entity-name="`${form.nama_depan || ''} ${form.nama_belakang || ''}`.trim()"
       @submit="handleSubmit"
     />
   </div>

@@ -56,11 +56,9 @@ const generatedAccount = ref({
 
 const formErrors = ref({})
 
-const handleSubmit = async () => {
-
+const onBeforeConfirm = () => {
   formErrors.value = {}
 
-  // Client-side Validation: All fields must be filled
   const errors = {}
   if (!form.value.nama_depan) {
     errors.first_name = 'Nama depan harus diisi'
@@ -132,8 +130,13 @@ const handleSubmit = async () => {
     toast.error('Gagal Menyimpan', {
       description: 'Harap lengkapi semua data formulir sebelum menyimpan.'
     })
-    return
+    return false
   }
+  return true
+}
+
+const handleSubmit = async () => {
+  if (!onBeforeConfirm()) return
 
   isLoading.value = true
 
@@ -200,6 +203,13 @@ const goToList = () => {
     <FormFooter
       :loading="isLoading"
       submit-label="Simpan Data Siswa"
+      confirm-title="Konfirmasi Simpan Data Siswa"
+      :entity-name="`${form.nama_depan || ''} ${form.nama_belakang || ''}`.trim()"
+      :summary-items="[
+        { label: 'NISN', value: form.nisn },
+        { label: 'Email Login Wali', value: form.emailLogin }
+      ]"
+      :before-confirm="onBeforeConfirm"
       @submit="handleSubmit"
     />
   </div>

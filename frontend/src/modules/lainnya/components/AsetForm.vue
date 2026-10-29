@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import {
   Select,
   SelectContent,
@@ -360,23 +361,12 @@ function submit() {
       </Card>
 
       <!-- Bottom Buttons -->
-      <div class="flex justify-end gap-3 w-full">
-        <Button
-          variant="outline"
-          size="lg"
-          @click="cancel"
-          class="h-11 px-6 rounded-xl font-semibold hover:bg-muted w-full sm:w-auto"
-        >
-          Batal
-        </Button>
-        <Button
-          size="lg"
-          @click="submit"
-          class="h-11 px-6 rounded-xl font-semibold shadow-xs w-full sm:w-auto"
-        >
-          {{ isEdit ? 'Simpan Perubahan' : 'Simpan' }}
-        </Button>
-      </div>
+      <FormFooter
+        :submit-label="isEdit ? 'Simpan Perubahan' : 'Simpan'"
+        :confirm-title="isEdit ? 'Konfirmasi Perubahan Aset' : 'Konfirmasi Simpan Aset'"
+        :entity-name="form.name"
+        @submit="submit"
+      />
     </div>
   </div>
 </template>

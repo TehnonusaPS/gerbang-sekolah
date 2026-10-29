@@ -24,7 +24,15 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
-import { Camera, UploadCloud, Eye, EyeOff } from 'lucide-vue-next'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from '@/components/ui/dialog'
+import { Camera, UploadCloud, Eye, EyeOff, HelpCircle, CheckCircle2 } from 'lucide-vue-next'
 
 const props = defineProps({
   open: {
@@ -74,6 +82,14 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: false
+  },
+  confirm: {
+    type: Boolean,
+    default: true
+  },
+  confirmTitle: {
+    type: String,
+    default: ''
   }
 })
 
@@ -190,7 +206,18 @@ const handleCancel = () => {
   isOpen.value = false
 }
 
+const isConfirmOpen = ref(false)
+
 const handleSubmit = () => {
+  if (!props.confirm) {
+    emit('submit', { ...localForm.value })
+    return
+  }
+  isConfirmOpen.value = true
+}
+
+const handleConfirmSubmit = () => {
+  isConfirmOpen.value = false
   emit('submit', { ...localForm.value })
 }
 </script>
@@ -421,4 +448,53 @@ const handleSubmit = () => {
       </div>
     </SheetContent>
   </Sheet>
+
+  <Dialog :open="isConfirmOpen" @update:open="val => (isConfirmOpen = val)">
+    <DialogContent class="sm:max-w-md bg-card dark:bg-zinc-900 border border-border dark:border-zinc-800">
+      <DialogHeader>
+        <div class="flex items-center gap-3">
+          <div class="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <HelpCircle class="h-5 w-5" />
+          </div>
+          <div class="text-left">
+            <DialogTitle class="text-base font-semibold text-foreground dark:text-zinc-100">
+              {{ confirmTitle || `Konfirmasi ${title}` }}
+            </DialogTitle>
+            <DialogDescription class="text-xs text-muted-foreground dark:text-zinc-400 mt-0.5">
+              Mohon periksa kembali isian formulir sebelum melanjutkan.
+            </DialogDescription>
+          </div>
+        </div>
+      </DialogHeader>
+
+      <div class="py-3 text-sm text-foreground dark:text-zinc-300 space-y-2 text-left">
+        <p v-if="localForm[titleKey] && String(localForm[titleKey]).trim()">
+          Apakah Anda yakin data <strong>{{ String(localForm[titleKey]).trim() }}</strong> sudah sesuai?
+        </p>
+        <p v-else>
+          Apakah Anda yakin seluruh data yang dimasukkan sudah sesuai?
+        </p>
+      </div>
+
+      <DialogFooter class="gap-2 sm:gap-2">
+        <Button
+          variant="outline"
+          type="button"
+          :disabled="loading"
+          @click="isConfirmOpen = false"
+        >
+          Kembali Periksa
+        </Button>
+        <Button
+          type="button"
+          :disabled="loading"
+          class="gap-1.5"
+          @click="handleConfirmSubmit"
+        >
+          <CheckCircle2 class="h-4 w-4" />
+          {{ loading ? 'Memproses...' : 'Ya, Simpan Sekarang' }}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>

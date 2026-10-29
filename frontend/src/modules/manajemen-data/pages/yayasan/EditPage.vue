@@ -9,22 +9,11 @@ import { createYayasanSchema, fieldErrorMap } from './data/yayasanSchema.js'
 import { useZodForm } from '@/composables/useZodForm'
 import { toast } from 'vue-sonner'
 import FormFooter from '@/components/forms/FormFooter.vue'
-import { CheckCircle2, HelpCircle } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter
-} from '@/components/ui/dialog'
 import { getFoundation, updateFoundation } from '@/services/managementService'
 
 const router = useRouter()
 const route = useRoute()
 const isLoading = ref(false)
-const isConfirmOpen = ref(false)
 const foundationId = route.query.id
 
 const form = ref({ ...defaultForm })
@@ -88,21 +77,20 @@ onMounted(async () => {
   }
 })
 
-function onClickSave() {
-  if (isLoading.value) return
+function onBeforeConfirm() {
+  if (isLoading.value) return false
   if (!validate()) {
     toast.error('Gagal Menyimpan', {
       description: formErrors.value.logo || 'Harap lengkapi semua isian wajib dan periksa format data terlebih dahulu.'
     })
-    return
+    return false
   }
 
-  isConfirmOpen.value = true
+  return true
 }
 
 const handleSubmit = async () => {
   if (isLoading.value) return
-  isConfirmOpen.value = false
 
   if (!validate()) {
     toast.error('Gagal Menyimpan', {
@@ -169,38 +157,11 @@ const goToList = () => {
     <FormFooter
       :loading="isLoading"
       submit-label="Simpan Perubahan"
-      @submit="onClickSave"
+      confirm-title="Konfirmasi Perubahan Data Yayasan"
+      confirm-button-label="Ya, Simpan Perubahan"
+      :entity-name="form.nama"
+      :before-confirm="onBeforeConfirm"
+      @submit="handleSubmit"
     />
   </div>
-
-  <!-- Confirmation Dialog (Konfirmasi Sebelum Simpan) -->
-  <Dialog :open="isConfirmOpen" @update:open="isConfirmOpen = false">
-    <DialogContent class="sm:max-w-md bg-card dark:bg-zinc-900 border border-border dark:border-zinc-800">
-      <DialogHeader>
-        <div class="flex items-center gap-3">
-          <div class="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <HelpCircle class="h-5 w-5" />
-          </div>
-          <div>
-            <DialogTitle class="text-base font-semibold text-foreground dark:text-zinc-100">
-              Konfirmasi Perubahan Data Yayasan
-            </DialogTitle>
-            <DialogDescription class="text-xs text-muted-foreground dark:text-zinc-400 mt-0.5">
-              Apakah Anda yakin ingin menyimpan perubahan data pada {{ form.nama }}?
-            </DialogDescription>
-          </div>
-        </div>
-      </DialogHeader>
-
-      <DialogFooter class="gap-2 sm:gap-0">
-        <Button variant="outline" type="button" @click="isConfirmOpen = false" :disabled="isLoading">
-          Batal
-        </Button>
-        <Button type="button" :disabled="isLoading" @click="handleSubmit" class="gap-1.5">
-          <CheckCircle2 class="h-4 w-4" />
-          {{ isLoading ? 'Memproses...' : 'Ya, Simpan Perubahan' }}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
 </template>

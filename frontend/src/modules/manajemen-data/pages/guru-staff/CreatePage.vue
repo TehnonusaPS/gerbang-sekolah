@@ -153,13 +153,18 @@ const mapValueToKelamin = (value) => {
   return map[value] || value
 }
 
-const handleSubmit = async () => {
+const onBeforeConfirm = () => {
   if (!validate()) {
     toast.error('Gagal Menyimpan', {
       description: 'Harap periksa kembali kolom yang ditandai merah pada formulir.'
     })
-    return
+    return false
   }
+  return true
+}
+
+const handleSubmit = async () => {
+  if (!onBeforeConfirm()) return
 
   const unitKerjaList = Array.isArray(form.value.unit_kerja)
     ? form.value.unit_kerja
@@ -287,6 +292,13 @@ const loadSubjectOptions = async () => {
     <FormFooter
       :loading="isLoading"
       submit-label="Simpan Data Guru/Staff"
+      confirm-title="Konfirmasi Simpan Data Guru/Staff"
+      :entity-name="`${form.nama_depan || ''} ${form.nama_belakang || ''}`.trim()"
+      :summary-items="[
+        { label: 'Email Login', value: form.emailLogin },
+        { label: 'No. HP Login', value: form.noHpLogin }
+      ]"
+      :before-confirm="onBeforeConfirm"
       @submit="handleSubmit"
     />
   </div>

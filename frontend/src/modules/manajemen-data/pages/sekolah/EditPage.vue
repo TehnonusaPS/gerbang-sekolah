@@ -8,16 +8,6 @@ import SekolahForm from './components/SekolahForm.vue'
 import FormFooter from '@/components/forms/FormFooter.vue'
 import { defaultForm } from './data/defaultForm'
 import { toast } from 'vue-sonner'
-import { CheckCircle2, HelpCircle } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter
-} from '@/components/ui/dialog'
 import { getSchool, updateSchool, getFoundations } from '@/services/managementService'
 import { glassFade } from '@/config/motion'
 
@@ -27,7 +17,6 @@ const isSuperAdmin = computed(() => auth.user?.role === 'superadmin')
 const router = useRouter()
 const route = useRoute()
 const isLoading = ref(false)
-const isConfirmOpen = ref(false)
 const schoolId = route.query.id
 
 const foundationOptions = ref([])
@@ -97,21 +86,20 @@ onMounted(async () => {
 
 const formErrors = ref({})
 
-function onClickSave() {
+function onBeforeConfirm() {
   formErrors.value = {}
   if (!form.value.nama?.trim()) formErrors.value.name = 'Nama sekolah wajib diisi.'
   if (!form.value.email?.trim()) formErrors.value.email = 'Email sekolah wajib diisi.'
 
   if (Object.keys(formErrors.value).length > 0) {
     toast.error('Gagal Menyimpan', { description: 'Harap lengkapi semua isian wajib terlebih dahulu.' })
-    return
+    return false
   }
 
-  isConfirmOpen.value = true
+  return true
 }
 
 const handleSubmit = async () => {
-  isConfirmOpen.value = false
   formErrors.value = {}
 
   // Client-side Validation: All fields must be filled
@@ -264,38 +252,11 @@ const goToList = () => {
     <FormFooter
       :loading="isLoading"
       submit-label="Simpan Perubahan"
-      @submit="onClickSave"
+      confirm-title="Konfirmasi Perubahan Data Sekolah"
+      confirm-button-label="Ya, Simpan Perubahan"
+      :entity-name="form.nama"
+      :before-confirm="onBeforeConfirm"
+      @submit="handleSubmit"
     />
   </div>
-
-  <!-- Confirmation Dialog (Konfirmasi Sebelum Simpan) -->
-  <Dialog :open="isConfirmOpen" @update:open="isConfirmOpen = false">
-    <DialogContent class="sm:max-w-md bg-card dark:bg-zinc-900 border border-border dark:border-zinc-800">
-      <DialogHeader>
-        <div class="flex items-center gap-3">
-          <div class="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <HelpCircle class="h-5 w-5" />
-          </div>
-          <div>
-            <DialogTitle class="text-base font-semibold text-foreground dark:text-zinc-100">
-              Konfirmasi Perubahan Data Sekolah
-            </DialogTitle>
-            <DialogDescription class="text-xs text-muted-foreground dark:text-zinc-400 mt-0.5">
-              Apakah Anda yakin ingin menyimpan perubahan data pada {{ form.nama }}?
-            </DialogDescription>
-          </div>
-        </div>
-      </DialogHeader>
-
-      <DialogFooter class="gap-2 sm:gap-0">
-        <Button variant="outline" type="button" @click="isConfirmOpen = false" :disabled="isLoading">
-          Batal
-        </Button>
-        <Button type="button" :disabled="isLoading" @click="handleSubmit" class="gap-1.5">
-          <CheckCircle2 class="h-4 w-4" />
-          {{ isLoading ? 'Memproses...' : 'Ya, Simpan Perubahan' }}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
 </template>

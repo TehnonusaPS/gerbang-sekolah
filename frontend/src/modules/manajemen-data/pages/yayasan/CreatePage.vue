@@ -9,23 +9,12 @@ import { statusOptions } from './data/yayasan.js'
 import { createYayasanSchema, fieldErrorMap } from './data/yayasanSchema.js'
 import { useZodForm } from '@/composables/useZodForm'
 import FormFooter from '@/components/forms/FormFooter.vue'
-import { CheckCircle2, HelpCircle } from 'lucide-vue-next'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter
-} from '@/components/ui/dialog'
 import { toast } from 'vue-sonner'
 import { createFoundation } from '@/services/managementService'
 import { glassFade, glassSlide } from '@/config/motion'
 
 const router = useRouter()
 const isLoading = ref(false)
-const isConfirmOpen = ref(false)
 
 const form = ref({ ...defaultForm })
 
@@ -51,21 +40,20 @@ const generatedAccount = ref({
   password: ''
 })
 
-function onClickSave() {
-  if (isLoading.value) return
+function onBeforeConfirm() {
+  if (isLoading.value) return false
   if (!validate()) {
     toast.error('Gagal Menyimpan', {
       description: formErrors.value.logo || 'Harap lengkapi semua isian wajib dan periksa format data terlebih dahulu.'
     })
-    return
+    return false
   }
 
-  isConfirmOpen.value = true
+  return true
 }
 
 const handleSubmit = async () => {
   if (isLoading.value) return
-  isConfirmOpen.value = false
 
   if (!validate()) {
     toast.error('Gagal Menyimpan', {
@@ -156,47 +144,15 @@ const goToList = () => {
     <FormFooter
       :loading="isLoading"
       submit-label="Simpan Data Yayasan"
-      @submit="onClickSave"
+      confirm-title="Konfirmasi Simpan Data Yayasan"
+      :entity-name="form.nama"
+      :summary-items="[
+        { label: 'Email Administrator', value: form.emailLogin }
+      ]"
+      :before-confirm="onBeforeConfirm"
+      @submit="handleSubmit"
     />
   </div>
-
-  <!-- Confirmation Dialog (Konfirmasi Sebelum Simpan) -->
-  <Dialog :open="isConfirmOpen" @update:open="isConfirmOpen = false">
-    <DialogContent class="sm:max-w-md bg-card dark:bg-zinc-900 border border-border dark:border-zinc-800">
-      <DialogHeader>
-        <div class="flex items-center gap-3">
-          <div class="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-            <HelpCircle class="h-5 w-5" />
-          </div>
-          <div>
-            <DialogTitle class="text-base font-semibold text-foreground dark:text-zinc-100">
-              Konfirmasi Simpan Data Yayasan
-            </DialogTitle>
-            <DialogDescription class="text-xs text-muted-foreground dark:text-zinc-400 mt-0.5">
-              Mohon periksa kembali isian formulir sebelum melanjutkan.
-            </DialogDescription>
-          </div>
-        </div>
-      </DialogHeader>
-
-      <div class="py-3 text-sm text-foreground dark:text-zinc-300 space-y-2">
-        <p>Apakah Anda yakin data <strong>{{ form.nama }}</strong> sudah sesuai?</p>
-        <div class="p-3 rounded-lg bg-accent/40 dark:bg-zinc-800/50 border border-border/50 dark:border-zinc-800 text-xs space-y-1">
-          <div><span class="text-muted-foreground">Email Administrator:</span> <span class="font-semibold text-foreground dark:text-zinc-100">{{ form.emailLogin }}</span></div>
-        </div>
-      </div>
-
-      <DialogFooter class="gap-2 sm:gap-0">
-        <Button variant="outline" type="button" @click="isConfirmOpen = false" :disabled="isLoading">
-          Kembali Periksa
-        </Button>
-        <Button type="button" :disabled="isLoading" @click="handleSubmit" class="gap-1.5">
-          <CheckCircle2 class="h-4 w-4" />
-          {{ isLoading ? 'Memproses...' : 'Ya, Simpan Sekarang' }}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
 
   <!-- Success Account Dialog -->
   <SuccessAccountDialog
