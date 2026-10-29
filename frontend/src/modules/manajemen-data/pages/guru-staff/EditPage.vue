@@ -1,10 +1,8 @@
 <script setup>
-import { 
-  Save
-} from 'lucide-vue-next'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import PageHeader from '@/components/page-header/PageHeader.vue'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import { defaultForm } from './data/defaultForm'
 import { useAuthStore } from '@/stores/authStore'
 import GuruStaffForm from './components/GuruStaffForm.vue'
@@ -423,15 +421,6 @@ const handleSubmit = async () => {
   }
 }
 
-const customActions = computed(() => [
-  {
-    label: isLoading.value ? 'Menyimpan...' : 'Simpan',
-    icon: Save,
-    loading: isLoading.value,
-    click: handleSubmit
-  },
-])
-
 const loadSubjectOptions = async () => {
   try {
     const res = await fetchAllSubjects()
@@ -459,7 +448,6 @@ const loadSubjectOptions = async () => {
       back
       title="Edit Guru/Staff"
       description="Lengkapi formulir berikut untuk mengedit data guru atau staff"
-      :actions="customActions"
     /> 
 
     <GuruStaffForm
@@ -476,6 +464,12 @@ const loadSubjectOptions = async () => {
       :subject-options="subjectOptions"
       :errors="formErrors"
       @image-change="handleImage"
+    />
+
+    <FormFooter
+      :loading="isLoading"
+      submit-label="Simpan Perubahan"
+      @submit="handleSubmit"
     />
   </div>
 </template>

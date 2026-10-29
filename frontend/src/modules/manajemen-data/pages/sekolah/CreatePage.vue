@@ -6,8 +6,9 @@ import { akreditasi, jenjangOptions, statusOptions } from './data/sekolah'
 import { useAuthStore } from '@/stores/authStore'
 import SuccessAccountDialog from '@/components/dialogs/SuccessAccountDialog.vue'
 import SekolahForm from './components/SekolahForm.vue'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import { defaultForm } from './data/defaultForm'
-import { Save, ArrowLeft, CheckCircle2, HelpCircle, School as SchoolIcon } from 'lucide-vue-next'
+import { CheckCircle2, HelpCircle } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -280,7 +281,7 @@ const goToList = () => {
     v-motion
     :initial="glassFade.initial"
     :visible-once="glassFade.visible"
-    class="space-y-6 p-1 pb-24 text-left"
+    class="space-y-6 p-1 pb-10 text-left"
   >
     <!-- Header dengan Tombol Kembali -->
     <PageHeader
@@ -307,38 +308,11 @@ const goToList = () => {
       />
     </div>
 
-    <!-- Bottom Action Bar (Tombol Batal & Simpan di Bawah) -->
-    <div class="fixed bottom-0 left-0 right-0 z-20 backdrop-blur-md bg-background/80 dark:bg-zinc-900/80 border-t border-border dark:border-zinc-800 p-4 transition-all">
-      <div class="max-w-7xl mx-auto flex items-center justify-between gap-4 px-4 sm:px-6">
-        <div class="hidden sm:flex items-center gap-2 text-xs text-muted-foreground dark:text-zinc-400">
-          <SchoolIcon class="h-4 w-4 text-primary" />
-          <span>Mata pelajaran wajib akan otomatis disinkronkan sesuai kurikulum terpilih.</span>
-        </div>
-
-        <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            @click="goToList"
-            :disabled="isLoading"
-            class="gap-1.5"
-          >
-            <ArrowLeft class="h-4 w-4" />
-            Batal
-          </Button>
-
-          <Button
-            type="button"
-            @click="onClickSave"
-            :disabled="isLoading"
-            class="gap-1.5 px-6 shadow-sm"
-          >
-            <Save class="h-4 w-4" />
-            {{ isLoading ? 'Menyimpan...' : 'Simpan Data Sekolah' }}
-          </Button>
-        </div>
-      </div>
-    </div>
+    <FormFooter
+      :loading="isLoading"
+      submit-label="Simpan Data Sekolah"
+      @submit="onClickSave"
+    />
   </div>
 
   <!-- Confirmation Dialog (Konfirmasi Sebelum Simpan) -->

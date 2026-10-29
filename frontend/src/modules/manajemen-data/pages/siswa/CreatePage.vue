@@ -6,8 +6,8 @@ import { statusOptions, agamaOptions, kelaminOptions, pekerjaanOptions, hubungan
 import { useAuthStore } from '@/stores/authStore'
 import SuccessAccountDialog from '@/components/dialogs/SuccessAccountDialog.vue'
 import SiswaForm from './components/SiswaForm.vue'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import { defaultForm } from './data/defaultForm'
-import { Save } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { getClassrooms } from '@/services/managementService'
 import { createSiswa } from '@/services/siswaService'
@@ -172,15 +172,6 @@ const handleSubmit = async () => {
 const goToList = () => {
   router.push('/manajemen-data/siswa')
 }
-
-const customActions = computed(() => [
-  {
-    label: isLoading.value ? 'Menyimpan...' : 'Simpan',
-    icon: Save,
-    loading: isLoading.value,
-    click: handleSubmit
-  },
-])
 </script>
 
 <template>
@@ -190,7 +181,6 @@ const customActions = computed(() => [
       back
       title="Tambah Siswa"
       description="Lengkapi formulir berikut untuk menambahkan data siswa baru"
-      :actions="customActions"
     /> 
 
     <!-- Form Siswa -->
@@ -205,6 +195,12 @@ const customActions = computed(() => [
       :hubungan-options="hubunganOptions"
       @image-change="handleImage"
       :errors="formErrors"
+    />
+
+    <FormFooter
+      :loading="isLoading"
+      submit-label="Simpan Data Siswa"
+      @submit="handleSubmit"
     />
   </div>
 

@@ -1,10 +1,8 @@
 <script setup>
-import { 
-  Save
-} from 'lucide-vue-next'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import PageHeader from '@/components/page-header/PageHeader.vue'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import { defaultForm } from './data/defaultForm'
 import { useAuthStore } from '@/stores/authStore'
 import GuruStaffForm from './components/GuruStaffForm.vue'
@@ -241,15 +239,6 @@ const goToList = () => {
   router.push('/manajemen-data/guru-staff')
 }
 
-const customActions = computed(() => [
-  {
-    label: isLoading.value ? 'Menyimpan...' : 'Simpan',
-    icon: Save,
-    loading: isLoading.value,
-    click: handleSubmit
-  },
-])
-
 const loadSubjectOptions = async () => {
   try {
     const res = await fetchAllSubjects()
@@ -277,7 +266,6 @@ const loadSubjectOptions = async () => {
       back
       title="Tambah Guru/Staff"
       description="Lengkapi formulir berikut untuk menambahkan data guru atau staff baru"
-      :actions="customActions"
     /> 
 
     <GuruStaffForm
@@ -296,6 +284,11 @@ const loadSubjectOptions = async () => {
       @image-change="handleImage"
     />
 
+    <FormFooter
+      :loading="isLoading"
+      submit-label="Simpan Data Guru/Staff"
+      @submit="handleSubmit"
+    />
   </div>
 
   <SuccessAccountDialog
