@@ -182,6 +182,7 @@ class TeacherController extends Controller
                 return 'tata_usaha';
             case 'guru':
             case 'j004':
+                return 'guru';
             case 'admin sekolah':
             case 'j006':
                 return 'admin_sekolah';
@@ -814,10 +815,25 @@ class TeacherController extends Controller
 
             $teacher->update($profileData);
 
-            TeacherSubjectAssignment::where('teacher_id', $u->id)->delete();
+            if (!$isTeacher) {
+                TeacherSubjectAssignment::where('teacher_id', $u->id)->delete();
+            } else {
+                $subjectIds = array_values(array_unique(array_filter(
+                    array_map('intval', $request->input('subject_ids', []))
+                )));
 
-            if ($isTeacher) {
-                foreach ($request->input('subject_ids', []) as $subjectId) {
+                TeacherSubjectAssignment::where('teacher_id', $u->id)
+                    ->whereNotIn('subject_id', $subjectIds)
+                    ->delete();
+
+                $existingSubjectIds = TeacherSubjectAssignment::where('teacher_id', $u->id)
+                    ->pluck('subject_id')
+                    ->map(fn ($id) => (int) $id)
+                    ->all();
+
+                $newSubjectIds = array_diff($subjectIds, $existingSubjectIds);
+
+                foreach ($newSubjectIds as $subjectId) {
                     $subject = Subject::find($subjectId);
                     $subjSchoolId = $subject ? $subject->school_id : $u->school_id;
 

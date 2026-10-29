@@ -6,7 +6,7 @@ import {
   School,
   BookX
 } from 'lucide-vue-next'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { toast } from 'vue-sonner'
 
 // Data for StatsCard
@@ -117,79 +117,6 @@ export const columns = [
   },
   { key: 'actions', label: 'Aksi' }
 ]
-
-export const allItems = computed(() => [
-  {
-    id: 1,
-    nama: 'Angga Yunanda',
-    nip: '1234567890',
-    unitKerja: 'SD Nusantara Pintar Bekasi',
-    unitId: 'S0001',
-    jabatan: 'Kepala Sekolah',
-    masaKerja: '2 tahun 6 bulan',
-    status: 'Tetap'
-  },
-  {
-    id: 2,
-    nama: 'Michelle Zudith',
-    nip: '1234567890',
-    unitKerja: 'Yayasan Nusantara Pintar',
-    unitId: 'Y0001',
-    jabatan: 'Staff Yayasan',
-    masaKerja: '2 tahun 6 bulan',
-    status: 'Tetap'
-  },
-  {
-    id: 3,
-    nama: 'Luna Maya',
-    nip: '1234567890',
-    unitKerja: 'SD Nusantara Pintar Bekasi',
-    unitId: 'S0001',
-    jabatan: 'Guru',
-    masaKerja: '2 tahun 6 bulan',
-    status: 'Kontrak'
-  },
-  {
-    id: 4,
-    nama: 'Nadiem Makarim',
-    nip: '1234567890',
-    unitKerja: 'SD Nusantara Pintar Jakarta Timur',
-    unitId: 'S0002',
-    jabatan: 'Kepala Sekolah',
-    masaKerja: '2 tahun 6 bulan',
-    status: 'Tetap'
-  },
-  {
-    id: 5,
-    nama: 'Maudy Ayunda',
-    nip: '1234567890',
-    unitKerja: 'SD Nusantara Pintar Bekasi',
-    unitId: 'S0001',
-    jabatan: 'Guru',
-    masaKerja: '3 tahun 8 bulan',
-    status: 'Tetap'
-  },
-  {
-    id: 6,
-    nama: 'Tiara Andiri',
-    nip: '1234567890',
-    unitKerja: 'SD Nusantara Pintar Jakarta Selatan',
-    unitId: 'S0004',
-    jabatan: 'Guru',
-    masaKerja: '2 tahun 6 bulan',
-    status: 'Honorer'
-  },
-  {
-    id: 7,
-    nama: 'Reza Rahadian',
-    nip: '1234567890',
-    unitKerja: 'SD Nusantara Pintar Bekasi',
-    unitId: 'S0001',
-    jabatan: 'Guru',
-    masaKerja: '2 tahun 6 bulan',
-    status: 'Tetap'
-  },
-])
 
 export const agamaOptions = [
   {
@@ -328,30 +255,6 @@ export const statusKepegawaianOptions = [
     value: 'SK03'
   },
 ]
-
-export const unitKerjaOptions = [
-  {
-    label: 'Yayasan Nusantara Pintar',
-    value: 'Y0001'
-  },
-  {
-    label: 'SD Nusantara Pintar Jakarta Timur',
-    value: 'S0002'
-  },
-  {
-    label: 'SD Nusantara Pintar Jakarta Selatan',
-    value: 'S0004'
-  },
-  {
-    label: 'SD Nusantara Pintar Bekasi',
-    value: 'S0001'
-  },
-  {
-    label: 'TK Nusantara Pintar Jakarta Selatan',
-    value: 'S0003'
-  },
-]
-
 
 export const statusOptions = [
   {

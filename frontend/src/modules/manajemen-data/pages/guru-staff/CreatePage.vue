@@ -260,7 +260,8 @@ const loadSubjectOptions = async () => {
       .filter(subject => subject.is_active === true)
       .map(subject => ({
         label: subject.name,
-        value: String(subject.id)
+        value: String(subject.id),
+        unit_id: subject.school_id ? 'S' + String(subject.school_id).padStart(4, '0') : null
       }))
   } catch (error) {
     console.error('Gagal memuat mata pelajaran:', error)

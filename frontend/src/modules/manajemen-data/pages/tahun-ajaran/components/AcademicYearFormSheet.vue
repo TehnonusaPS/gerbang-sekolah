@@ -208,7 +208,7 @@ async function handleSave() {
                 <Input
                   type="date"
                   v-model="formItem.oddTanggalMulai"
-                  class="h-9 text-xs rounded-xl"
+                  class="h-10 text-xs rounded-xl"
                   :class="formErrors.oddTanggalMulai ? 'border-rose-500' : ''"
                 />
                 <p v-if="formErrors.oddTanggalMulai" class="text-[9px] text-rose-500">{{ formErrors.oddTanggalMulai }}</p>
@@ -218,7 +218,7 @@ async function handleSave() {
                 <Input
                   type="date"
                   v-model="formItem.oddTanggalSelesai"
-                  class="h-9 text-xs rounded-xl"
+                  class="h-10 text-xs rounded-xl"
                   :class="formErrors.oddTanggalSelesai ? 'border-rose-500' : ''"
                 />
                 <p v-if="formErrors.oddTanggalSelesai" class="text-[9px] text-rose-500">{{ formErrors.oddTanggalSelesai }}</p>
@@ -238,7 +238,7 @@ async function handleSave() {
                 <Input
                   type="date"
                   v-model="formItem.evenTanggalMulai"
-                  class="h-9 text-xs rounded-xl"
+                  class="h-10 text-xs rounded-xl"
                   :class="formErrors.evenTanggalMulai ? 'border-rose-500' : ''"
                 />
                 <p v-if="formErrors.evenTanggalMulai" class="text-[9px] text-rose-500">{{ formErrors.evenTanggalMulai }}</p>
@@ -248,7 +248,7 @@ async function handleSave() {
                 <Input
                   type="date"
                   v-model="formItem.evenTanggalSelesai"
-                  class="h-9 text-xs rounded-xl"
+                  class="h-10 text-xs rounded-xl"
                   :class="formErrors.evenTanggalSelesai ? 'border-rose-500' : ''"
                 />
                 <p v-if="formErrors.evenTanggalSelesai" class="text-[9px] text-rose-500">{{ formErrors.evenTanggalSelesai }}</p>

@@ -62,7 +62,8 @@ const sanitizedOptions = computed(() => {
       >
         <SelectTrigger
           class="w-full"
-          :class="{ 'border-destructive': error }"
+          :aria-invalid="!!error"
+          :class="{ 'border-destructive ring-1 ring-destructive/20': error }"
         >
           <!-- Manually resolve label when Reka UI can't (value set programmatically) -->
           <span v-if="selectedLabel" class="block truncate">{{ selectedLabel }}</span>

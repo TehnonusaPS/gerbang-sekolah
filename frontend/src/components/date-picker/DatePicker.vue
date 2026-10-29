@@ -48,6 +48,10 @@ const props = defineProps({
   error: {
     type: Boolean,
     default: false
+  },
+  size: {
+    type: String,
+    default: 'default'
   }
 })
 
@@ -144,14 +148,18 @@ const displayText = computed(() => {
         <button
           :id="id"
           type="button"
+          role="combobox"
+          data-slot="select-trigger"
+          :data-size="size"
+          :aria-invalid="!!error"
           :disabled="disabled"
-          class="w-full h-10 rounded-xl border border-input bg-background dark:bg-zinc-900 px-3 text-xs md:text-sm transition-all flex items-center justify-between gap-2 outline-none text-foreground font-normal hover:border-primary/50 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm cursor-pointer"
-          :class="{ 'border-destructive focus-visible:ring-destructive/20': error }"
+          class="border-input dark:bg-input/30 dark:hover:bg-input/50 focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 flex h-8 w-full items-center justify-between gap-1.5 rounded-lg border bg-transparent px-2.5 py-1 text-sm font-normal text-foreground transition-colors outline-none select-none focus-visible:ring-3 aria-invalid:ring-3 disabled:cursor-not-allowed disabled:opacity-50"
+          :class="{ 'border-destructive ring-1 ring-destructive/20': error }"
         >
-          <span :class="!modelValue ? 'text-muted-foreground dark:text-zinc-500' : 'text-foreground dark:text-zinc-100 font-medium'">
+          <span class="truncate" :class="!modelValue ? 'text-muted-foreground' : 'text-foreground'">
             {{ displayText }}
           </span>
-          <CalendarIcon class="text-primary size-4 pointer-events-none shrink-0" />
+          <CalendarIcon class="text-muted-foreground size-4 pointer-events-none shrink-0" />
         </button>
       </PopoverTrigger>
       <PopoverContent class="w-auto overflow-hidden p-0 bg-popover dark:bg-zinc-900 border border-border dark:border-zinc-800 shadow-xl" align="start">

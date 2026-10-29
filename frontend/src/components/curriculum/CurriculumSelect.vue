@@ -113,8 +113,9 @@ function handleChange(val) {
       @update:model-value="handleChange"
     >
       <SelectTrigger
-        class="w-full bg-background dark:bg-zinc-900 border-input dark:border-zinc-800 text-foreground dark:text-zinc-100 transition-all focus:ring-2 focus:ring-primary/20 h-10 rounded-xl"
-        :class="{ 'border-destructive focus:ring-destructive/20': error }"
+        class="w-full"
+        :aria-invalid="!!error"
+        :class="{ 'border-destructive ring-1 ring-destructive/20': error }"
       >
         <div class="flex items-center gap-2 truncate">
           <BookOpen class="h-4 w-4 text-primary shrink-0" />

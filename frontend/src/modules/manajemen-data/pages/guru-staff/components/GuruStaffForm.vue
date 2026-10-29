@@ -47,11 +47,57 @@ const isTeacher = computed(() => {
   return jabatan === 'GURU' || jabatan === 'J004'
 })
 
+const selectedSchoolUnitIds = computed(() => {
+  const units = Array.isArray(props.form.unit_kerja)
+    ? props.form.unit_kerja
+    : props.form.unit_kerja
+      ? [props.form.unit_kerja]
+      : []
+  return units.map(u => String(u).toUpperCase()).filter(u => u.startsWith('S'))
+})
+
+const unitNameMap = computed(() => {
+  const map = {}
+  for (const opt of props.unitKerjaOptions) {
+    map[String(opt.value).toUpperCase()] = opt.label
+  }
+  return map
+})
+
+const filteredSubjectOptions = computed(() => {
+  if (isAdminSekolah.value) return props.subjectOptions
+  const schoolUnits = selectedSchoolUnitIds.value
+  if (schoolUnits.length === 0) return []
+  const showSchoolLabel = schoolUnits.length > 1
+  return props.subjectOptions
+    .filter(opt => !opt.unit_id || schoolUnits.includes(String(opt.unit_id).toUpperCase()))
+    .map(opt => {
+      const unitLabel = opt.unit_id ? unitNameMap.value[String(opt.unit_id).toUpperCase()] : ''
+      return {
+        ...opt,
+        label: showSchoolLabel && unitLabel ? `${opt.label} (${unitLabel})` : opt.label
+      }
+    })
+})
+
 watch(
   () => props.form.jabatan,
   () => {
     if (!isTeacher.value) {
       props.form.subject_ids = []
+    }
+  }
+)
+
+watch(
+  [selectedSchoolUnitIds, () => props.subjectOptions],
+  ([, subjects]) => {
+    if (isAdminSekolah.value || subjects.length === 0) return
+    const validIds = new Set(filteredSubjectOptions.value.map(o => String(o.value)))
+    const current = Array.isArray(props.form.subject_ids) ? props.form.subject_ids : []
+    const next = current.filter(id => validIds.has(String(id)))
+    if (next.length !== current.length) {
+      props.form.subject_ids = next
     }
   }
 )
@@ -242,8 +288,9 @@ watch(
           <FormMultiSelect
             v-model="form.subject_ids"
             label="Mata Pelajaran yang Diajarkan"
-            placeholder="Pilih mata pelajaran yang diampu"
-            :options="subjectOptions"
+            :placeholder="!isAdminSekolah && selectedSchoolUnitIds.length === 0 ? 'Pilih unit kerja sekolah terlebih dahulu' : 'Pilih mata pelajaran yang diampu'"
+            :disabled="!isAdminSekolah && selectedSchoolUnitIds.length === 0"
+            :options="filteredSubjectOptions"
             :error="errors.subject_ids"
             item-name="mata pelajaran"
             searchable

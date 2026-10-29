@@ -65,6 +65,10 @@ const props = defineProps({
   itemName: {
     type: String,
     default: 'mata pelajaran'
+  },
+  size: {
+    type: String,
+    default: 'default'
   }
 })
 
@@ -166,12 +170,12 @@ const toggleSelectAll = () => {
           <button
             type="button"
             role="combobox"
+            data-slot="select-trigger"
+            :data-size="size"
             :aria-expanded="isOpen"
+            :aria-invalid="!!error"
             :disabled="disabled"
-            class="flex h-10 w-full items-center justify-between gap-2 rounded-full border border-input bg-background px-4 py-2
-              text-left text-sm shadow-sm outline-none transition-all hover:bg-accent/30
-              focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20
-              disabled:cursor-not-allowed disabled:opacity-50"
+            class="border-input dark:bg-input/30 dark:hover:bg-input/50 focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:aria-invalid:border-destructive/50 flex h-8 w-full items-center justify-between gap-1.5 rounded-lg border bg-transparent px-2.5 py-1 text-left text-sm font-normal transition-colors outline-none select-none focus-visible:ring-3 aria-invalid:ring-3 disabled:cursor-not-allowed disabled:opacity-50"
             :class="{'border-destructive ring-1 ring-destructive/20': error}"
           >
             <span

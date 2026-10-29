@@ -34,9 +34,10 @@ defineEmits(['update:modelValue'])
         :rows="rows"
         :placeholder="placeholder"
         :model-value="modelValue"
+        :aria-invalid="!!error"
         @update:model-value="$emit('update:modelValue', $event)"
         :class="{
-          'border-destructive': error
+          'border-destructive ring-1 ring-destructive/20': error
         }"
       />
     </FieldContent>
