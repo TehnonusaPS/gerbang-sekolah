@@ -1,12 +1,15 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import PageHeader from '@/components/page-header/PageHeader.vue'
 import YayasanForm from './components/YayasanForm.vue'
 import { defaultForm } from './data/defaultForm'
 import { statusOptions } from './data/yayasan.js'
+import { createYayasanSchema, fieldErrorMap } from './data/yayasanSchema.js'
+import { useZodForm } from '@/composables/useZodForm'
 import { toast } from 'vue-sonner'
-import { Save, ArrowLeft, CheckCircle2, HelpCircle } from 'lucide-vue-next'
+import FormFooter from '@/components/forms/FormFooter.vue'
+import { CheckCircle2, HelpCircle } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -29,9 +32,21 @@ const form = ref({ ...defaultForm })
 const imagePreview = ref('')
 const logoFile = ref(null)
 
+const {
+  errors: formErrors,
+  validate,
+  clearErrors,
+  setServerErrors
+} = useZodForm(
+  () => createYayasanSchema({ isEdit: true, hasExistingLogo: Boolean(imagePreview.value) }),
+  form,
+  { fieldMap: fieldErrorMap }
+)
+
 const handleImage = (file) => {
-  logoFile.value = file
-  imagePreview.value = URL.createObjectURL(file)
+  logoFile.value = file || null
+  form.value.logo = file || null
+  imagePreview.value = file ? URL.createObjectURL(file) : ''
 }
 
 onMounted(async () => {
@@ -46,28 +61,25 @@ onMounted(async () => {
     const res = await getFoundation(foundationId)
     const foundation = res.data
     form.value = {
-      kode: foundation.code,
-      nama: foundation.name,
+      nama: foundation.name || '',
       tanggal_berdiri: foundation.established_date ? foundation.established_date.split('T')[0] : '',
       status: foundation.status ? foundation.status.charAt(0).toUpperCase() + foundation.status.slice(1) : '',
-      alamat: foundation.address,
-      email: foundation.email,
-      no_hp: foundation.phone,
-      emailLogin: foundation.email,
-      noHpLogin: foundation.phone,
-      website: foundation.website,
-      no_akta: foundation.deed_number,
+      alamat: foundation.address || '',
+      email: foundation.email || '',
+      no_hp: foundation.phone || '',
+      website: foundation.website || '',
+      no_akta: foundation.deed_number || '',
       tanggal_akta: foundation.deed_date ? foundation.deed_date.split('T')[0] : '',
-      no_sk: foundation.decree_number,
+      no_sk: foundation.decree_number || '',
       tanggal_sk: foundation.decree_date ? foundation.decree_date.split('T')[0] : '',
-      curriculum_id: foundation.curriculum_id ? String(foundation.curriculum_id) : '',
       emailLogin: foundation.users && foundation.users[0] ? foundation.users[0].email : '',
-      noHpLogin: foundation.users && foundation.users[0] ? foundation.users[0].phone : ''
+      logo: foundation.logo || null
     }
     if (foundation.logo) {
       const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api').replace(/\/api$/, '')
       imagePreview.value = foundation.logo.startsWith('http') ? foundation.logo : `${baseUrl}/storage/${foundation.logo}`
     }
+    clearErrors()
   } catch (err) {
     toast.error('Gagal mengambil data yayasan')
     router.push('/manajemen-data/yayasan')
@@ -76,16 +88,12 @@ onMounted(async () => {
   }
 })
 
-const formErrors = ref({})
-
 function onClickSave() {
   if (isLoading.value) return
-  formErrors.value = {}
-  if (!form.value.nama?.trim()) formErrors.value.name = 'Nama yayasan wajib diisi.'
-  if (!form.value.email?.trim()) formErrors.value.email = 'Email yayasan wajib diisi.'
-
-  if (Object.keys(formErrors.value).length > 0) {
-    toast.error('Gagal', { description: 'Terdapat isian wajib yang belum dilengkapi.' })
+  if (!validate()) {
+    toast.error('Gagal Menyimpan', {
+      description: formErrors.value.logo || 'Harap lengkapi semua isian wajib dan periksa format data terlebih dahulu.'
+    })
     return
   }
 
@@ -95,66 +103,18 @@ function onClickSave() {
 const handleSubmit = async () => {
   if (isLoading.value) return
   isConfirmOpen.value = false
+
+  if (!validate()) {
+    toast.error('Gagal Menyimpan', {
+      description: formErrors.value.logo || 'Harap periksa kembali isian formulir sebelum menyimpan.'
+    })
+    return
+  }
+
   isLoading.value = true
-  formErrors.value = {}
 
   try {
-    // Client-side Validation: All fields must be filled
-    const errors = {}
-    if (!form.value.email) {
-      errors.email = 'E-mail yayasan harus diisi'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
-      errors.email = 'Format e-mail tidak valid'
-    }
-    if (!form.value.no_hp) {
-      errors.phone = 'No. Telp harus diisi'
-    }
-    if (!form.value.nama) {
-      errors.name = 'Nama yayasan harus diisi'
-    }
-    if (!form.value.kode) {
-      errors.code = 'Kode yayasan harus diisi'
-    }
-    if (!form.value.tanggal_berdiri) {
-      errors.established_date = 'Tanggal berdiri harus diisi'
-    }
-    if (!form.value.status) {
-      errors.status = 'Status harus dipilih'
-    }
-    if (!form.value.no_akta) {
-      errors.deed_number = 'No. Akta Pendirian harus diisi'
-    }
-    if (!form.value.tanggal_akta) {
-      errors.deed_date = 'Tanggal akta pendirian harus diisi'
-    }
-    if (!form.value.no_sk) {
-      errors.decree_number = 'No. SK Kemenkumham harus diisi'
-    }
-    if (!form.value.tanggal_sk) {
-      errors.decree_date = 'Tanggal SK Kemenkumham harus diisi'
-    }
-    if (!form.value.alamat) {
-      errors.address = 'Alamat lengkap harus diisi'
-    }
-    if (!form.value.emailLogin) {
-      errors.emailLogin = 'E-mail login administrator harus diisi'
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.emailLogin)) {
-      errors.emailLogin = 'Format e-mail login tidak valid'
-    }
-    if (!form.value.noHpLogin) {
-      errors.noHpLogin = 'No. HP login administrator harus diisi'
-    }
-
-    if (Object.keys(errors).length > 0) {
-      formErrors.value = errors
-      toast.error('Gagal Menyimpan', {
-        description: 'Harap lengkapi semua data formulir sebelum menyimpan.'
-      })
-      return
-    }
-
     const formData = new FormData()
-    formData.append('code', form.value.kode || '')
     formData.append('name', form.value.nama || '')
     if (form.value.tanggal_berdiri) formData.append('established_date', form.value.tanggal_berdiri)
     formData.append('status', form.value.status ? form.value.status.toLowerCase() : 'active')
@@ -166,9 +126,7 @@ const handleSubmit = async () => {
     if (form.value.tanggal_akta) formData.append('deed_date', form.value.tanggal_akta)
     if (form.value.no_sk) formData.append('decree_number', form.value.no_sk)
     if (form.value.tanggal_sk) formData.append('decree_date', form.value.tanggal_sk)
-    if (form.value.curriculum_id) formData.append('curriculum_id', form.value.curriculum_id)
     if (form.value.emailLogin) formData.append('emailLogin', form.value.emailLogin)
-    if (form.value.noHpLogin) formData.append('noHpLogin', form.value.noHpLogin)
     if (logoFile.value) {
       formData.append('logo', logoFile.value)
     }
@@ -179,26 +137,15 @@ const handleSubmit = async () => {
     })
     router.push('/manajemen-data/yayasan')
   } catch (err) {
-    if (err.response?.status === 422 && err.response?.data?.errors) {
-      const serverErrors = err.response.data.errors
-      const localErrors = {}
-      const isUserValidationError = err.response.data.message?.toLowerCase().includes('administrator')
-      Object.keys(serverErrors).forEach(key => {
-        if (isUserValidationError) {
-          if (key === 'email') localErrors.emailLogin = serverErrors[key][0]
-          else if (key === 'phone') localErrors.noHpLogin = serverErrors[key][0]
-          else localErrors[key] = serverErrors[key][0]
-        } else {
-          if (key === 'email') localErrors.email = serverErrors[key][0]
-          else if (key === 'phone') localErrors.phone = serverErrors[key][0]
-          else localErrors[key] = serverErrors[key][0]
-        }
+    if (setServerErrors(err)) {
+      const serverErrors = err.response?.data?.errors || {}
+      const firstError = Object.values(serverErrors).flat()[0]
+      toast.error('Gagal Menyimpan', {
+        description: firstError || 'Terdapat isian yang tidak valid. Silakan periksa kembali formulir.'
       })
-      formErrors.value = localErrors
-      toast.error('Gagal', { description: 'Terdapat kesalahan validasi pada data yayasan.' })
     } else {
-      const errorMsg = err.response?.data?.message || 'Gagal menyimpan perubahan yayasan.'
-      toast.error('Gagal', { description: errorMsg })
+      const errorMsg = err.response?.data?.message || err.message || 'Gagal menyimpan perubahan yayasan.'
+      toast.error('Gagal Menyimpan', { description: errorMsg })
     }
   } finally {
     isLoading.value = false
@@ -219,18 +166,11 @@ const goToList = () => {
     <YayasanForm v-model:form="form" :image-preview="imagePreview" :status-options="statusOptions" :errors="formErrors"
       @image-change="handleImage" />
 
-    <!-- Bottom Footer Actions (Tombol Batal & Simpan di Bawah) -->
-    <div class="flex items-center justify-end gap-3 pt-6 border-t border-border dark:border-zinc-800">
-      <Button type="button" variant="outline" @click="goToList" :disabled="isLoading" class="gap-1.5">
-        <ArrowLeft class="h-4 w-4" />
-        Batal
-      </Button>
-
-      <Button type="button" @click="onClickSave" :disabled="isLoading" class="gap-1.5 px-6">
-        <Save class="h-4 w-4" />
-        {{ isLoading ? 'Menyimpan...' : 'Simpan Perubahan' }}
-      </Button>
-    </div>
+    <FormFooter
+      :loading="isLoading"
+      submit-label="Simpan Perubahan"
+      @submit="onClickSave"
+    />
   </div>
 
   <!-- Confirmation Dialog (Konfirmasi Sebelum Simpan) -->

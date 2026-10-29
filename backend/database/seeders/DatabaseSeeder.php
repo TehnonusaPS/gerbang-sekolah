@@ -51,6 +51,7 @@ class DatabaseSeeder extends Seeder
             'deed_date'        => '2010-01-15',
             'decree_number'    => 'SK-001/YNP/2010',
             'decree_date'      => '2010-02-01',
+            'logo'             => 'logos/nusantara-pintar.png',
         ]);
 
         $foundationB = Foundation::create([
@@ -66,6 +67,7 @@ class DatabaseSeeder extends Seeder
             'deed_date'        => '2015-05-10',
             'decree_number'    => 'SK-002/YHB/2015',
             'decree_date'      => '2015-06-01',
+            'logo'             => 'logos/harapan-bangsa.png',
         ]);
 
         // ─────────────────────────────────────────────

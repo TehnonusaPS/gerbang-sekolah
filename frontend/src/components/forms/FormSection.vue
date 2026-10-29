@@ -7,6 +7,10 @@ defineProps({
   icon: {
     type: [Object, Function],
     default: null
+  },
+  required: {
+    type: Boolean,
+    default: false
   }
 })
 </script>
@@ -23,7 +27,17 @@ defineProps({
           v-if="icon"
           class="h-5 w-5"
         />
-        <CardTitle>{{ title }}</CardTitle>
+        <CardTitle class="inline-flex items-center">
+          <slot name="title">
+            <span>{{ title }}</span>
+          </slot>
+          <span
+            v-if="required"
+            class="text-red-500 text-destructive font-bold ml-1 text-base leading-none select-none"
+            aria-hidden="true"
+            >*</span
+          >
+        </CardTitle>
       </div>
 
       <CardDescription v-if="description">

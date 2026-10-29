@@ -77,7 +77,7 @@ const handleOpenChange = value => {
               <div class="font-medium">{{ email }}</div>
             </div>
 
-            <div>
+            <div v-if="phone">
               <div class="text-muted-foreground">No. HP Login</div>
               <div class="font-medium">{{ phone }}</div>
             </div>
@@ -90,7 +90,7 @@ const handleOpenChange = value => {
         </div>
 
         <div class="rounded-lg border bg-muted/20 p-3 text-sm text-muted-foreground">
-          Password default telah dikirim ke alamat e-mail dan nomor WhatsApp administrator. Demi
+          Password default telah dikirim ke alamat e-mail{{ phone ? ' dan nomor WhatsApp' : '' }} administrator. Demi
           keamanan, administrator disarankan untuk segera mengganti password setelah login pertama
           kali.
         </div>

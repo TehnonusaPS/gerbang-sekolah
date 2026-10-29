@@ -19,7 +19,11 @@ class FoundationController extends Controller
         $user = $request->user();
 
         if ($user->isSuperAdmin()) {
-            $query = Foundation::with(['users:id,foundation_id,email,phone'])->withCount('schools');
+            $query = Foundation::with(['users' => function ($q) {
+                $q->whereIn('role_id', function ($sq) {
+                    $sq->select('id')->from('roles')->where('name', 'admin_yayasan');
+                })->select('id', 'foundation_id', 'email', 'phone');
+            }])->withCount('schools');
 
             // Search by name or code
             if ($request->filled('search')) {
@@ -64,7 +68,11 @@ class FoundationController extends Controller
         }
 
         if ($user->hasRole('admin_yayasan')) {
-            $foundation = Foundation::with(['users:id,foundation_id,email,phone',])->withCount('schools')
+            $foundation = Foundation::with(['users' => function ($q) {
+                $q->whereIn('role_id', function ($sq) {
+                    $sq->select('id')->from('roles')->where('name', 'admin_yayasan');
+                })->select('id', 'foundation_id', 'email', 'phone');
+            }])->withCount('schools')
                             ->find($user->foundation_id);
 
             if (!$foundation) {
@@ -105,6 +113,59 @@ class FoundationController extends Controller
     }
 
     /**
+     * Generate foundation code based on name initials and a 3-digit sequence.
+     * Example: "Yayasan Cahaya Ilmu" -> "YCI001"
+     */
+    public static function generateFoundationCode(string $name): string
+    {
+        // Clean name to letters and numbers
+        $cleaned = preg_replace('/[^\p{L}\p{N}]+/u', ' ', $name);
+        $words = preg_split('/\s+/', trim($cleaned));
+
+        $initials = '';
+        foreach ($words as $word) {
+            $word = trim($word);
+            // Ignore generic word "Yayasan"
+            if ($word === '' || strcasecmp($word, 'yayasan') === 0) {
+                continue;
+            }
+            $initials .= mb_substr($word, 0, 1);
+        }
+
+        $prefix = strtoupper('Y' . $initials);
+        if ($prefix === 'Y' || $prefix === '') {
+            $prefix = 'Y';
+        }
+
+        // Lock matching rows in database to prevent concurrent race conditions
+        $existingCodes = Foundation::withTrashed()
+            ->where('code', 'like', "{$prefix}%")
+            ->lockForUpdate()
+            ->pluck('code')
+            ->toArray();
+
+        $maxNumber = 0;
+        foreach ($existingCodes as $code) {
+            if (preg_match('/^' . preg_quote($prefix, '/') . '(\d{3,})$/', $code, $matches)) {
+                $num = (int) $matches[1];
+                if ($num > $maxNumber) {
+                    $maxNumber = $num;
+                }
+            }
+        }
+
+        $nextNumber = $maxNumber + 1;
+        $candidateCode = sprintf('%s%03d', $prefix, $nextNumber);
+
+        while (in_array($candidateCode, $existingCodes) || Foundation::withTrashed()->where('code', $candidateCode)->exists()) {
+            $nextNumber++;
+            $candidateCode = sprintf('%s%03d', $prefix, $nextNumber);
+        }
+
+        return $candidateCode;
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request): JsonResponse
@@ -117,9 +178,9 @@ class FoundationController extends Controller
             ], 403);
         }
 
-        $validator = Validator::make($request->all(), [
+        $rules = [
             'name'             => 'required|string|max:255',
-            'code'             => 'required|string|unique:foundations,code|max:255',
+            'code'             => 'nullable|string|max:255|unique:foundations,code',
             'established_date' => 'nullable|date',
             'status'           => 'nullable|in:active,inactive,trial',
             'address'          => 'nullable|string',
@@ -130,14 +191,44 @@ class FoundationController extends Controller
             'deed_date'        => 'nullable|date',
             'decree_number'    => 'nullable|string|max:255',
             'decree_date'      => 'nullable|date',
-            'curriculum_id'     => 'nullable|exists:curriculums,id',
-            'logo'             => 'nullable|image|max:2048',
-        ]);
+            'curriculum_id'    => 'nullable|exists:curriculums,id',
+            'logo'             => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
+        ];
+
+        if ($request->has('emailLogin')) {
+            $rules['emailLogin'] = 'required|email|max:255|unique:users,email';
+        }
+
+        if ($request->filled('noHpLogin')) {
+            $rules['noHpLogin']  = 'nullable|string|max:50|unique:users,phone';
+        }
+
+        $customMessages = [
+            'name.required'         => 'Nama yayasan wajib diisi.',
+            'name.max'              => 'Nama yayasan tidak boleh lebih dari 255 karakter.',
+            'emailLogin.unique'     => 'Email login administrator sudah digunakan.',
+            'emailLogin.required'   => 'Email login administrator wajib diisi.',
+            'emailLogin.email'      => 'Format email login administrator tidak valid.',
+            'noHpLogin.unique'      => 'No. HP login administrator sudah digunakan.',
+            'noHpLogin.required'    => 'No. HP login administrator wajib diisi.',
+            'code.unique'           => 'Kode yayasan sudah digunakan.',
+            'logo.required'         => 'Logo yayasan wajib diunggah.',
+            'logo.image'            => 'Logo yayasan harus berupa berkas gambar JPG, JPEG, PNG, atau WEBP.',
+            'logo.mimes'            => 'Logo yayasan harus berupa berkas gambar JPG, JPEG, PNG, atau WEBP.',
+            'logo.max'              => 'Ukuran logo yayasan tidak boleh lebih dari 2 MB.',
+            'email.email'           => 'Format email kontak yayasan tidak valid.',
+            'status.in'             => 'Status operasional yang dipilih tidak valid.',
+            'established_date.date' => 'Format tanggal berdiri tidak valid.',
+            'deed_date.date'        => 'Format tanggal akta pendirian tidak valid.',
+            'decree_date.date'      => 'Format tanggal SK Kemenkumham tidak valid.',
+        ];
+
+        $validator = Validator::make($request->all(), $rules, $customMessages);
 
         if ($validator->fails()) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Validation error.',
+                'message' => $validator->errors()->first() ?: 'Validasi data yayasan gagal.',
                 'errors'  => $validator->errors(),
             ], 422);
         }
@@ -150,12 +241,54 @@ class FoundationController extends Controller
             unset($data['logo']);
         }
 
-        $foundation = Foundation::create($data);
+        $result = \DB::transaction(function () use ($request, $data) {
+            $foundationData = $data;
+            unset($foundationData['emailLogin'], $foundationData['noHpLogin']);
+
+            if (empty($foundationData['code'])) {
+                $foundationData['code'] = self::generateFoundationCode($foundationData['name']);
+            }
+
+            $foundation = Foundation::create($foundationData);
+
+            $adminAccount = null;
+            if ($request->filled('emailLogin')) {
+                $role = \App\Models\Role::where('name', 'admin_yayasan')->first();
+                $roleId = $role ? $role->id : 2;
+                $generatedPassword = \Illuminate\Support\Str::random(10) . 'A1!';
+
+                $adminUser = User::create([
+                    'name'          => 'Admin ' . $foundation->name,
+                    'email'         => $request->input('emailLogin'),
+                    'phone'         => $request->input('noHpLogin'),
+                    'password'      => \Illuminate\Support\Facades\Hash::make($generatedPassword),
+                    'role_id'       => $roleId,
+                    'foundation_id' => $foundation->id,
+                    'is_active'     => true,
+                ]);
+
+                $adminAccount = [
+                    'email'    => $adminUser->email,
+                    'phone'    => $adminUser->phone,
+                    'password' => $generatedPassword,
+                ];
+            }
+
+            return ['foundation' => $foundation, 'admin_account' => $adminAccount];
+        });
+
+        $foundation = $result['foundation'];
+        $foundation->load(['users' => function ($q) {
+            $q->whereIn('role_id', function ($sq) {
+                $sq->select('id')->from('roles')->where('name', 'admin_yayasan');
+            })->select('id', 'foundation_id', 'email', 'phone');
+        }]);
 
         return response()->json([
-            'status'  => 'success',
-            'message' => 'Foundation created successfully.',
-            'data'    => $foundation,
+            'status'        => 'success',
+            'message'       => 'Foundation created successfully.',
+            'data'          => $foundation,
+            'admin_account' => $result['admin_account'],
         ], 201);
     }
 
@@ -230,31 +363,75 @@ class FoundationController extends Controller
             'deed_date'        => 'nullable|date',
             'decree_number'    => 'nullable|string|max:255',
             'decree_date'      => 'nullable|date',
-            'logo'             => 'nullable|image|max:2048',
+            'curriculum_id'    => 'nullable|exists:curriculums,id',
+            'logo'             => empty($foundation->logo)
+                ? 'required|image|mimes:jpeg,png,jpg,webp|max:2048'
+                : 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ];
 
-        // Only superadmin can change code and status
+        // Superadmin optional updates for code and status
         if ($isSuperAdmin) {
-            $rules['code']   = 'required|string|max:255|unique:foundations,code,' . $foundation->id;
-            $rules['status'] = 'required|in:active,inactive,trial';
+            if ($request->has('code') && $request->filled('code')) {
+                $rules['code'] = 'string|max:255|unique:foundations,code,' . $foundation->id;
+            }
+            if ($request->has('status') && $request->filled('status')) {
+                $rules['status'] = 'in:active,inactive,trial';
+            }
         }
 
-        $validator = Validator::make($request->all(), $rules);
+        $adminUser = User::where('foundation_id', $foundation->id)
+            ->whereIn('role_id', function ($sq) {
+                $sq->select('id')->from('roles')->where('name', 'admin_yayasan');
+            })->first();
+
+        if ($request->has('emailLogin')) {
+            $adminUserId = $adminUser ? $adminUser->id : 'NULL';
+            $rules['emailLogin'] = 'required|email|max:255|unique:users,email,' . $adminUserId;
+        }
+
+        if ($request->filled('noHpLogin')) {
+            $adminUserId = $adminUser ? $adminUser->id : 'NULL';
+            $rules['noHpLogin'] = 'nullable|string|max:50|unique:users,phone,' . $adminUserId;
+        }
+
+        $customMessages = [
+            'name.required'         => 'Nama yayasan wajib diisi.',
+            'name.max'              => 'Nama yayasan tidak boleh lebih dari 255 karakter.',
+            'emailLogin.unique'     => 'Email login administrator sudah digunakan.',
+            'emailLogin.required'   => 'Email login administrator wajib diisi.',
+            'emailLogin.email'      => 'Format email login administrator tidak valid.',
+            'noHpLogin.unique'      => 'No. HP login administrator sudah digunakan.',
+            'noHpLogin.required'    => 'No. HP login administrator wajib diisi.',
+            'code.unique'           => 'Kode yayasan sudah digunakan.',
+            'logo.required'         => 'Logo yayasan wajib diunggah.',
+            'logo.image'            => 'Logo yayasan harus berupa berkas gambar JPG, JPEG, PNG, atau WEBP.',
+            'logo.mimes'            => 'Logo yayasan harus berupa berkas gambar JPG, JPEG, PNG, atau WEBP.',
+            'logo.max'              => 'Ukuran logo yayasan tidak boleh lebih dari 2 MB.',
+            'email.email'           => 'Format email kontak yayasan tidak valid.',
+            'status.in'             => 'Status operasional yang dipilih tidak valid.',
+            'established_date.date' => 'Format tanggal berdiri tidak valid.',
+            'deed_date.date'        => 'Format tanggal akta pendirian tidak valid.',
+            'decree_date.date'      => 'Format tanggal SK Kemenkumham tidak valid.',
+        ];
+
+        $validator = Validator::make($request->all(), $rules, $customMessages);
 
         if ($validator->fails()) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Validation error.',
+                'message' => $validator->errors()->first() ?: 'Validasi data yayasan gagal.',
                 'errors'  => $validator->errors(),
             ], 422);
         }
 
         $data = $request->all();
 
-        // Strip code and status if admin_yayasan
+        // Strip code and status if admin_yayasan, or if code is not explicitly provided (preserve existing code)
         if (!$isSuperAdmin) {
             unset($data['code']);
             unset($data['status']);
+        } elseif (empty($data['code'])) {
+            unset($data['code']);
         }
 
         if ($request->hasFile('logo')) {
@@ -264,50 +441,48 @@ class FoundationController extends Controller
             unset($data['logo']);
         }
 
-        $foundation->update($data);
+        \DB::transaction(function () use ($foundation, $data, $request, $adminUser) {
+            $foundationData = $data;
+            unset($foundationData['emailLogin'], $foundationData['noHpLogin']);
+            $foundation->update($foundationData);
 
-        // Update administrator user details if provided in request
-        $adminUser = User::where('foundation_id', $foundation->id)
-            ->whereIn('role_id', function ($sq) {
+            if ($adminUser) {
+                $userUpdateData = [];
+                if ($request->has('emailLogin') && $request->filled('emailLogin')) {
+                    $userUpdateData['email'] = $request->input('emailLogin');
+                }
+                if ($request->has('noHpLogin') && $request->filled('noHpLogin')) {
+                    $userUpdateData['phone'] = $request->input('noHpLogin');
+                }
+                if ($request->has('name') && $request->filled('name')) {
+                    $userUpdateData['name'] = 'Admin ' . $request->input('name');
+                }
+
+                if (!empty($userUpdateData)) {
+                    $adminUser->update($userUpdateData);
+                }
+            } elseif ($request->filled('emailLogin')) {
+                $role = \App\Models\Role::where('name', 'admin_yayasan')->first();
+                $roleId = $role ? $role->id : 2;
+                $generatedPassword = \Illuminate\Support\Str::random(10) . 'A1!';
+
+                User::create([
+                    'name'          => 'Admin ' . $foundation->name,
+                    'email'         => $request->input('emailLogin'),
+                    'phone'         => $request->input('noHpLogin'),
+                    'password'      => \Illuminate\Support\Facades\Hash::make($generatedPassword),
+                    'role_id'       => $roleId,
+                    'foundation_id' => $foundation->id,
+                    'is_active'     => true,
+                ]);
+            }
+        });
+
+        $foundation->load(['users' => function ($q) {
+            $q->whereIn('role_id', function ($sq) {
                 $sq->select('id')->from('roles')->where('name', 'admin_yayasan');
-            })->first();
-
-        if ($adminUser) {
-            $userUpdateData = [];
-            if ($request->has('emailLogin') && $request->filled('emailLogin')) {
-                $userUpdateData['email'] = $request->input('emailLogin');
-            }
-            if ($request->has('noHpLogin') && $request->filled('noHpLogin')) {
-                $userUpdateData['phone'] = $request->input('noHpLogin');
-            }
-            if ($request->has('name') && $request->filled('name')) {
-                $userUpdateData['name'] = 'Admin ' . $request->input('name');
-            }
-
-            if (!empty($userUpdateData)) {
-                // Validate email and phone if they are being updated
-                $userRules = [];
-                if (isset($userUpdateData['email'])) {
-                    $userRules['email'] = 'required|email|unique:users,email,' . $adminUser->id;
-                }
-                if (isset($userUpdateData['phone'])) {
-                    $userRules['phone'] = 'required|string|max:50|unique:users,phone,' . $adminUser->id;
-                }
-
-                if (!empty($userRules)) {
-                    $userValidator = Validator::make($userUpdateData, $userRules);
-                    if ($userValidator->fails()) {
-                        return response()->json([
-                            'status'  => 'error',
-                            'message' => 'Validation error on administrator account.',
-                            'errors'  => $userValidator->errors(),
-                        ], 422);
-                    }
-                }
-
-                $adminUser->update($userUpdateData);
-            }
-        }
+            })->select('id', 'foundation_id', 'email', 'phone');
+        }]);
 
         return response()->json([
             'status'  => 'success',
