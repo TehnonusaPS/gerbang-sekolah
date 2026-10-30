@@ -388,6 +388,10 @@ class FoundationController extends Controller
                 : 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ];
 
+        if ($request->has('password') && $request->filled('password')) {
+            $rules['password'] = 'string|min:8';
+        }
+
         // Superadmin optional updates for code and status
         if ($isSuperAdmin) {
             if ($request->has('code') && $request->filled('code')) {
@@ -472,6 +476,9 @@ class FoundationController extends Controller
                 }
                 if ($request->has('noHpLogin') && $request->filled('noHpLogin')) {
                     $userUpdateData['phone'] = $request->input('noHpLogin');
+                }
+                if ($request->has('password') && $request->filled('password')) {
+                    $userUpdateData['password'] = \Illuminate\Support\Facades\Hash::make($request->input('password'));
                 }
                 if ($request->has('name') && $request->filled('name')) {
                     $userUpdateData['name'] = 'Admin ' . $request->input('name');

@@ -13,5 +13,8 @@ export const defaultForm = {
   tanggal_sk: '',
   emailLogin: '',
   noHpLogin: '',
+  password_lama: '',
+  password_baru: '',
+  password_baru_confirmation: '',
   logo: null
 }

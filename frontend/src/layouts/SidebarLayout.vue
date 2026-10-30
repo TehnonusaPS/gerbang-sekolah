@@ -265,7 +265,7 @@ const handleCrumbClick = (e, path) => {
   <SidebarProvider>
     <AppSidebar />
     <SidebarInset class="min-w-0 overflow-x-clip">
-      <div class="sticky top-0 z-50 w-full pt-2">
+      <div class="sticky top-0 z-30 w-full pt-2">
         <header
           v-motion
           :initial="topbarSlide.initial"

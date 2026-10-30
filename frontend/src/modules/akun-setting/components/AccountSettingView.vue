@@ -32,6 +32,8 @@ import { useZodForm } from '@/composables/useZodForm'
 import { v } from '@/utils/validators'
 import { getPhotoUrl } from '@/utils/getPhotoUrl'
 import { updateProfile } from '@/services/authService'
+import YayasanForm from '@/modules/manajemen-data/pages/yayasan/components/YayasanForm.vue'
+import { statusOptions as yayasanStatusOptions } from '@/modules/manajemen-data/pages/yayasan/data/yayasan.js'
 
 const props = defineProps({
   roleTitle: {
@@ -299,7 +301,22 @@ const loadUserData = () => {
   const studentUser = studentLink.user || {}
   const studentClass = studentLink.classroom || {}
 
+  const f = u.foundation || u.school?.foundation || {}
+
   form.value = {
+    // Data Yayasan (Read-Only di Akun Setting)
+    nama: f.name || '',
+    status: f.status ? f.status.charAt(0).toUpperCase() + f.status.slice(1) : '',
+    tanggal_berdiri: (f.established_date || '').split('T')[0],
+    alamat: f.address || '',
+    no_akta: f.deed_number || '',
+    tanggal_akta: (f.deed_date || '').split('T')[0],
+    no_sk: f.decree_number || '',
+    tanggal_sk: (f.decree_date || '').split('T')[0],
+    email: f.email || '',
+    no_hp: f.phone || '',
+    website: f.website || '',
+    logo: f.logo || null,
     foto: null,
     emailLogin: u.email || '',
     noHpLogin: u.phone || '',
@@ -464,7 +481,22 @@ const handleSave = async () => {
 
     <!-- Formulir Grid Standar Pembuatan Data Gerbang Sekolah -->
     <form class="space-y-6" @submit.prevent="handleSave">
-      <BentoFormLayout>
+      <!-- ================= 1. ADMIN YAYASAN (Reusable Form Yayasan Standar) ================= -->
+      <template v-if="isAdminYayasan">
+        <YayasanForm
+          :form="form"
+          :image-preview="visualSlot.preview"
+          :status-options="yayasanStatusOptions"
+          :errors="errors"
+          :is-read-only-institutional="true"
+          :show-password-fields="true"
+          :require-old-password="true"
+          @image-change="handleImageChange"
+        />
+      </template>
+
+      <!-- ================= 2. ROLE LAINNYA ================= -->
+      <BentoFormLayout v-else>
         <!-- Kolom Kiri: Foto Profil / Logo & Akun Pengguna / Password (35%) -->
         <template #left>
           <!-- 1. Foto Profil atau Logo Resmi Sesuai Role -->
@@ -678,101 +710,6 @@ const handleSave = async () => {
                 <FormInput
                   :model-value="schoolData.facebook || '-'"
                   label="Halaman Facebook"
-                  disabled
-                />
-              </div>
-            </FormSection>
-          </template>
-
-          <!-- ================= 2. ADMIN YAYASAN (Dibuat Saat Pembuatan Yayasan) ================= -->
-          <template v-else-if="isAdminYayasan">
-            <!-- 1. Informasi Dasar Yayasan (Read-Only) -->
-            <FormSection
-              title="Informasi Dasar Yayasan"
-              description="Data utama profil, status operasional, dan domisili yayasan (Dikelola melalui menu Manajemen Data)"
-              :icon="Building2"
-            >
-              <div class="grid gap-4 md:grid-cols-2">
-                <FormInput
-                  :model-value="foundationData.name || '-'"
-                  label="Nama Lengkap Yayasan"
-                  class="md:col-span-2"
-                  disabled
-                />
-                <FormInput
-                  :model-value="formatDate(foundationData.established_date)"
-                  label="Tanggal Berdiri"
-                  disabled
-                />
-                <FormInput
-                  :model-value="foundationData.status || '-'"
-                  label="Status Operasional"
-                  disabled
-                />
-              </div>
-
-              <Separator class="my-2" />
-
-              <FormTextArea
-                :model-value="foundationData.address || '-'"
-                :rows="3"
-                label="Alamat Lengkap Yayasan"
-                disabled
-              />
-            </FormSection>
-
-            <!-- 3. Dokumen Legalitas Yayasan (Read-Only) -->
-            <FormSection
-              title="Dokumen Legalitas Yayasan"
-              description="Rincian Nomor Akta Pendirian dan SK Kemenkumham yayasan (Dikelola melalui menu Manajemen Data)"
-              :icon="FileText"
-            >
-              <div class="grid gap-4 md:grid-cols-2">
-                <FormInput
-                  :model-value="foundationData.deed_number || '-'"
-                  label="No. Akta Pendirian"
-                  disabled
-                />
-                <FormInput
-                  :model-value="formatDate(foundationData.deed_date)"
-                  label="Tanggal Akta Pendirian"
-                  disabled
-                />
-                <FormInput
-                  :model-value="foundationData.decree_number || '-'"
-                  label="No. SK Kemenkumham"
-                  disabled
-                />
-                <FormInput
-                  :model-value="formatDate(foundationData.decree_date)"
-                  label="Tanggal SK Kemenkumham"
-                  disabled
-                />
-              </div>
-            </FormSection>
-
-            <!-- 4. Kontak Resmi Yayasan (Read-Only) -->
-            <FormSection
-              v-if="foundationData.email || foundationData.phone || foundationData.website"
-              title="Kontak Resmi Yayasan"
-              description="Informasi email, telepon, dan website resmi yayasan (Dikelola melalui menu Manajemen Data)"
-              :icon="Phone"
-            >
-              <div class="grid gap-4 md:grid-cols-2">
-                <FormInput
-                  :model-value="foundationData.email || '-'"
-                  label="E-mail Resmi Yayasan"
-                  disabled
-                />
-                <FormInput
-                  :model-value="foundationData.phone || '-'"
-                  label="No. Telepon Yayasan"
-                  disabled
-                />
-                <FormInput
-                  :model-value="foundationData.website || '-'"
-                  label="Website Resmi Yayasan"
-                  class="md:col-span-2"
                   disabled
                 />
               </div>

@@ -65,6 +65,8 @@ onMounted(async () => {
       tanggal_sk: foundation.decree_date ? foundation.decree_date.split('T')[0] : '',
       emailLogin: foundation.users && foundation.users[0] ? foundation.users[0].email : '',
       noHpLogin: foundation.users && foundation.users[0] ? foundation.users[0].phone : '',
+      password_baru: '',
+      password_baru_confirmation: '',
       logo: foundation.logo || null
     }
     if (foundation.logo) {
@@ -118,6 +120,7 @@ const handleSubmit = async () => {
     if (form.value.tanggal_sk) formData.append('decree_date', form.value.tanggal_sk)
     if (form.value.emailLogin) formData.append('emailLogin', form.value.emailLogin)
     if (form.value.noHpLogin) formData.append('noHpLogin', form.value.noHpLogin)
+    if (form.value.password_baru) formData.append('password', form.value.password_baru)
     if (logoFile.value) {
       formData.append('logo', logoFile.value)
     }
@@ -164,10 +167,11 @@ const handleSubmit = async () => {
       :visible-once="{ ...glassSlide.visible, transition: { ...glassSlide.visible.transition, delay: 100 } }"
     >
       <YayasanForm
-        v-model:form="form"
+        :form="form"
         :image-preview="imagePreview"
         :status-options="statusOptions"
         :errors="formErrors"
+        :show-password-fields="true"
         @image-change="handleImage"
       />
     </div>

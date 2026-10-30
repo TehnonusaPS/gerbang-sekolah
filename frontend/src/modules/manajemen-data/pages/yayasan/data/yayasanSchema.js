@@ -18,7 +18,10 @@ export const fieldErrorMap = {
   no_sk: 'decree_number',
   tanggal_sk: 'decree_date',
   alamat: 'address',
-  logo: 'logo'
+  logo: 'logo',
+  password_lama: 'password_lama',
+  password_baru: 'password_baru',
+  password_baru_confirmation: 'password_baru_confirmation'
 }
 
 /**
@@ -41,7 +44,20 @@ export const createYayasanSchema = ({ isEdit = false, hasExistingLogo = false } 
     tanggal_sk: v.requiredDate('Tanggal SK Kemenkumham'),
     emailLogin: v.requiredEmail('E-mail login administrator'),
     noHpLogin: v.optionalPhone('No. HP / WhatsApp administrator'),
+    password_lama: z.string().optional(),
+    password_baru: z.string().optional().refine(val => !val || val.length >= 8, {
+      message: 'Password baru minimal 8 karakter'
+    }),
+    password_baru_confirmation: z.string().optional(),
     logo: isEdit && hasExistingLogo
       ? v.optionalImage({ maxSizeMB: 2 })
       : v.requiredImage('Logo yayasan', { maxSizeMB: 2 })
+  }).refine(data => {
+    if (data.password_baru && data.password_baru !== data.password_baru_confirmation) {
+      return false
+    }
+    return true
+  }, {
+    message: 'Konfirmasi password baru tidak cocok',
+    path: ['password_baru_confirmation']
   })

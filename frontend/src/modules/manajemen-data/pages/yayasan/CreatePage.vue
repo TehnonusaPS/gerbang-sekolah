@@ -78,6 +78,7 @@ const handleSubmit = async () => {
     if (form.value.no_sk) formData.append('decree_number', form.value.no_sk)
     if (form.value.tanggal_sk) formData.append('decree_date', form.value.tanggal_sk)
     if (form.value.emailLogin) formData.append('emailLogin', form.value.emailLogin)
+    if (form.value.noHpLogin) formData.append('noHpLogin', form.value.noHpLogin)
     if (logoFile.value) {
       formData.append('logo', logoFile.value)
     }
@@ -133,7 +134,7 @@ const goToList = () => {
       :visible-once="{ ...glassSlide.visible, transition: { ...glassSlide.visible.transition, delay: 100 } }"
     >
       <YayasanForm
-        v-model:form="form"
+        :form="form"
         :image-preview="imagePreview"
         :status-options="statusOptions"
         :errors="formErrors"
