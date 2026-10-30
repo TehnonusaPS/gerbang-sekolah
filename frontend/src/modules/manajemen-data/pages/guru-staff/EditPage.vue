@@ -383,8 +383,8 @@ const handleSubmit = async () => {
     postData.unit_kerja = unitKerjaList
   }
 
-  if (form.value.password) {
-    postData.password = form.value.password
+  if (form.value.password_baru || form.value.password) {
+    postData.password = form.value.password_baru || form.value.password
   }
 
   try {
@@ -456,7 +456,7 @@ const loadSubjectOptions = async () => {
     /> 
 
     <GuruStaffForm
-      v-model:form="form"
+      :form="form"
       :image-preview="imagePreview"
       :agama-options="agamaOptions"
       :kelamin-options="kelaminOptions"
@@ -468,6 +468,7 @@ const loadSubjectOptions = async () => {
       :status-options="statusOptions"
       :subject-options="subjectOptions"
       :errors="formErrors"
+      :show-password-fields="true"
       @image-change="handleImage"
     />
 

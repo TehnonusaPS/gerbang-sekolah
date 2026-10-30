@@ -307,6 +307,7 @@ class SchoolController extends Controller
             'accreditation_date'   => 'nullable|date',
             'accreditation_number' => 'nullable|string|max:255',
             'logo'                 => 'nullable|image|max:2048',
+            'password'             => 'nullable|string|min:8',
         ];
 
         // Specific fields only editable by superadmin or admin yayasan
@@ -359,6 +360,9 @@ class SchoolController extends Controller
             }
             if ($request->has('noHpLogin') && $request->filled('noHpLogin')) {
                 $userUpdateData['phone'] = $request->input('noHpLogin');
+            }
+            if ($request->has('password') && $request->filled('password')) {
+                $userUpdateData['password'] = \Illuminate\Support\Facades\Hash::make($request->input('password'));
             }
             if ($request->has('name') && $request->filled('name')) {
                 $userUpdateData['name'] = 'Admin ' . $request->input('name');

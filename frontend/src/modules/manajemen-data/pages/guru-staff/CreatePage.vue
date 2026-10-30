@@ -274,7 +274,7 @@ const loadSubjectOptions = async () => {
     /> 
 
     <GuruStaffForm
-      v-model:form="form"
+      :form="form"
       :image-preview="imagePreview"
       :agama-options="agamaOptions"
       :kelamin-options="kelaminOptions"

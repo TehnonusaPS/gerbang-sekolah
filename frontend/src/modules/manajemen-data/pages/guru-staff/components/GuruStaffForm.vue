@@ -1,6 +1,6 @@
 <script setup>
 import { computed, watch } from 'vue'
-import { Image, SquareUserRound, BriefcaseBusiness, UserCog } from 'lucide-vue-next'
+import { Image, SquareUserRound, BriefcaseBusiness, UserCog, Lock } from 'lucide-vue-next'
 import { Separator } from '@/components/ui/separator'
 import ImageUpload from '@/components/forms/ImageUpload.vue'
 import FormInput from '@/components/forms/FormInput.vue'
@@ -25,7 +25,11 @@ const props = defineProps({
   unitKerjaOptions: { type: Array, default: () => [] },
   statusOptions: { type: Array, default: () => [] },
   subjectOptions: { type: Array, default: () => [] },
-  errors: { type: Object, default: () => ({}) }
+  errors: { type: Object, default: () => ({}) },
+  isReadOnlyEmployment: { type: Boolean, default: false },
+  isReadOnlyEmail: { type: Boolean, default: false },
+  showPasswordFields: { type: Boolean, default: false },
+  requireOldPassword: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['image-change'])
@@ -139,6 +143,7 @@ watch(
             type="email"
             label="E-mail Login"
             placeholder="Contoh: nama@sekolah.sch.id"
+            :disabled="isReadOnlyEmail"
             required
             :error="errors.emailLogin"
           />
@@ -150,6 +155,45 @@ watch(
             :maxlength="15"
             :error="errors.noHpLogin"
           />
+
+          <!-- Opsi Ganti Kata Sandi jika diaktifkan (Edit & Akun Setting) -->
+          <template v-if="showPasswordFields">
+            <Separator class="my-2" />
+            <div class="space-y-1">
+              <div class="flex items-center gap-1.5 text-xs font-semibold text-foreground tracking-tight">
+                <Lock class="w-3.5 h-3.5 text-primary" />
+                <span>Keamanan Kata Sandi</span>
+              </div>
+              <p class="text-[11px] text-muted-foreground leading-relaxed">
+                Kosongkan bagian ini jika Anda tidak ingin mengganti kata sandi akun.
+              </p>
+            </div>
+
+            <FormInput
+              v-if="requireOldPassword"
+              v-model="form.password_lama"
+              type="password"
+              label="Password Lama"
+              placeholder="Masukkan password saat ini"
+              :error="errors.password_lama"
+            />
+
+            <FormInput
+              v-model="form.password_baru"
+              type="password"
+              label="Password Baru"
+              placeholder="Minimal 8 karakter"
+              :error="errors.password_baru"
+            />
+
+            <FormInput
+              v-model="form.password_baru_confirmation"
+              type="password"
+              label="Konfirmasi Password Baru"
+              placeholder="Ulangi password baru"
+              :error="errors.password_baru_confirmation"
+            />
+          </template>
         </div>
       </FormSection>
     </template>
@@ -263,11 +307,21 @@ watch(
       </FormSection>
 
       <!-- 2. Informasi Kepegawaian -->
-      <FormSection title="Informasi Kepegawaian" description="Penempatan unit kerja, jabatan, status ikatan kerja, dan nomor induk pegawai" :icon="BriefcaseBusiness">
+      <FormSection
+        title="Informasi Kepegawaian"
+        :description="isReadOnlyEmployment ? 'Penempatan unit kerja, jabatan, dan status ikatan kerja (Read-Only)' : 'Penempatan unit kerja, jabatan, status ikatan kerja, dan nomor induk pegawai'"
+        :icon="BriefcaseBusiness"
+      >
         <!-- Grup A: Penempatan & Jabatan -->
         <div class="grid gap-4 md:grid-cols-2">
+          <FormInput
+            v-if="isReadOnlyEmployment"
+            :model-value="Array.isArray(form.unit_kerja) ? form.unit_kerja.join(', ') : (form.unit_kerja || form.unit_kerja_label || '-')"
+            label="Unit Kerja"
+            disabled
+          />
           <FormMultiSelect
-            v-if="!isAdminSekolah"
+            v-else-if="!isAdminSekolah"
             v-model="form.unit_kerja"
             label="Unit Kerja"
             placeholder="Pilih satu atau lebih unit kerja"
@@ -278,7 +332,14 @@ watch(
             show-select-all
             required
           />
+          <FormInput
+            v-if="isReadOnlyEmployment"
+            :model-value="form.jabatan || '-'"
+            label="Jabatan"
+            disabled
+          />
           <FormSelect
+            v-else
             v-model="form.jabatan"
             label="Jabatan"
             placeholder="Pilih jabatan"
@@ -286,8 +347,14 @@ watch(
             required
             :error="errors.jabatan"
           />
+          <FormInput
+            v-if="isReadOnlyEmployment"
+            :model-value="form.status_kepegawaian || '-'"
+            label="Status Kepegawaian"
+            disabled
+          />
           <FormSelect
-            v-if="isAdminSekolah"
+            v-else-if="isAdminSekolah"
             v-model="form.status_kepegawaian"
             label="Status Kepegawaian"
             placeholder="Pilih status kepegawaian"
@@ -298,7 +365,7 @@ watch(
         </div>
 
         <!-- Penugasan Mata Pelajaran (Muncul tepat di bawah Jabatan jika memilih Guru) -->
-        <div v-if="isTeacher" class="grid gap-4 md:grid-cols-1">
+        <div v-if="isTeacher && !isReadOnlyEmployment" class="grid gap-4 md:grid-cols-1">
           <FormMultiSelect
             v-model="form.subject_ids"
             label="Mata Pelajaran yang Diajarkan"
@@ -317,33 +384,36 @@ watch(
 
         <!-- Grup B: Status Kepegawaian, Tanggal Bergabung & Nomor Induk -->
         <div class="grid gap-4 md:grid-cols-2">
-          <FormSelect
-            v-if="!isAdminSekolah"
-            v-model="form.status_kepegawaian"
-            label="Status Kepegawaian"
-            placeholder="Pilih status kepegawaian"
-            :options="statusKepegawaianOptions"
-            required
-            :error="errors.status_kepegawaian"
-          />
-          <FormSelect
-            v-model="form.status_aktif"
-            label="Status Aktif"
-            placeholder="Pilih status aktif"
-            :options="statusOptions"
-            required
-            :error="errors.status_aktif"
-          />
-          <FormDate
-            v-model="form.join_date"
-            label="Tanggal Bergabung"
-            required
-            :error="errors.join_date"
-          />
+          <template v-if="!isReadOnlyEmployment">
+            <FormSelect
+              v-if="!isAdminSekolah"
+              v-model="form.status_kepegawaian"
+              label="Status Kepegawaian"
+              placeholder="Pilih status kepegawaian"
+              :options="statusKepegawaianOptions"
+              required
+              :error="errors.status_kepegawaian"
+            />
+            <FormSelect
+              v-model="form.status_aktif"
+              label="Status Aktif"
+              placeholder="Pilih status aktif"
+              :options="statusOptions"
+              required
+              :error="errors.status_aktif"
+            />
+            <FormDate
+              v-model="form.join_date"
+              label="Tanggal Bergabung"
+              required
+              :error="errors.join_date"
+            />
+          </template>
           <FormInput
             v-model="form.nip_nuptk"
-            label="NIP / NUPTK (Opsional)"
+            label="NIP / NUPTK"
             placeholder="Kosongkan jika belum memiliki NIP/NUPTK"
+            :disabled="isReadOnlyEmployment"
             numeric-only
             :maxlength="18"
             :error="errors.nip_nuptk"

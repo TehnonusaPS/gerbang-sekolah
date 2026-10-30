@@ -34,6 +34,9 @@ import { getPhotoUrl } from '@/utils/getPhotoUrl'
 import { updateProfile } from '@/services/authService'
 import YayasanForm from '@/modules/manajemen-data/pages/yayasan/components/YayasanForm.vue'
 import { statusOptions as yayasanStatusOptions } from '@/modules/manajemen-data/pages/yayasan/data/yayasan.js'
+import SekolahForm from '@/modules/manajemen-data/pages/sekolah/components/SekolahForm.vue'
+import { akreditasi as sekolahAkreditasi, jenjangOptions as sekolahJenjangOptions, statusOptions as sekolahStatusOptions } from '@/modules/manajemen-data/pages/sekolah/data/sekolah.js'
+import GuruStaffForm from '@/modules/manajemen-data/pages/guru-staff/components/GuruStaffForm.vue'
 
 const props = defineProps({
   roleTitle: {
@@ -302,21 +305,34 @@ const loadUserData = () => {
   const studentClass = studentLink.classroom || {}
 
   const f = u.foundation || u.school?.foundation || {}
+  const s = u.school || {}
+  const sf = s.foundation || f
 
   form.value = {
-    // Data Yayasan (Read-Only di Akun Setting)
-    nama: f.name || '',
-    status: f.status ? f.status.charAt(0).toUpperCase() + f.status.slice(1) : '',
-    tanggal_berdiri: (f.established_date || '').split('T')[0],
-    alamat: f.address || '',
+    // Data Instansi (Yayasan / Sekolah - Read-Only di Akun Setting)
+    nama: s.name || f.name || '',
+    npsn: s.npsn || '',
+    yayasan: sf.name || sf.id || '',
+    jenjang: s.level ? s.level.toUpperCase() : '',
+    tanggal_berdiri: (s.established_date || f.established_date || '').split('T')[0],
+    status: (s.status || f.status) ? (s.status || f.status).charAt(0).toUpperCase() + (s.status || f.status).slice(1) : '',
+    alamat: s.address || f.address || '',
+    curriculum_id: s.curriculum_id ? String(s.curriculum_id) : '',
+    email: s.email || f.email || '',
+    no_hp: s.phone || f.phone || '',
+    website: s.website || f.website || '',
+    instagram: s.instagram || '',
+    facebook: s.facebook || '',
+    no_sk: s.decree_number || f.decree_number || '',
+    tanggal_sk: (s.decree_date || f.decree_date || '').split('T')[0],
+    no_izin: s.permit_number || '',
+    tanggal_izin: (s.permit_date || '').split('T')[0],
+    akreditasi: s.accreditation || '',
+    tanggal_akreditasi: (s.accreditation_date || '').split('T')[0],
+    no_akreditasi: s.accreditation_number || '',
     no_akta: f.deed_number || '',
     tanggal_akta: (f.deed_date || '').split('T')[0],
-    no_sk: f.decree_number || '',
-    tanggal_sk: (f.decree_date || '').split('T')[0],
-    email: f.email || '',
-    no_hp: f.phone || '',
-    website: f.website || '',
-    logo: f.logo || null,
+    logo: s.logo || f.logo || null,
     foto: null,
     emailLogin: u.email || '',
     noHpLogin: u.phone || '',
@@ -495,7 +511,47 @@ const handleSave = async () => {
         />
       </template>
 
-      <!-- ================= 2. ROLE LAINNYA ================= -->
+      <!-- ================= 2. ADMIN SEKOLAH (Reusable Form Sekolah Standar) ================= -->
+      <template v-else-if="isAdminSekolah">
+        <SekolahForm
+          :form="form"
+          :image-preview="visualSlot.preview"
+          :foundation-options="[{ label: schoolData.foundation?.name || foundationData.name || 'Yayasan Induk', value: schoolData.foundation?.name || foundationData.name || '' }]"
+          :jenjang-options="sekolahJenjangOptions"
+          :status-options="sekolahStatusOptions"
+          :akreditasi="sekolahAkreditasi"
+          :errors="errors"
+          :is-read-only-institutional="true"
+          :show-password-fields="true"
+          :require-old-password="true"
+          @image-change="handleImageChange"
+        />
+      </template>
+
+      <!-- ================= 3. GURU, KEPALA SEKOLAH & TATA USAHA (Reusable Form Guru & Staff Standar) ================= -->
+      <template v-else-if="isEduStaff || isTu">
+        <GuruStaffForm
+          :form="form"
+          :image-preview="visualSlot.preview"
+          :agama-options="agamaOptions"
+          :kelamin-options="kelaminOptions"
+          :pendidikan-options="pendidikanOptions"
+          :status-pernikahan-options="statusPernikahanOptions"
+          :jabatan-options="[{ label: form.jabatan || 'Guru', value: form.jabatan || 'Guru' }]"
+          :status-kepegawaian-options="statusKepegawaianOptions"
+          :unit-kerja-options="[{ label: form.unit_kerja || 'Sekolah', value: form.unit_kerja || 'Sekolah' }]"
+          :status-options="[{ label: 'Aktif', value: 'active' }]"
+          :subject-options="[]"
+          :errors="errors"
+          :is-read-only-employment="true"
+          :is-read-only-email="true"
+          :show-password-fields="true"
+          :require-old-password="true"
+          @image-change="handleImageChange"
+        />
+      </template>
+
+      <!-- ================= 4. ROLE LAINNYA ================= -->
       <BentoFormLayout v-else>
         <!-- Kolom Kiri: Foto Profil / Logo & Akun Pengguna / Password (35%) -->
         <template #left>
@@ -576,148 +632,8 @@ const handleSave = async () => {
 
         <!-- Kolom Kanan: Informasi Pribadi & Informasi Instansi (65%) -->
         <template #right>
-          <!-- ================= 1. ADMIN SEKOLAH (Dibuat Saat Pembuatan Sekolah) ================= -->
-          <template v-if="isAdminSekolah">
-            <!-- 1. Informasi Dasar Sekolah (Read-Only) -->
-            <FormSection
-              title="Informasi Dasar Sekolah"
-              description="Rincian nama sekolah, NPSN, jenjang, dan kurikulum (Dikelola melalui menu Manajemen Data)"
-              :icon="School"
-            >
-              <div class="grid gap-4 md:grid-cols-2">
-                <FormInput
-                  :model-value="schoolData.name || '-'"
-                  label="Nama Unit Sekolah"
-                  disabled
-                />
-                <FormInput
-                  :model-value="schoolData.npsn || '-'"
-                  label="NPSN"
-                  disabled
-                />
-                <FormInput
-                  :model-value="schoolData.foundation?.name || foundationData.name || '-'"
-                  label="Yayasan Induk"
-                  disabled
-                />
-                <FormInput
-                  :model-value="schoolData.level ? schoolData.level.toUpperCase() : '-'"
-                  label="Jenjang Pendidikan"
-                  disabled
-                />
-                <FormInput
-                  :model-value="formatDate(schoolData.established_date)"
-                  label="Tanggal Berdiri"
-                  disabled
-                />
-                <FormInput
-                  :model-value="schoolData.status || '-'"
-                  label="Status Operasional"
-                  disabled
-                />
-                <FormInput
-                  :model-value="schoolData.curriculum?.name || '-'"
-                  label="Jenis Kurikulum Sekolah"
-                  class="md:col-span-2"
-                  disabled
-                />
-              </div>
-
-              <Separator class="my-2" />
-
-              <FormTextArea
-                :model-value="schoolData.address || '-'"
-                :rows="3"
-                label="Alamat Lengkap Sekolah"
-                disabled
-              />
-            </FormSection>
-
-            <!-- 3. Dokumen Legalitas & Akreditasi (Read-Only) -->
-            <FormSection
-              title="Dokumen Legalitas & Akreditasi"
-              description="Informasi SK Pendirian, Izin Operasional, dan Akreditasi (Dikelola melalui menu Manajemen Data)"
-              :icon="Scale"
-            >
-              <div class="grid gap-4 md:grid-cols-2">
-                <FormInput
-                  :model-value="schoolData.decree_number || '-'"
-                  label="No. SK Pendirian"
-                  disabled
-                />
-                <FormInput
-                  :model-value="formatDate(schoolData.decree_date)"
-                  label="Tanggal SK Pendirian"
-                  disabled
-                />
-                <FormInput
-                  :model-value="schoolData.permit_number || '-'"
-                  label="No. Izin Operasional"
-                  disabled
-                />
-                <FormInput
-                  :model-value="formatDate(schoolData.permit_date)"
-                  label="Tanggal Izin Operasional"
-                  disabled
-                />
-                <FormInput
-                  :model-value="schoolData.accreditation || '-'"
-                  label="Peringkat Akreditasi"
-                  disabled
-                />
-                <FormInput
-                  :model-value="formatDate(schoolData.accreditation_date)"
-                  label="Tanggal Akreditasi"
-                  disabled
-                />
-                <FormInput
-                  :model-value="schoolData.accreditation_number || '-'"
-                  label="No. SK Akreditasi"
-                  class="md:col-span-2"
-                  disabled
-                />
-              </div>
-            </FormSection>
-
-            <!-- 4. Kontak & Media Sosial Resmi Sekolah (Read-Only) -->
-            <FormSection
-              title="Kontak Resmi Sekolah"
-              description="Informasi email, telepon, website, dan medsos resmi sekolah (Dikelola melalui menu Manajemen Data)"
-              :icon="Phone"
-            >
-              <div class="grid gap-4 md:grid-cols-2">
-                <FormInput
-                  :model-value="schoolData.email || '-'"
-                  label="E-mail Resmi Sekolah"
-                  disabled
-                />
-                <FormInput
-                  :model-value="schoolData.phone || '-'"
-                  label="No. Telepon Sekolah"
-                  disabled
-                />
-                <FormInput
-                  :model-value="schoolData.website || '-'"
-                  label="Website Resmi Sekolah"
-                  class="md:col-span-2"
-                  disabled
-                />
-                <FormInput
-                  :model-value="schoolData.instagram || '-'"
-                  label="Akun Instagram"
-                  disabled
-                />
-                <FormInput
-                  :model-value="schoolData.facebook || '-'"
-                  label="Halaman Facebook"
-                  disabled
-                />
-              </div>
-            </FormSection>
-          </template>
-
-          <!-- ================= 3. SUPERADMIN ================= -->
-          <template v-else-if="isSuperAdmin">
+          <!-- ================= 1. SUPERADMIN ================= -->
+          <template v-if="isSuperAdmin">
             <FormSection
               title="Informasi Administrator"
               description="Data identitas super administrator"
@@ -760,268 +676,7 @@ const handleSave = async () => {
             </FormSection>
           </template>
 
-          <!-- ================= 4. GURU & KEPALA SEKOLAH (Tenaga Pendidik Bergelar) ================= -->
-          <template v-else-if="isEduStaff">
-            <!-- 1. Informasi Pribadi Guru/Kepala Sekolah -->
-            <FormSection
-              title="Informasi Pribadi"
-              description="Identitas diri, data kelahiran, kualifikasi pendidikan, dan domisili"
-              :icon="SquareUserRound"
-            >
-              <!-- Grup A: Nama & Gelar -->
-              <div class="grid gap-4 md:grid-cols-2">
-                <FormInput
-                  v-model="form.nama_depan"
-                  label="Nama Depan"
-                  placeholder="Contoh: Ahmad"
-                  required
-                  :error="errors.nama_depan"
-                />
-                <FormInput
-                  v-model="form.nama_belakang"
-                  label="Nama Belakang (Opsional)"
-                  placeholder="Contoh: Fauzi"
-                  :error="errors.nama_belakang"
-                />
-                <FormInput
-                  v-model="form.gelar_depan"
-                  label="Gelar Depan (Opsional)"
-                  placeholder="Contoh: Drs."
-                  :error="errors.gelar_depan"
-                />
-                <FormInput
-                  v-model="form.gelar_belakang"
-                  label="Gelar Belakang (Opsional)"
-                  placeholder="Contoh: S.Pd., M.Pd."
-                  :error="errors.gelar_belakang"
-                />
-              </div>
-
-              <Separator class="my-2" />
-
-              <!-- Grup B: Identitas Kependudukan & Kelahiran -->
-              <div class="grid gap-4 md:grid-cols-2">
-                <FormInput
-                  :model-value="form.nik || '-'"
-                  label="NIK (Nomor Induk Kependudukan)"
-                  disabled
-                />
-                <FormSelect
-                  v-model="form.jenis_kelamin"
-                  label="Jenis Kelamin"
-                  placeholder="Pilih jenis kelamin"
-                  :options="kelaminOptions"
-                  required
-                  :error="errors.jenis_kelamin"
-                />
-                <FormInput
-                  v-model="form.tempat_lahir"
-                  label="Tempat Lahir"
-                  placeholder="Contoh: Jakarta"
-                  required
-                  :error="errors.tempat_lahir"
-                />
-                <FormDate
-                  v-model="form.tanggal_lahir"
-                  label="Tanggal Lahir"
-                  required
-                  :error="errors.tanggal_lahir"
-                />
-                <FormSelect
-                  v-model="form.agama"
-                  label="Agama"
-                  placeholder="Pilih agama"
-                  :options="agamaOptions"
-                  required
-                  :error="errors.agama"
-                />
-                <FormSelect
-                  v-model="form.status_pernikahan"
-                  label="Status Pernikahan"
-                  placeholder="Pilih status pernikahan"
-                  :options="statusPernikahanOptions"
-                  required
-                  :error="errors.status_pernikahan"
-                />
-              </div>
-
-              <Separator class="my-2" />
-
-              <!-- Grup C: Kualifikasi Pendidikan & Domisili -->
-              <div class="grid gap-4 md:grid-cols-1">
-                <FormSelect
-                  v-model="form.pendidikan_terakhir"
-                  label="Pendidikan Terakhir"
-                  placeholder="Pilih jenjang pendidikan terakhir"
-                  :options="pendidikanOptions"
-                  required
-                  :error="errors.pendidikan_terakhir"
-                />
-                <FormTextArea
-                  v-model="form.alamat"
-                  :rows="3"
-                  label="Alamat Lengkap"
-                  placeholder="Contoh: Jl. Pendidikan No. 10, RT 01/RW 02..."
-                  required
-                  :error="errors.alamat"
-                />
-              </div>
-            </FormSection>
-
-            <!-- 2. Informasi Kepegawaian (Read-Only) -->
-            <FormSection
-              title="Informasi Kepegawaian"
-              description="Penempatan unit kerja, jabatan, dan nomor induk pegawai (Dikelola di Manajemen Data)"
-              :icon="BriefcaseBusiness"
-            >
-              <div class="grid gap-4 md:grid-cols-2">
-                <FormInput
-                  v-model="form.unit_kerja"
-                  label="Unit Kerja"
-                  disabled
-                />
-                <FormInput
-                  v-model="form.jabatan"
-                  label="Jabatan"
-                  disabled
-                />
-                <FormInput
-                  v-model="form.nip_nuptk"
-                  label="NIP / NUPTK"
-                  disabled
-                />
-                <FormInput
-                  v-model="form.status_kepegawaian"
-                  label="Status Kepegawaian"
-                  disabled
-                />
-              </div>
-            </FormSection>
-          </template>
-
-          <!-- ================= 5. TATA USAHA (Staf Administrasi) ================= -->
-          <template v-else-if="isTu">
-            <FormSection
-              title="Informasi Pribadi"
-              description="Identitas diri, data kelahiran, kualifikasi pendidikan, dan domisili staf TU"
-              :icon="SquareUserRound"
-            >
-              <div class="grid gap-4 md:grid-cols-2">
-                <FormInput
-                  v-model="form.nama_depan"
-                  label="Nama Depan"
-                  placeholder="Contoh: Tata"
-                  required
-                  :error="errors.nama_depan"
-                />
-                <FormInput
-                  v-model="form.nama_belakang"
-                  label="Nama Belakang (Opsional)"
-                  placeholder="Contoh: Usaha"
-                  :error="errors.nama_belakang"
-                />
-              </div>
-
-              <Separator class="my-2" />
-
-              <div class="grid gap-4 md:grid-cols-2">
-                <FormInput
-                  :model-value="form.nik || '-'"
-                  label="NIK (Nomor Induk Kependudukan)"
-                  disabled
-                />
-                <FormSelect
-                  v-model="form.jenis_kelamin"
-                  label="Jenis Kelamin"
-                  placeholder="Pilih jenis kelamin"
-                  :options="kelaminOptions"
-                  required
-                  :error="errors.jenis_kelamin"
-                />
-                <FormInput
-                  v-model="form.tempat_lahir"
-                  label="Tempat Lahir"
-                  placeholder="Contoh: Jakarta"
-                  required
-                  :error="errors.tempat_lahir"
-                />
-                <FormDate
-                  v-model="form.tanggal_lahir"
-                  label="Tanggal Lahir"
-                  required
-                  :error="errors.tanggal_lahir"
-                />
-                <FormSelect
-                  v-model="form.agama"
-                  label="Agama"
-                  placeholder="Pilih agama"
-                  :options="agamaOptions"
-                  required
-                  :error="errors.agama"
-                />
-                <FormSelect
-                  v-model="form.status_pernikahan"
-                  label="Status Pernikahan"
-                  placeholder="Pilih status pernikahan"
-                  :options="statusPernikahanOptions"
-                  required
-                  :error="errors.status_pernikahan"
-                />
-              </div>
-
-              <Separator class="my-2" />
-
-              <div class="grid gap-4 md:grid-cols-1">
-                <FormSelect
-                  v-model="form.pendidikan_terakhir"
-                  label="Pendidikan Terakhir"
-                  placeholder="Pilih jenjang pendidikan terakhir"
-                  :options="pendidikanOptions"
-                  required
-                  :error="errors.pendidikan_terakhir"
-                />
-                <FormTextArea
-                  v-model="form.alamat"
-                  :rows="3"
-                  label="Alamat Lengkap"
-                  placeholder="Contoh: Jl. Cut Mutia No. 88..."
-                  required
-                  :error="errors.alamat"
-                />
-              </div>
-            </FormSection>
-
-            <FormSection
-              title="Informasi Kepegawaian"
-              description="Penempatan unit kerja dan jabatan staf tata usaha (Dikelola di Manajemen Data)"
-              :icon="BriefcaseBusiness"
-            >
-              <div class="grid gap-4 md:grid-cols-2">
-                <FormInput
-                  v-model="form.unit_kerja"
-                  label="Unit Kerja"
-                  disabled
-                />
-                <FormInput
-                  v-model="form.jabatan"
-                  label="Jabatan"
-                  disabled
-                />
-                <FormInput
-                  v-model="form.nip_nuptk"
-                  label="NIP / NUPTK"
-                  disabled
-                />
-                <FormInput
-                  v-model="form.status_kepegawaian"
-                  label="Status Kepegawaian"
-                  disabled
-                />
-              </div>
-            </FormSection>
-          </template>
-
-          <!-- ================= 6. SISWA (Dibuat di Manajemen Siswa) ================= -->
+          <!-- ================= 2. SISWA (Dibuat di Manajemen Siswa) ================= -->
           <template v-else-if="isStudent">
             <FormSection
               title="Informasi Siswa"

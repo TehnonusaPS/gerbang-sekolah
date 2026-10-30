@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { Phone, Image, UserCog, SquareUserRound, GraduationCap, ShieldUser } from 'lucide-vue-next'
+import { Phone, Image, UserCog, SquareUserRound, GraduationCap, ShieldUser, Lock } from 'lucide-vue-next'
 import { Separator } from '@/components/ui/separator'
 import ImageUpload from '@/components/forms/ImageUpload.vue'
 import FormInput from '@/components/forms/FormInput.vue'
@@ -20,7 +20,10 @@ const props = defineProps({
   agamaOptions: { type: Array, default: () => [] },
   kelaminOptions: { type: Array, default: () => [] },
   hubunganOptions: { type: Array, default: () => [] },
-  errors: { type: Object, default: () => ({}) }
+  errors: { type: Object, default: () => ({}) },
+  isReadOnlyAcademic: { type: Boolean, default: false },
+  showPasswordFields: { type: Boolean, default: false },
+  requireOldPassword: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['image-change'])
@@ -80,13 +83,13 @@ const handleImageChange = file => {
       <!-- 3. Informasi Akademik -->
       <FormSection
         title="Informasi Akademik"
-        description="Informasi penempatan kelas dan status siswa"
+        :description="isReadOnlyAcademic ? 'Informasi penempatan kelas dan status siswa (Read-Only)' : 'Informasi penempatan kelas dan status siswa'"
         :icon="GraduationCap"
       >
         <div class="space-y-4">
-          <FormDate v-model="form.tahun_masuk" label="Tahun Masuk" :error="errors.tahun_masuk"/>
-          <FormSelect v-model="form.kelas" label="Kelas" placeholder="Pilih kelas" :options="kelasOptions" :error="errors.kelas"/>
-          <FormSelect v-model="form.status" label="Status" placeholder="Pilih status" :options="statusOptions" :error="errors.status"/>
+          <FormDate v-model="form.tahun_masuk" label="Tahun Masuk" :disabled="isReadOnlyAcademic" :error="errors.tahun_masuk"/>
+          <FormSelect v-model="form.kelas" label="Kelas" placeholder="Pilih kelas" :options="kelasOptions" :disabled="isReadOnlyAcademic" :error="errors.kelas"/>
+          <FormSelect v-model="form.status" label="Status" placeholder="Pilih status" :options="statusOptions" :disabled="isReadOnlyAcademic" :error="errors.status"/>
         </div>
       </FormSection>
     </template>
@@ -138,6 +141,44 @@ const handleImageChange = file => {
           <FormInput v-model="form.emailLogin" label="E-mail Login" placeholder="Contoh: nama_ortu@gmail.com" :error="errors.emailLogin"/>
           <FormInput v-model="form.noHpLogin" label="No. HP Login" placeholder="Contoh: 081234567890" numeric-only :maxlength="15" :error="errors.noHpLogin"/>
         </div>
+
+        <template v-if="showPasswordFields">
+          <Separator class="my-3" />
+          <div class="space-y-1 mb-3">
+            <div class="flex items-center gap-1.5 text-xs font-semibold text-foreground tracking-tight">
+              <Lock class="w-3.5 h-3.5 text-primary" />
+              <span>Keamanan Kata Sandi Orang Tua/Wali</span>
+            </div>
+            <p class="text-[11px] text-muted-foreground leading-relaxed">
+              Kosongkan bagian ini jika Anda tidak ingin mengganti kata sandi akun orang tua/wali.
+            </p>
+          </div>
+
+          <div class="grid gap-4 md:grid-cols-2">
+            <FormInput
+              v-if="requireOldPassword"
+              v-model="form.password_lama"
+              type="password"
+              label="Password Lama"
+              placeholder="Masukkan password saat ini"
+              :error="errors.password_lama"
+            />
+            <FormInput
+              v-model="form.password_baru"
+              type="password"
+              label="Password Baru"
+              placeholder="Minimal 8 karakter"
+              :error="errors.password_baru"
+            />
+            <FormInput
+              v-model="form.password_baru_confirmation"
+              type="password"
+              label="Konfirmasi Password Baru"
+              placeholder="Ulangi password baru"
+              :error="errors.password_baru_confirmation"
+            />
+          </div>
+        </template>
       </FormSection>
     </template>
   </BentoFormLayout>

@@ -588,6 +588,7 @@ class StudentController extends Controller
             'tanggal_lahir'  => 'required|date',
             'email'          => 'nullable|email|unique:users,email,' . $studentUser->id,
             'no_hp'          => 'nullable|string',
+            'password'       => 'nullable|string|min:6',
             'foto'           => 'nullable|image|mimes:jpeg,png,jpg|max:10240',
         ], [
             'foto.max' => 'Tolong masukkan foto kurang dari 10 MB.',
@@ -708,13 +709,17 @@ class StudentController extends Controller
 
                 $parent = $profile->parents->first();
                 if ($parent) {
+                    $parentUpdate = [
+                        'name'  => $request->nama_wali,
+                        'email' => $parentEmail,
+                        'phone' => $parentPhone,
+                    ];
+                    if ($request->has('password') && $request->filled('password')) {
+                        $parentUpdate['password'] = Hash::make($request->input('password'));
+                    }
                     // Update parent user account
                     if ($parent->user) {
-                        $parent->user->update([
-                            'name'  => $request->nama_wali,
-                            'email' => $parentEmail,
-                            'phone' => $parentPhone,
-                        ]);
+                        $parent->user->update($parentUpdate);
                     }
 
                     // Update parent profile

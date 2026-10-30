@@ -285,7 +285,7 @@ const goToList = () => {
       :visible-once="{ ...glassSlide.visible, transition: { ...glassSlide.visible.transition, delay: 100 } }"
     >
       <SekolahForm
-        v-model:form="form"
+        :form="form"
         :image-preview="imagePreview"
         :foundation-options="foundationOptions"
         :jenjang-options="jenjangOptions"

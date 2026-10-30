@@ -72,6 +72,8 @@ onMounted(async () => {
       curriculum_id: school.curriculum_id ? String(school.curriculum_id) : '',
       emailLogin: school.users && school.users[0] ? school.users[0].email : '',
       noHpLogin: school.users && school.users[0] ? school.users[0].phone : '',
+      password_baru: '',
+      password_baru_confirmation: '',
       logo: school.logo || null
     }
     if (school.logo) {
@@ -198,6 +200,7 @@ const handleSubmit = async () => {
     if (form.value.curriculum_id) formData.append('curriculum_id', form.value.curriculum_id)
     if (form.value.emailLogin) formData.append('emailLogin', form.value.emailLogin)
     if (form.value.noHpLogin) formData.append('noHpLogin', form.value.noHpLogin)
+    if (form.value.password_baru) formData.append('password', form.value.password_baru)
     if (logoFile.value) {
       formData.append('logo', logoFile.value)
     }
@@ -246,9 +249,17 @@ const goToList = () => {
       description="Lengkapi formulir berikut untuk memperbarui data unit sekolah." />
 
     <!-- Form Sekolah -->
-    <SekolahForm v-model:form="form" :image-preview="imagePreview" :foundation-options="foundationOptions"
-      :jenjang-options="jenjangOptions" :status-options="statusOptions" :akreditasi="akreditasi" :errors="formErrors"
-      @image-change="handleImage" />
+    <SekolahForm
+      :form="form"
+      :image-preview="imagePreview"
+      :foundation-options="foundationOptions"
+      :jenjang-options="jenjangOptions"
+      :status-options="statusOptions"
+      :akreditasi="akreditasi"
+      :errors="formErrors"
+      :show-password-fields="true"
+      @image-change="handleImage"
+    />
 
     <FormFooter
       :loading="isLoading"

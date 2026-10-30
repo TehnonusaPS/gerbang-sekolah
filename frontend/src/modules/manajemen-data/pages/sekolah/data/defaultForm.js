@@ -21,5 +21,8 @@ export const defaultForm = {
   no_akreditasi: '',
   curriculum_id: '',
   emailLogin: '',
-  noHpLogin: ''
+  noHpLogin: '',
+  password_lama: '',
+  password_baru: '',
+  password_baru_confirmation: ''
 }

@@ -188,7 +188,7 @@ const goToList = () => {
 
     <!-- Form Siswa -->
     <SiswaForm
-      v-model:form="form"
+      :form="form"
       :image-preview="imagePreview"
       :status-options="statusOptions"
       :kelas-options="classes"

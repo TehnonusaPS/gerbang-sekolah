@@ -71,7 +71,8 @@ const handleSubmit = async () => {
   let payload = {
     ...form.value,
     tanggal_lahir: form.value.tanggal_lahir || null,
-    tahun_masuk: form.value.tahun_masuk || null
+    tahun_masuk: form.value.tahun_masuk || null,
+    password: form.value.password_baru || form.value.password || undefined
   }
 
   if (form.value.foto instanceof File) {
@@ -116,7 +117,7 @@ const goToList = () => {
 
     <!-- Form Siswa -->
     <SiswaForm
-      v-model:form="form"
+      :form="form"
       :image-preview="imagePreview"
       :status-options="statusOptions"
       :kelas-options="classes"
@@ -124,6 +125,7 @@ const goToList = () => {
       :agama-options="agamaOptions"
       :kelamin-options="kelaminOptions"
       :hubungan-options="hubunganOptions"
+      :show-password-fields="true"
       @image-change="handleImage"
     />
 

@@ -6,9 +6,8 @@ import {
   School,
   Scale,
   Globe,
-  MapPin,
-  Sparkles,
-  UserCog
+  UserCog,
+  Lock
 } from 'lucide-vue-next'
 import { Separator } from '@/components/ui/separator'
 import ImageUpload from '@/components/forms/ImageUpload.vue'
@@ -28,7 +27,10 @@ const props = defineProps({
   jenjangOptions: { type: Array, default: () => [] },
   statusOptions: { type: Array, default: () => [] },
   akreditasi: { type: Array, default: () => [] },
-  errors: { type: Object, default: () => ({}) }
+  errors: { type: Object, default: () => ({}) },
+  isReadOnlyInstitutional: { type: Boolean, default: false },
+  showPasswordFields: { type: Boolean, default: false },
+  requireOldPassword: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['image-change'])
@@ -53,54 +55,83 @@ const handleImageChange = (file) => {
       <!-- 1. Logo Sekolah -->
       <FormSection
         title="Logo Sekolah"
-        description="Unggah identitas visual logo unit sekolah"
+        :description="isReadOnlyInstitutional ? 'Identitas visual resmi unit sekolah (Read-Only)' : 'Unggah identitas visual logo unit sekolah'"
         :icon="Image"
       >
         <ImageUpload
           :preview="computedPreview"
-          @change="handleImageChange"
-          note="Format: JPG atau PNG. Maksimal 2MB. Dimensi rekomendasi 1:1"
+          fit="contain"
+          :disabled="isReadOnlyInstitutional"
+          :note="isReadOnlyInstitutional ? 'Logo resmi unit sekolah dikelola melalui menu Manajemen Data' : 'Format: JPG atau PNG. Maksimal 2MB. Dimensi rekomendasi 1:1'"
           :error="errors.logo"
+          @change="handleImageChange"
         />
       </FormSection>
 
-      <!-- 2. Informasi Kontak Resmi Sekolah -->
+      <!-- 2. Akun Administrator Login -->
       <FormSection
-        title="Kontak Resmi Sekolah"
-        description="Informasi email, telepon kantor, website, dan media sosial resmi unit sekolah"
-        :icon="Phone"
+        title="Akun Administrator Login"
+        description="Data kredensial administrator sekolah untuk login ke sistem"
+        :icon="UserCog"
       >
         <div class="space-y-4">
           <FormInput
-            v-model="form.email"
-            label="E-mail Resmi Sekolah"
-            placeholder="Contoh: info@sdnpbekasi.sch.id"
-            :error="errors.email"
+            v-model="form.emailLogin"
+            type="email"
+            label="E-mail Login Administrator"
+            placeholder="Contoh: admin@sdnpbekasi.sch.id"
+            :disabled="isReadOnlyInstitutional"
+            :error="errors.emailLogin || errors.email"
+            required
           />
+
           <FormInput
-            v-model="form.no_hp"
-            label="No. Telepon Sekolah"
-            placeholder="Contoh: (021) 87654321"
-            :error="errors.phone"
+            v-model="form.noHpLogin"
+            label="No. HP / WhatsApp (Opsional)"
+            placeholder="Contoh: 081234567890"
+            numeric-only
+            :maxlength="15"
+            :error="errors.noHpLogin || errors.phone"
           />
-          <FormInput
-            v-model="form.website"
-            label="Website Resmi Sekolah"
-            placeholder="Contoh: https://sdnpbekasi.sch.id"
-            :error="errors.website"
-          />
-          <FormInput
-            v-model="form.instagram"
-            label="Akun Instagram"
-            placeholder="Contoh: @sd_nusantara_bekasi"
-            :error="errors.instagram"
-          />
-          <FormInput
-            v-model="form.facebook"
-            label="Halaman Facebook"
-            placeholder="Contoh: @sd_nusantara_bekasi"
-            :error="errors.facebook"
-          />
+
+          <!-- Opsi Ganti Kata Sandi jika diaktifkan (Edit Manajemen Data & Pengaturan Akun) -->
+          <template v-if="showPasswordFields">
+            <Separator class="my-2" />
+            <div class="space-y-1">
+              <div class="flex items-center gap-1.5 text-xs font-semibold text-foreground tracking-tight">
+                <Lock class="w-3.5 h-3.5 text-primary" />
+                <span>Keamanan Kata Sandi</span>
+              </div>
+              <p class="text-[11px] text-muted-foreground leading-relaxed">
+                Kosongkan bagian ini jika Anda tidak ingin mengganti kata sandi akun.
+              </p>
+            </div>
+
+            <FormInput
+              v-if="requireOldPassword"
+              v-model="form.password_lama"
+              type="password"
+              label="Password Lama"
+              placeholder="Masukkan password saat ini"
+              :error="errors.password_lama"
+            />
+
+            <FormInput
+              v-model="form.password_baru"
+              type="password"
+              label="Password Baru"
+              placeholder="Minimal 8 karakter"
+              :error="errors.password_baru"
+            />
+
+            <FormInput
+              v-model="form.password_baru_confirmation"
+              type="password"
+              label="Konfirmasi Password Baru"
+              placeholder="Ulangi password baru"
+              :error="errors.password_baru_confirmation"
+            />
+          </template>
         </div>
       </FormSection>
     </template>
@@ -110,7 +141,7 @@ const handleImageChange = (file) => {
       <!-- 1. Informasi Dasar Sekolah -->
       <FormSection
         title="Informasi Dasar Sekolah"
-        description="Rincian nama sekolah, NPSN, naungan yayasan, jenjang, dan kurikulum"
+        :description="isReadOnlyInstitutional ? 'Rincian nama sekolah, NPSN, jenjang, dan kurikulum (Read-Only)' : 'Rincian nama sekolah, NPSN, naungan yayasan, jenjang, dan kurikulum'"
         :icon="School"
       >
         <div class="grid gap-4 md:grid-cols-2">
@@ -118,13 +149,15 @@ const handleImageChange = (file) => {
             v-model="form.nama"
             label="Nama Unit Sekolah"
             placeholder="Contoh: SD Nusantara Pintar Bekasi"
-            :error="errors.name"
+            :disabled="isReadOnlyInstitutional"
+            :error="errors.name || errors.nama"
             required
           />
           <FormInput
             v-model="form.npsn"
             label="NPSN"
             placeholder="Contoh: 20100001"
+            :disabled="isReadOnlyInstitutional"
             :error="errors.npsn"
             required
           />
@@ -136,14 +169,16 @@ const handleImageChange = (file) => {
             label="Yayasan Induk"
             placeholder="Pilih yayasan naungan"
             :options="foundationOptions"
-            :error="errors.foundation_id"
+            :disabled="isReadOnlyInstitutional"
+            :error="errors.foundation_id || errors.yayasan"
           />
           <FormSelect
             v-model="form.jenjang"
             label="Jenjang Pendidikan"
             placeholder="Pilih jenjang (SD / SMP)"
             :options="jenjangOptions"
-            :error="errors.level"
+            :disabled="isReadOnlyInstitutional"
+            :error="errors.level || errors.jenjang"
           />
         </div>
 
@@ -151,13 +186,15 @@ const handleImageChange = (file) => {
           <FormDate
             v-model="form.tanggal_berdiri"
             label="Tanggal Berdiri"
-            :error="errors.established_date"
+            :disabled="isReadOnlyInstitutional"
+            :error="errors.established_date || errors.tanggal_berdiri"
           />
           <FormSelect
             v-model="form.status"
             label="Status Operasional"
             placeholder="Pilih status sekolah"
             :options="statusOptions"
+            :disabled="isReadOnlyInstitutional"
             :error="errors.status"
           />
         </div>
@@ -168,7 +205,8 @@ const handleImageChange = (file) => {
             mode="school"
             :level-filter="form.jenjang"
             label="Jenis Kurikulum Sekolah"
-            hint="Pilihan kurikulum spesifik jenjang (SD / SMP) disesuaikan dengan Kurikulum Yayasan Induk."
+            hint="Pilihan kurikulum disesuaikan dengan Kurikulum Yayasan Induk."
+            :disabled="isReadOnlyInstitutional"
             :error="errors.curriculum_id"
           />
         </div>
@@ -180,14 +218,15 @@ const handleImageChange = (file) => {
           label="Alamat Lengkap Sekolah"
           placeholder="Contoh: Jl. Raya Bekasi No. 45, Kel. Harapan Mulya, Kec. Medan Satria, Kota Bekasi"
           :rows="3"
-          :error="errors.address"
+          :disabled="isReadOnlyInstitutional"
+          :error="errors.address || errors.alamat"
         />
       </FormSection>
 
       <!-- 2. Dokumen Legalitas & Akreditasi -->
       <FormSection
         title="Dokumen Legalitas & Akreditasi"
-        description="Informasi SK Pendirian, Izin Operasional, dan Sertifikat Akreditasi"
+        :description="isReadOnlyInstitutional ? 'Informasi SK Pendirian, Izin Operasional, dan Akreditasi (Read-Only)' : 'Informasi SK Pendirian, Izin Operasional, dan Sertifikat Akreditasi'"
         :icon="Scale"
       >
         <div class="grid gap-4 md:grid-cols-2">
@@ -195,12 +234,14 @@ const handleImageChange = (file) => {
             v-model="form.no_sk"
             label="No. SK Pendirian"
             placeholder="Contoh: SK-002/SDNP/2012"
-            :error="errors.decree_number"
+            :disabled="isReadOnlyInstitutional"
+            :error="errors.decree_number || errors.no_sk"
           />
           <FormDate
             v-model="form.tanggal_sk"
             label="Tanggal SK Pendirian"
-            :error="errors.decree_date"
+            :disabled="isReadOnlyInstitutional"
+            :error="errors.decree_date || errors.tanggal_sk"
           />
         </div>
 
@@ -209,12 +250,14 @@ const handleImageChange = (file) => {
             v-model="form.no_izin"
             label="No. Izin Operasional"
             placeholder="Contoh: IZIN-001/2012"
-            :error="errors.permit_number"
+            :disabled="isReadOnlyInstitutional"
+            :error="errors.permit_number || errors.no_izin"
           />
           <FormDate
             v-model="form.tanggal_izin"
             label="Tanggal Izin Operasional"
-            :error="errors.permit_date"
+            :disabled="isReadOnlyInstitutional"
+            :error="errors.permit_date || errors.tanggal_izin"
           />
         </div>
 
@@ -224,12 +267,14 @@ const handleImageChange = (file) => {
             label="Peringkat Akreditasi"
             placeholder="Pilih akreditasi"
             :options="akreditasi"
-            :error="errors.accreditation"
+            :disabled="isReadOnlyInstitutional"
+            :error="errors.accreditation || errors.akreditasi"
           />
           <FormDate
             v-model="form.tanggal_akreditasi"
             label="Tanggal Akreditasi"
-            :error="errors.accreditation_date"
+            :disabled="isReadOnlyInstitutional"
+            :error="errors.accreditation_date || errors.tanggal_akreditasi"
           />
         </div>
 
@@ -237,31 +282,53 @@ const handleImageChange = (file) => {
           v-model="form.no_akreditasi"
           label="No. SK Akreditasi"
           placeholder="Contoh: AKR-2023-0001"
-          :error="errors.accreditation_number"
+          :disabled="isReadOnlyInstitutional"
+          :error="errors.accreditation_number || errors.no_akreditasi"
         />
       </FormSection>
 
-      <!-- 3. Akun Administrator Login -->
+      <!-- 3. Informasi Kontak Resmi Sekolah -->
       <FormSection
-        title="Akun Administrator Login"
-        description="Data E-mail dan No. HP yang digunakan administrator sekolah untuk login ke sistem"
-        :icon="UserCog"
+        title="Kontak Resmi Sekolah"
+        :description="isReadOnlyInstitutional ? 'Informasi email, telepon, website, dan medsos resmi sekolah (Read-Only)' : 'Informasi email, telepon kantor, website, dan media sosial resmi unit sekolah'"
+        :icon="Phone"
       >
         <div class="grid gap-4 md:grid-cols-2">
           <FormInput
-            v-model="form.emailLogin"
-            label="E-mail Login Administrator"
-            placeholder="Contoh: admin@sdnpbekasi.sch.id"
-            :error="errors.emailLogin || errors.email"
-            required
+            v-model="form.email"
+            label="E-mail Resmi Sekolah"
+            placeholder="Contoh: info@sdnpbekasi.sch.id"
+            :disabled="isReadOnlyInstitutional"
+            :error="errors.email"
           />
-
           <FormInput
-            v-model="form.noHpLogin"
-            label="No. HP Login Administrator"
-            placeholder="Contoh: 081234567890"
-            :error="errors.noHpLogin || errors.phone"
-            required
+            v-model="form.no_hp"
+            label="No. Telepon Sekolah"
+            placeholder="Contoh: (021) 87654321"
+            :disabled="isReadOnlyInstitutional"
+            :error="errors.phone || errors.no_hp"
+          />
+          <FormInput
+            v-model="form.website"
+            label="Website Resmi Sekolah"
+            placeholder="Contoh: https://sdnpbekasi.sch.id"
+            :disabled="isReadOnlyInstitutional"
+            :error="errors.website"
+            class="md:col-span-2"
+          />
+          <FormInput
+            v-model="form.instagram"
+            label="Akun Instagram"
+            placeholder="Contoh: @sd_nusantara_bekasi"
+            :disabled="isReadOnlyInstitutional"
+            :error="errors.instagram"
+          />
+          <FormInput
+            v-model="form.facebook"
+            label="Halaman Facebook"
+            placeholder="Contoh: @sd_nusantara_bekasi"
+            :disabled="isReadOnlyInstitutional"
+            :error="errors.facebook"
           />
         </div>
       </FormSection>
