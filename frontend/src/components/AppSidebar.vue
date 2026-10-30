@@ -1,12 +1,11 @@
 <script setup>
-import { School } from 'lucide-vue-next'
 import NavMain from '@/components/NavMain.vue'
 import NavUser from '@/components/NavUser.vue'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar } from '@/components/ui/avatar'
 import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
-import { currentLogoSquare } from '@/config/logo'
+import { useTenantBrand } from '@/composables/useTenantBrand'
 import {
   Sidebar,
   SidebarContent,
@@ -29,17 +28,7 @@ const currentUser = computed(() => ({
   avatar: ''
 }))
 
-const tenantName = computed(() => {
-  if (auth.user?.school?.name) return auth.user.school.name
-  if (auth.user?.foundation?.name) return auth.user.foundation.name
-  return 'Gerbang Sekolah'
-})
-
-const tenantLogo = computed(() => {
-  if (auth.user?.school?.logo) return auth.user.school.logo
-  if (auth.user?.foundation?.logo) return auth.user.foundation.logo
-  return currentLogoSquare
-})
+const { tenantName, tenantLogo, onLogoError } = useTenantBrand()
 
 // Struktur RBAC Dinamis
 const filteredNavMain = computed(() => {
@@ -89,10 +78,7 @@ const filteredNavMain = computed(() => {
               <SidebarMenuButton size="lg"
                 class="glass-mini text-sidebar-accent-foreground cursor-default hover:bg-transparent active:bg-transparent data-[state=open]:bg-transparent transition-colors duration-300">
                 <Avatar class="h-8 w-8 rounded-lg">
-                  <img v-if="tenantLogo" :src="tenantLogo" alt="Logo" class="h-full w-full object-cover" />
-                  <AvatarFallback v-else class="rounded-lg bg-primary text-primary-foreground">
-                    <School class="size-5" />
-                  </AvatarFallback>
+                  <img :src="tenantLogo" :alt="tenantName" class="h-full w-full object-cover" @error="onLogoError" />
                 </Avatar>
                 <div class="grid flex-1 text-left text-sm leading-tight">
                   <span class="truncate font-extrabold text-sidebar-foreground tracking-tight">{{ tenantName }}</span>

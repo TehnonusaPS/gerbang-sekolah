@@ -12,5 +12,6 @@ export const defaultForm = {
   no_sk: '',
   tanggal_sk: '',
   emailLogin: '',
+  noHpLogin: '',
   logo: null
 }

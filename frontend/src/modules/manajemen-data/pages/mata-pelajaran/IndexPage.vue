@@ -20,6 +20,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import MataPelajaranForm from './components/MataPelajaranForm.vue'
 import FormTextArea from '@/components/forms/FormTextArea.vue'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import {
   BookOpen,
   BookCheck,
@@ -176,7 +177,7 @@ const handleEdit = (item) => {
   isFormSheetOpen.value = true
 }
 
-const handleSavePrompt = () => {
+const validateForm = () => {
   const code = formItem.value.kode?.trim().toUpperCase()
   const name = formItem.value.nama?.trim()
 
@@ -184,7 +185,7 @@ const handleSavePrompt = () => {
     toast.error('Gagal Menyimpan', {
       description: 'Kode dan Nama Mata Pelajaran wajib diisi.'
     })
-    return
+    return false
   }
 
   // Check unique code
@@ -200,11 +201,17 @@ const handleSavePrompt = () => {
     toast.error('Kode Sudah Digunakan', {
       description: `Mata pelajaran dengan kode "${code}" sudah terdaftar.`
     })
-    return
+    return false
   }
 
-  isSaveConfirmOpen.value = true
+  return true
 }
+
+const isSaving = ref(false)
+const saveSummary = computed(() => [
+  { label: 'Nama Mata Pelajaran', value: formItem.value.nama },
+  { label: 'Kode Mapel', value: formItem.value.kode?.toUpperCase() }
+])
 
 const executeSave = async () => {
   const code = formItem.value.kode?.trim().toUpperCase()
@@ -219,6 +226,7 @@ const executeSave = async () => {
     is_active: isEditMode.value ? (formItem.value.status === 'approved' || formItem.value.status === 'draft') : true
   }
 
+  isSaving.value = true
   try {
     if (isEditMode.value) {
       await updateSubject(formItem.value.id, payload)
@@ -231,11 +239,12 @@ const executeSave = async () => {
         description: `Mata pelajaran "${name}" telah ditambahkan.`
       })
     }
-    isSaveConfirmOpen.value = false
     isFormSheetOpen.value = false
     fetchSubjectsData()
   } catch (err) {
     toast.error('Gagal menyimpan mata pelajaran')
+  } finally {
+    isSaving.value = false
   }
 }
 
@@ -493,6 +502,7 @@ const toggleActiveState = async (item) => {
       :columns="columns"
       :items="paginatedItems"
       :filters="filters"
+      :loading="isLoading"
       v-model:filterValues="filterValues"
       v-model:perPage="perPage"
       :from="from"
@@ -653,7 +663,7 @@ const toggleActiveState = async (item) => {
 
     <!-- Form Sheet (Inline Create/Edit) -->
     <Sheet v-model:open="isFormSheetOpen">
-      <SheetContent :show-close-button="false" class="sm:max-w-[500px] flex flex-col h-full gap-2">
+      <SheetContent class="sm:max-w-[500px] flex flex-col h-full gap-2">
         <SheetHeader class="border-b border-border pb-3 text-left">
           <SheetTitle class="text-base font-bold text-foreground">
             {{ isEditMode ? 'Edit Mata Pelajaran' : 'Tambah Mata Pelajaran' }}
@@ -667,23 +677,14 @@ const toggleActiveState = async (item) => {
           <MataPelajaranForm :form="formItem" :is-edit="isEditMode" />
         </div>
 
-        <div class="border-t border-border pt-4 flex items-center justify-end gap-2 shrink-0">
-          <Button
-            type="button"
-            variant="ghost"
-            class="text-xs font-bold rounded-xl cursor-pointer"
-            @click="isFormSheetOpen = false"
-          >
-            Batal
-          </Button>
-          <Button
-            type="button"
-            class="text-xs font-bold rounded-xl cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 shadow-none border-none"
-            @click="handleSavePrompt"
-          >
-            {{ isEditMode ? 'Simpan Perubahan' : 'Simpan' }}
-          </Button>
-        </div>
+        <FormFooter
+          :loading="isSaving"
+          :is-edit="isEditMode"
+          entity-name="Mata Pelajaran"
+          :summary-items="saveSummary"
+          :before-confirm="validateForm"
+          @save="executeSave"
+        />
       </SheetContent>
     </Sheet>
 
@@ -827,39 +828,6 @@ const toggleActiveState = async (item) => {
             @click="confirmReject"
           >
             Tolak Mapel
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-
-    <!-- 5. SAVE CONFIRMATION DIALOG -->
-    <Dialog v-model:open="isSaveConfirmOpen">
-      <DialogContent class="sm:max-w-[400px] rounded-2xl p-6 text-left">
-        <DialogHeader>
-          <DialogTitle class="text-sm font-bold text-foreground flex items-center gap-2">
-            <BookCheck class="h-5 w-5 text-primary" />
-            Konfirmasi Simpan Data
-          </DialogTitle>
-          <DialogDescription class="text-xs text-muted-foreground leading-relaxed mt-2">
-            Apakah Anda yakin ingin menyimpan {{ isEditMode ? 'perubahan' : 'data baru' }} untuk Mata Pelajaran <strong class="text-foreground">"{{ formItem.nama }}"</strong> (Kode: {{ formItem.kode?.toUpperCase() }})?
-          </DialogDescription>
-        </DialogHeader>
-
-        <DialogFooter class="flex flex-row items-center justify-end gap-2 pt-4 border-t border-border mt-4">
-          <Button
-            type="button"
-            variant="ghost"
-            class="text-xs font-bold rounded-xl cursor-pointer"
-            @click="isSaveConfirmOpen = false"
-          >
-            Batal
-          </Button>
-          <Button
-            type="button"
-            class="text-xs font-bold rounded-xl cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90"
-            @click="executeSave"
-          >
-            Ya, Simpan
           </Button>
         </DialogFooter>
       </DialogContent>

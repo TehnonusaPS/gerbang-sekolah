@@ -10,6 +10,7 @@ import {
   DialogDescription,
   DialogFooter
 } from '@/components/ui/dialog'
+import { useApiLoading } from '@/composables/useApiLoading'
 
 const props = defineProps({
   loading: {
@@ -60,14 +61,25 @@ const props = defineProps({
 
 const emit = defineEmits(['submit'])
 
+const { isFetching, isMutating } = useApiLoading()
 const isConfirmOpen = ref(false)
+const isSubmitLocked = ref(false)
+
+const isBusy = computed(() => Boolean(props.loading || isMutating.value || isSubmitLocked.value))
+const isButtonDisabled = computed(() => Boolean(props.disabled || isBusy.value || isFetching.value))
 
 const visibleSummaryItems = computed(() =>
   (props.summaryItems || []).filter(item => item && item.value !== null && item.value !== undefined && String(item.value).trim() !== '')
 )
 
 const handleClickSave = async () => {
+  if (isButtonDisabled.value) return
+
   if (!props.confirm) {
+    isSubmitLocked.value = true
+    setTimeout(() => {
+      isSubmitLocked.value = false
+    }, 800)
     emit('submit')
     return
   }
@@ -81,6 +93,11 @@ const handleClickSave = async () => {
 }
 
 const handleConfirmSubmit = () => {
+  if (isBusy.value) return
+  isSubmitLocked.value = true
+  setTimeout(() => {
+    isSubmitLocked.value = false
+  }, 800)
   isConfirmOpen.value = false
   emit('submit')
 }
@@ -90,16 +107,17 @@ const handleConfirmSubmit = () => {
   <div class="flex items-center justify-end pt-6 border-t border-border dark:border-zinc-800">
     <Button
       type="button"
-      :disabled="loading || disabled"
-      class="gap-1.5 px-6 shadow-sm w-full sm:w-auto"
+      size="lg"
+      :disabled="isButtonDisabled"
+      class="gap-2 px-8 h-11 text-sm font-semibold shadow-sm w-full sm:w-auto transition-all"
       @click="handleClickSave"
     >
       <span
-        v-if="loading"
+        v-if="isBusy"
         class="h-4 w-4 animate-spin border-2 border-current border-t-transparent rounded-full"
       />
-      <Save v-else class="h-4 w-4" />
-      {{ loading ? loadingLabel : submitLabel }}
+      <Save v-else class="h-4.5 w-4.5" />
+      {{ isBusy ? loadingLabel : submitLabel }}
     </Button>
 
     <Dialog :open="isConfirmOpen" @update:open="val => (isConfirmOpen = val)">
@@ -145,19 +163,19 @@ const handleConfirmSubmit = () => {
           <Button
             variant="outline"
             type="button"
-            :disabled="loading"
+            :disabled="isBusy"
             @click="isConfirmOpen = false"
           >
             Kembali Periksa
           </Button>
           <Button
             type="button"
-            :disabled="loading"
+            :disabled="isBusy"
             class="gap-1.5"
             @click="handleConfirmSubmit"
           >
             <CheckCircle2 class="h-4 w-4" />
-            {{ loading ? 'Memproses...' : confirmButtonLabel }}
+            {{ isBusy ? 'Memproses...' : confirmButtonLabel }}
           </Button>
         </DialogFooter>
       </DialogContent>

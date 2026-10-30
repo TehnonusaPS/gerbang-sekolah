@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import * as perpustakaanService from '@/services/perpustakaanService'
 import { useAuthStore } from '@/stores/authStore'
+import { getPhotoUrl } from '@/utils/getPhotoUrl'
 
 export const usePerpustakaanStore = defineStore('perpustakaan', {
   state: () => ({
@@ -26,7 +27,7 @@ export const usePerpustakaanStore = defineStore('perpustakaan', {
           jumlahStok: item.stock ? item.stock.toString() : '0',
           lokasiRak: item.rack_location,
           deskripsi: item.description,
-          photo: item.foto ? `http://127.0.0.1:8000/storage/${item.foto}` : null,
+          photo: getPhotoUrl(item.foto),
           school_id: item.school_id,
           school_name: item.school ? item.school.name : null
         }))

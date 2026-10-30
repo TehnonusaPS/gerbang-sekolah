@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'vue-sonner'
 import PageHeader from '@/components/page-header/PageHeader.vue'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import { getLocalTimeZone, today, CalendarDate } from '@internationalized/date'
 import { formatDate } from '@/utils/formatDate'
 import { glassFade } from '@/config/motion'
@@ -247,16 +248,19 @@ const packageFeatures = computed(() => {
 
 const isSubmitting = ref(false)
 
-const handleSubmit = async () => {
+const validateForm = () => {
   if (!form.value.foundation_id) {
     toast.error('Mohon pilih institusi / yayasan!')
-    return
+    return false
   }
   if (!form.value.subscription_plan_id) {
     toast.error('Mohon pilih paket langganan!')
-    return
+    return false
   }
+  return true
+}
 
+const handleSubmit = async () => {
   isSubmitting.value = true
 
   try {
@@ -546,31 +550,14 @@ const handleSubmit = async () => {
           </Field>
 
           <!-- Form Buttons -->
-          <div class="border-t border-border/80 pt-6 flex items-center justify-end gap-3.5">
-            <Button
-              type="button"
-              variant="outline"
-              class="px-5 h-11 rounded-lg font-semibold border-2 hover:bg-muted/50"
-              @click="router.push('/keuangan/subscription')"
-            >
-              Batal
-            </Button>
-            
-            <Button
-              type="submit"
-              class="px-6 h-11 rounded-lg font-bold shadow-md bg-primary text-primary-foreground hover:bg-primary/90 transition-all hover:-translate-y-0.5 flex items-center gap-2"
-              :disabled="isSubmitting"
-            >
-              <span v-if="isSubmitting" class="flex items-center gap-1.5">
-                <span class="w-4 h-4 border-2 border-primary-foreground border-t-transparent animate-spin rounded-full"></span>
-                Menyimpan...
-              </span>
-              <span v-else class="flex items-center gap-2">
-                {{ isEditMode ? 'Simpan Perubahan' : 'Simpan Langganan' }}
-                <CheckCircle2 class="w-4.5 h-4.5" />
-              </span>
-            </Button>
-          </div>
+          <FormFooter
+            :loading="isSubmitting"
+            :is-edit="isEditMode"
+            :label="isEditMode ? 'Simpan Perubahan' : 'Simpan Langganan'"
+            entity-name="Langganan"
+            :before-confirm="validateForm"
+            @save="handleSubmit"
+          />
         </form>
       </Card>
 

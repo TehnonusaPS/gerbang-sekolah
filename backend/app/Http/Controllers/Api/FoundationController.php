@@ -42,13 +42,32 @@ class FoundationController extends Controller
  
             $foundations = $query->latest()->paginate($request->input('per_page', 15));
 
-            $foundations->getCollection()->transform(function ($f) {
-                $schoolIds = $f->schools()->pluck('id');
-                $f->users_count = \App\Models\User::where('foundation_id', $f->id)
-                    ->orWhereIn('school_id', $schoolIds)
-                    ->count();
-                return $f;
-            });
+            $foundationIds = $foundations->getCollection()->pluck('id')->all();
+            if (!empty($foundationIds)) {
+                $schoolFoundationMap = \App\Models\School::whereIn('foundation_id', $foundationIds)
+                    ->pluck('foundation_id', 'id');
+                $schoolIds = $schoolFoundationMap->keys()->all();
+
+                $users = \App\Models\User::whereIn('foundation_id', $foundationIds)
+                    ->when(!empty($schoolIds), function ($q) use ($schoolIds) {
+                        $q->orWhereIn('school_id', $schoolIds);
+                    })
+                    ->select('id', 'foundation_id', 'school_id')
+                    ->get();
+
+                $countByFoundation = [];
+                foreach ($users as $u) {
+                    $fId = $u->foundation_id ?: ($schoolFoundationMap[$u->school_id] ?? null);
+                    if ($fId) {
+                        $countByFoundation[$fId] = ($countByFoundation[$fId] ?? 0) + 1;
+                    }
+                }
+
+                $foundations->getCollection()->transform(function ($f) use ($countByFoundation) {
+                    $f->users_count = $countByFoundation[$f->id] ?? 0;
+                    return $f;
+                });
+            }
 
             $total = Foundation::count();
             $active = Foundation::where('status', 'active')->count();

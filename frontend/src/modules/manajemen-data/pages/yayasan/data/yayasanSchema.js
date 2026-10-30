@@ -10,6 +10,7 @@ export const fieldErrorMap = {
   no_hp: 'phone',
   website: 'website',
   emailLogin: 'emailLogin',
+  noHpLogin: 'noHpLogin',
   tanggal_berdiri: 'established_date',
   status: 'status',
   no_akta: 'deed_number',
@@ -39,6 +40,7 @@ export const createYayasanSchema = ({ isEdit = false, hasExistingLogo = false } 
     no_sk: v.requiredString('No. SK Kemenkumham', { min: 1, max: 255 }),
     tanggal_sk: v.requiredDate('Tanggal SK Kemenkumham'),
     emailLogin: v.requiredEmail('E-mail login administrator'),
+    noHpLogin: v.optionalPhone('No. HP / WhatsApp administrator'),
     logo: isEdit && hasExistingLogo
       ? v.optionalImage({ maxSizeMB: 2 })
       : v.requiredImage('Logo yayasan', { maxSizeMB: 2 })

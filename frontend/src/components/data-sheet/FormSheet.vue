@@ -431,13 +431,6 @@ const handleConfirmSubmit = () => {
           :cancel="handleCancel"
         >
           <Button
-            variant="outline"
-            size="sm"
-            @click="handleCancel"
-          >
-            {{ cancelLabel }}
-          </Button>
-          <Button
             size="sm"
             :loading="loading"
             @click="handleSubmit"

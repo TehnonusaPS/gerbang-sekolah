@@ -15,6 +15,7 @@ import { fetchAllSiswa } from '@/services/siswaService'
 import { useSuratPeringatanStore } from '@/stores/suratPeringatanStore'
 import { toast } from 'vue-sonner'
 import PageHeader from '@/components/page-header/PageHeader.vue'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import { glassFade } from '@/config/motion'
 
 const router = useRouter()
@@ -76,26 +77,29 @@ function handleJumlahTunggakanInput(e) {
   form.value.jumlahTunggakan = formatted
 }
 
-function handleSave() {
+function validateForm() {
   if (!form.value.namaSiswa || !form.value.jenisSurat) {
     toast.error('Mohon lengkapi Jenis Surat dan Nama Siswa.')
-    return
+    return false
   }
 
   if (form.value.jenisSurat === 'Surat Pelanggaran') {
     if (!form.value.perihalPelanggaran) {
       toast.error('Mohon lengkapi Perihal Pelanggaran.')
-      return
+      return false
     }
   }
 
   if (form.value.jenisSurat === 'Surat Tunggakan') {
     if (!form.value.jumlahTunggakan) {
       toast.error('Mohon lengkapi Jumlah Tunggakan.')
-      return
+      return false
     }
   }
+  return true
+}
 
+function handleSave() {
   try {
     store.add({ ...form.value })
     toast.success('Surat peringatan berhasil dibuat!')
@@ -218,13 +222,13 @@ function handleCancel() {
       </div>
       
       <!-- Footer / Actions -->
-      <div class="p-6 border-t border-border/50 bg-muted/10 flex items-center justify-end gap-4">
-        <Button @click="handleCancel" variant="outline" class="px-8 h-12 rounded-xl font-semibold border-2 hover:bg-slate-100 dark:hover:bg-slate-800">
-          Batal
-        </Button>
-        <Button @click="handleSave" class="px-8 h-12 rounded-xl font-semibold shadow-md bg-primary text-primary-foreground hover:bg-primary/90 transition-all hover:-translate-y-0.5">
-          Simpan
-        </Button>
+      <div class="p-6 border-t border-border/50 bg-muted/10">
+        <FormFooter
+          entity-name="Surat Peringatan"
+          :before-confirm="validateForm"
+          @save="handleSave"
+          class="border-none pt-0"
+        />
       </div>
     </div>
   </div>

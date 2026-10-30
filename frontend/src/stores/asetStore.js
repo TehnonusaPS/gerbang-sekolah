@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import * as asetService from '@/services/asetService'
 import { useAuthStore } from '@/stores/authStore'
+import { getPhotoUrl } from '@/utils/getPhotoUrl'
 
 export const useAsetStore = defineStore('aset', {
   state: () => ({
@@ -26,7 +27,7 @@ export const useAsetStore = defineStore('aset', {
           condition: item.condition,
           date: item.date,
           value: item.value,
-          photo: item.foto ? `http://127.0.0.1:8000/storage/${item.foto}` : null,
+          photo: getPhotoUrl(item.foto),
           school_id: item.school_id,
           school_name: item.school ? item.school.name : null
         }))

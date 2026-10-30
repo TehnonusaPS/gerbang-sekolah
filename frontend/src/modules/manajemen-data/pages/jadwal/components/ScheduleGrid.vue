@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Plus } from 'lucide-vue-next'
+import { useApiLoading } from '@/composables/useApiLoading'
 
 const props = defineProps({
   timeSlots: Array,
@@ -10,8 +11,15 @@ const props = defineProps({
   includeSaturday: {
     type: Boolean,
     default: true
+  },
+  loading: {
+    type: Boolean,
+    default: undefined
   }
 })
+
+const { isFetching } = useApiLoading()
+const isGridLoading = computed(() => Boolean(props.loading || isFetching.value))
 
 const emit = defineEmits(['cell-clicked'])
 
@@ -94,7 +102,20 @@ const isPublished = computed(() => {
           </thead>
           
           <tbody class="divide-y divide-border">
+            <template v-if="isGridLoading && (!timeSlots || timeSlots.length === 0)">
+              <tr v-for="r in 5" :key="'skel-' + r">
+                <td class="p-3 border-r border-border/60">
+                  <div class="h-3.5 w-20 rounded bg-muted animate-pulse mb-1.5" />
+                  <div class="h-2.5 w-24 rounded bg-muted/70 animate-pulse" />
+                </td>
+                <td v-for="day in days" :key="day.value" class="p-3 border-r border-border/60 last:border-r-0">
+                  <div class="h-10 w-full rounded-xl bg-muted/50 animate-pulse" />
+                </td>
+              </tr>
+            </template>
+
             <tr
+              v-else
               v-for="slot in timeSlots"
               :key="slot.id"
               class="hover:bg-muted/10 transition-colors"
@@ -162,7 +183,7 @@ const isPublished = computed(() => {
               </template>
             </tr>
 
-            <tr v-if="timeSlots.length === 0">
+            <tr v-if="!isGridLoading && timeSlots.length === 0">
               <td :colspan="days.length + 1" class="h-32 text-center text-muted-foreground font-semibold">
                 Belum ada jam pelajaran dikonfigurasi. Klik "Atur Jam Pelajaran" untuk mengatur.
               </td>

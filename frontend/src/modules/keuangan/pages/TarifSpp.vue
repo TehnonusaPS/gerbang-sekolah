@@ -18,6 +18,7 @@ import {
 } from 'lucide-vue-next'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -97,17 +98,20 @@ onMounted(() => {
   loadClassrooms()
 })
 
-// Handle Form Submit
-const handleSave = async () => {
+const validateTariff = () => {
   if (!form.value.name.trim()) {
     toast.error('Silakan isi nama biaya dengan benar!')
-    return
+    return false
   }
   if (!form.value.amount || Number(form.value.amount) <= 0) {
     toast.error('Silakan isi nominal tarif dengan benar!')
-    return
+    return false
   }
+  return true
+}
 
+// Handle Form Submit
+const handleSave = async () => {
   const payload = {
     name: form.value.name,
     amount: Number(form.value.amount),
@@ -444,23 +448,14 @@ const filteredTariffs = computed(() => {
           </div>
 
           <!-- Submit Button -->
-          <div class="pt-2 flex flex-col gap-2">
-            <Button
-              class="w-full bg-foreground text-background hover:bg-foreground/90 font-bold h-11"
-              @click="handleSave"
-              :disabled="isLoading"
-            >
-              <Save class="w-4 h-4 mr-2" /> {{ isEditing ? 'Perbarui Tarif' : 'Simpan Tarif' }}
-            </Button>
-            <Button
-              v-if="isEditing"
-              variant="outline"
-              class="w-full font-bold h-11"
-              @click="cancelEdit"
-            >
-              Batal
-            </Button>
-          </div>
+          <FormFooter
+            :loading="isLoading"
+            :is-edit="isEditing"
+            entity-name="Tarif SPP"
+            :label="isEditing ? 'Perbarui Tarif' : 'Simpan Tarif'"
+            :before-confirm="validateTariff"
+            @save="handleSave"
+          />
         </CardContent>
       </Card>
     </div>

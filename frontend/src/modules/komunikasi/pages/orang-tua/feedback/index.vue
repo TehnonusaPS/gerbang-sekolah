@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/authStore'
 import { useFeedbackStore } from '@/stores/feedbackStore'
 import FeedbackDetailModal from '../../../components/FeedbackDetailModal.vue'
 import PageHeader from '@/components/page-header/PageHeader.vue'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import { glassSlide, glassFade } from '@/config/motion'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -84,14 +85,17 @@ function openEditView(item) {
   currentView.value = 'edit'
 }
 
-async function submitFeedback() {
+function validateFeedback() {
   if (!form.value.kategori || !form.value.kelas || !form.value.judul || !form.value.pesan) {
     toast.error('Gagal mengirim aduan', {
       description: 'Mohon isi seluruh bidang formulir terlebih dahulu.'
     })
-    return
+    return false
   }
+  return true
+}
 
+async function submitFeedback() {
   try {
     if (currentView.value === 'create') {
       await feedbackStore.add({
@@ -384,14 +388,13 @@ const categoryBadgeClass = (kategori) => {
                 </div>
               </div>
 
-              <div class="border-t border-border pt-4 sm:pt-6 flex flex-col sm:flex-row gap-3 items-center">
-                <Button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white w-full sm:w-auto px-6 h-11 flex items-center justify-center gap-2 font-bold rounded-xl shadow-md transition-all cursor-pointer">
-                  {{ currentView === 'create' ? 'Kirim Aduan' : 'Simpan Perubahan' }}
-                </Button>
-                <Button type="button" variant="ghost" @click="cancelForm" class="w-full sm:w-auto font-semibold rounded-xl h-11 px-4 cursor-pointer">
-                  Batal
-                </Button>
-              </div>
+              <FormFooter
+                :is-edit="currentView === 'edit'"
+                entity-name="Aduan & Masukan"
+                :label="currentView === 'create' ? 'Kirim Aduan' : 'Simpan Perubahan'"
+                :before-confirm="validateFeedback"
+                @save="submitFeedback"
+              />
             </form>
           </Card>
 

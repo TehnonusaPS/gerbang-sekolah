@@ -1,5 +1,5 @@
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import { ImagePlus, Camera } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import {
@@ -11,7 +11,7 @@ import {
   DialogFooter
 } from '@/components/ui/dialog'
 
-defineProps({
+const props = defineProps({
   label: {
     type: String,
     default: 'Upload Gambar'
@@ -22,10 +22,23 @@ defineProps({
   allowCamera: {
     type: Boolean,
     default: false
+  },
+  disabled: {
+    type: Boolean,
+    default: false
+  },
+  fit: {
+    type: String,
+    default: 'cover' // 'cover' | 'contain'
   }
 })
 
 const emit = defineEmits(['change'])
+
+const hasError = ref(false)
+watch(() => props.preview, () => {
+  hasError.value = false
+})
 
 const handleFileChange = event => {
   const file = event.target.files?.[0]
@@ -117,30 +130,38 @@ const capturePhoto = () => {
 <template>
   <div class="space-y-3 flex flex-col items-center">
     <div
-      class="flex flex-col items-center justify-center sm:w-32 md:w-40 lg:w-64 aspect-square mx-auto rounded-xl border-2 border-dashed overflow-hidden relative bg-muted/20"
+      class="flex flex-col items-center justify-center sm:w-32 md:w-40 lg:w-64 aspect-square mx-auto rounded-xl border-2 overflow-hidden relative bg-muted/20"
       :class="[
+        disabled ? 'border-border/60 bg-muted/10' : 'border-dashed',
         error
           ? 'border-destructive'
-          : 'border-muted-foreground/25'
+          : disabled
+            ? ''
+            : 'border-muted-foreground/25'
       ]"
     >
-      <template v-if="preview">
+      <template v-if="preview && !hasError">
         <img
           :src="preview"
           alt="Preview"
-          class="w-full h-full object-cover"
+          class="w-full h-full"
+          :class="fit === 'contain' ? 'object-contain p-2' : 'object-cover'"
+          @error="hasError = true"
         />
       </template>
 
       <template v-else>
         <div class="flex flex-col items-center gap-3 text-muted-foreground">
-          <ImagePlus class="w-8 h-8 md:w-8 md:h-8 lg:w-10 lg:h-10" />
-          <div class="text-xs text-center px-4 font-medium">Foto belum dipilih</div>
+          <ImagePlus class="w-8 h-8 md:w-8 md:h-8 lg:w-10 lg:h-10 opacity-60" />
+          <div class="text-xs text-center px-4 font-medium">
+            {{ disabled ? 'Belum ada gambar / logo' : 'Foto belum dipilih' }}
+          </div>
         </div>
       </template>
     </div>
 
     <input
+      v-if="!disabled"
       ref="fileInputRef"
       type="file"
       accept="image/*"
@@ -148,8 +169,8 @@ const capturePhoto = () => {
       @change="handleFileChange"
     />
 
-    <!-- Action Buttons Group -->
-    <div class="flex flex-wrap justify-center gap-3 w-full">
+    <!-- Action Buttons Group (Hidden when disabled) -->
+    <div v-if="!disabled" class="flex flex-wrap justify-center gap-3 w-full">
       <!-- Gallery Upload Button -->
       <Button
         type="button"

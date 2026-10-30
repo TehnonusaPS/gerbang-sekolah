@@ -17,7 +17,10 @@ import {
 } from '@/components/ui/accordion'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Spinner } from '@/components/ui/spinner'
 import { File } from 'lucide-vue-next'
+import { useApiLoading } from '@/composables/useApiLoading'
 
 const props = defineProps({
   open: {
@@ -79,8 +82,17 @@ const props = defineProps({
   sections: {
     type: Array,
     default: () => []
+  },
+  loading: {
+    type: Boolean,
+    default: undefined
   }
 })
+
+const { isFetching } = useApiLoading()
+const isSheetLoading = computed(() =>
+  props.loading !== undefined ? props.loading : (isFetching.value && !props.item)
+)
 
 const emit = defineEmits(['update:open'])
 
@@ -234,7 +246,17 @@ const resolveFieldValue = field => {
 
       <!-- Body / Accordion -->
       <div class="overflow-y-auto pr-1 flex-1 no-scrollbar">
-        <slot>
+        <div v-if="isSheetLoading" class="space-y-4 py-6">
+          <div class="flex items-center gap-2 text-xs text-muted-foreground pb-2">
+            <Spinner class="size-4 text-primary" />
+            <span>Memuat detail data...</span>
+          </div>
+          <div v-for="n in 4" :key="n" class="space-y-2">
+            <Skeleton class="h-3.5 w-28" />
+            <Skeleton class="h-8 w-full rounded-lg" />
+          </div>
+        </div>
+        <slot v-else>
           <Accordion
             type="multiple"
             class="w-full"

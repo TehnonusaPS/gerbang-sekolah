@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue'
 import { 
   Phone, 
   Image,
@@ -17,6 +18,8 @@ import FormDate from '@/components/forms/FormDate.vue'
 import FormSection from '@/components/forms/FormSection.vue'
 import FormSelect from '@/components/forms/FormSelect.vue'
 import CurriculumSelect from '@/components/curriculum/CurriculumSelect.vue'
+import BentoFormLayout from '@/components/forms/BentoFormLayout.vue'
+import { getPhotoUrl } from '@/utils/getPhotoUrl'
 
 const props = defineProps({
   form: { type: Object, required: true },
@@ -30,94 +33,81 @@ const props = defineProps({
 
 const emit = defineEmits(['image-change'])
 
+const computedPreview = computed(() => {
+  if (props.imagePreview) return props.imagePreview
+  if (props.form?.logo && typeof props.form.logo === 'string') {
+    return getPhotoUrl(props.form.logo)
+  }
+  return ''
+})
+
 const handleImageChange = (file) => {
   emit('image-change', file)
 }
 </script>
 
 <template>
-  <div class="grid gap-6 md:grid-cols-3 text-left">
-    <!-- Kolom Kiri: Data Logo, Kontak & Login Admin (Lebar 1 Kolom) -->
-    <div class="space-y-6">
-      <!-- Logo Sekolah -->
+  <BentoFormLayout>
+    <!-- ================= KOLOM KIRI (35% LEBAR) ================= -->
+    <template #left>
+      <!-- 1. Logo Sekolah -->
       <FormSection
         title="Logo Sekolah"
         description="Unggah identitas visual logo unit sekolah"
         :icon="Image"
       >
         <ImageUpload
-          :preview="imagePreview"
+          :preview="computedPreview"
           @change="handleImageChange"
           note="Format: JPG atau PNG. Maksimal 2MB. Dimensi rekomendasi 1:1"
           :error="errors.logo"
         />
       </FormSection>
 
-      <!-- Informasi Kontak Resmi -->
+      <!-- 2. Informasi Kontak Resmi Sekolah -->
       <FormSection
         title="Kontak Resmi Sekolah"
         description="Informasi email, telepon kantor, website, dan media sosial resmi unit sekolah"
         :icon="Phone"
       >
-        <FormInput
-          v-model="form.email"
-          label="E-mail Resmi Sekolah"
-          placeholder="Contoh: info@sdnpbekasi.sch.id"
-          :error="errors.email"
-        />
-        <FormInput
-          v-model="form.no_hp"
-          label="No. Telepon Sekolah"
-          placeholder="Contoh: (021) 87654321"
-          :error="errors.phone"
-        />
-        <FormInput
-          v-model="form.website"
-          label="Website Resmi Sekolah"
-          placeholder="Contoh: https://sdnpbekasi.sch.id"
-          :error="errors.website"
-        />
-        <FormInput
-          v-model="form.instagram"
-          label="Akun Instagram"
-          placeholder="Contoh: @sd_nusantara_bekasi"
-          :error="errors.instagram"
-        />
-        <FormInput
-          v-model="form.facebook"
-          label="Halaman Facebook"
-          placeholder="Contoh: @sd_nusantara_bekasi"
-          :error="errors.facebook"
-        />
+        <div class="space-y-4">
+          <FormInput
+            v-model="form.email"
+            label="E-mail Resmi Sekolah"
+            placeholder="Contoh: info@sdnpbekasi.sch.id"
+            :error="errors.email"
+          />
+          <FormInput
+            v-model="form.no_hp"
+            label="No. Telepon Sekolah"
+            placeholder="Contoh: (021) 87654321"
+            :error="errors.phone"
+          />
+          <FormInput
+            v-model="form.website"
+            label="Website Resmi Sekolah"
+            placeholder="Contoh: https://sdnpbekasi.sch.id"
+            :error="errors.website"
+          />
+          <FormInput
+            v-model="form.instagram"
+            label="Akun Instagram"
+            placeholder="Contoh: @sd_nusantara_bekasi"
+            :error="errors.instagram"
+          />
+          <FormInput
+            v-model="form.facebook"
+            label="Halaman Facebook"
+            placeholder="Contoh: @sd_nusantara_bekasi"
+            :error="errors.facebook"
+          />
+        </div>
       </FormSection>
+    </template>
 
-      <!-- Akun Administrator (Login) -->
-      <FormSection
-        title="Akun Administrator Login"
-        description="Data E-mail dan No. HP yang digunakan administrator sekolah untuk login ke sistem"
-        :icon="UserCog"
-      >
-        <FormInput
-          v-model="form.emailLogin"
-          label="E-mail Login Administrator"
-          placeholder="Contoh: admin@sdnpbekasi.sch.id"
-          :error="errors.emailLogin || errors.email"
-          required
-        />
-
-        <FormInput
-          v-model="form.noHpLogin"
-          label="No. HP Login Administrator"
-          placeholder="Contoh: 081234567890"
-          :error="errors.noHpLogin || errors.phone"
-          required
-        />
-      </FormSection>
-    </div>
-
-    <!-- Kolom Kanan: Informasi Umum & Legalitas (Lebar 2 Kolom) -->
-    <div class="md:col-span-2 space-y-6">
-      <!-- Informasi Umum -->
+    <!-- ================= KOLOM KANAN (65% LEBAR) ================= -->
+    <template #right>
+      <!-- 1. Informasi Dasar Sekolah -->
       <FormSection
         title="Informasi Dasar Sekolah"
         description="Rincian nama sekolah, NPSN, naungan yayasan, jenjang, dan kurikulum"
@@ -194,7 +184,7 @@ const handleImageChange = (file) => {
         />
       </FormSection>
 
-      <!-- Data Legalitas & Akreditasi -->
+      <!-- 2. Dokumen Legalitas & Akreditasi -->
       <FormSection
         title="Dokumen Legalitas & Akreditasi"
         description="Informasi SK Pendirian, Izin Operasional, dan Sertifikat Akreditasi"
@@ -250,6 +240,31 @@ const handleImageChange = (file) => {
           :error="errors.accreditation_number"
         />
       </FormSection>
-    </div>
-  </div>
+
+      <!-- 3. Akun Administrator Login -->
+      <FormSection
+        title="Akun Administrator Login"
+        description="Data E-mail dan No. HP yang digunakan administrator sekolah untuk login ke sistem"
+        :icon="UserCog"
+      >
+        <div class="grid gap-4 md:grid-cols-2">
+          <FormInput
+            v-model="form.emailLogin"
+            label="E-mail Login Administrator"
+            placeholder="Contoh: admin@sdnpbekasi.sch.id"
+            :error="errors.emailLogin || errors.email"
+            required
+          />
+
+          <FormInput
+            v-model="form.noHpLogin"
+            label="No. HP Login Administrator"
+            placeholder="Contoh: 081234567890"
+            :error="errors.noHpLogin || errors.phone"
+            required
+          />
+        </div>
+      </FormSection>
+    </template>
+  </BentoFormLayout>
 </template>

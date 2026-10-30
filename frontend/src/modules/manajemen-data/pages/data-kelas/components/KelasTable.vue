@@ -15,10 +15,14 @@ const props = defineProps({
   items: {
     type: Array,
     required: true
+  },
+  loading: {
+    type: Boolean,
+    default: undefined
   }
 })
 
-const emit = defineEmits(['create'])
+const emit = defineEmits(['create', 'delete'])
 
 // DataTable state
 const filterValues = ref({})
@@ -179,6 +183,7 @@ const tingkatOptions = computed(() => {
     :items="paginatedItems"
     :filters="filters"
     :actions="actions"
+    :loading="loading"
     v-model:filterValues="filterValues"
     :page="page"
     :per-page="perPage"
@@ -187,6 +192,7 @@ const tingkatOptions = computed(() => {
     :to="Math.min(page * perPage, filteredItems.length)"
     @update:page="page = $event"
     @update:perPage="perPage = $event"
+    @delete="(id, item) => emit('delete', id, item)"
   >
     <!-- Custom Render untuk Kolom Wali Kelas -->
     <template #cell-homeroom_teacher="{ item }">

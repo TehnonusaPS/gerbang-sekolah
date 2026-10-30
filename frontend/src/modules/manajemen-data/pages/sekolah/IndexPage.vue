@@ -1,4 +1,5 @@
 <script setup>
+import { getPhotoUrl } from '@/utils/getPhotoUrl'
 import DataTableCard from '@/components/data-table/DataTableCard.vue'
 import PageHeader from '@/components/page-header/PageHeader.vue'
 import { columns, filters, actions } from './data/sekolah.js'
@@ -48,8 +49,7 @@ const stats = computed(() => [
   {
     label: 'TOTAL SEKOLAH',
     value: String(statsData.value.total),
-    trend: '+8.4% bln ini',
-    trendDirection: 'up',
+    sub: 'Total Unit Sekolah Terdaftar',
     icon: School,
     illustration: 'globe',
     variant: 'primary'
@@ -57,8 +57,7 @@ const stats = computed(() => [
   {
     label: 'SEKOLAH AKTIF',
     value: String(statsData.value.aktif),
-    trend: '+12 Baru',
-    trendDirection: 'up',
+    sub: 'Unit Sekolah Berstatus Aktif',
     icon: BookCheck,
     illustration: 'school_bell',
     variant: 'emerald'
@@ -66,8 +65,7 @@ const stats = computed(() => [
   {
     label: 'SEKOLAH SEDANG TRIAL',
     value: String(statsData.value.trial),
-    trend: '-2 Sekolah',
-    trendDirection: 'down',
+    sub: 'Unit Sekolah Masa Percobaan',
     icon: BookAlert,
     illustration: 'pencil',
     variant: 'amber'
@@ -75,8 +73,7 @@ const stats = computed(() => [
   {
     label: 'SEKOLAH TIDAK AKTIF',
     value: String(statsData.value.inactive),
-    trend: '-1 Sekolah',
-    trendDirection: 'up',
+    sub: 'Unit Sekolah Nonaktif',
     icon: BookX,
     illustration: 'ruler',
     variant: 'violet'
@@ -108,13 +105,6 @@ const fetchSchools = async () => {
       params.status = statusMap[filterValues.value.status] || filterValues.value.status
     }
     const res = await getSchools(params)
-    const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api').replace(/\/api$/, '')
-    const getLogoUrl = (path) => {
-      if (!path) return null
-      if (path.startsWith('http')) return path
-      return `${baseUrl}/storage/${path}`
-    }
-
     tableItems.value = res.data.data.map(item => ({
       ...item,
       id: item.id,
@@ -139,8 +129,8 @@ const fetchSchools = async () => {
       tanggal_akreditasi: item.accreditation_date ? item.accreditation_date.split('T')[0] : '-',
       no_akreditasi: item.accreditation_number,
       status: item.status === 'active' ? 'Aktif' : (item.status === 'inactive' ? 'Nonaktif' : 'Trial'),
-      foto: getLogoUrl(item.logo) || '/defaults/sd/logo.png',
-      logo: getLogoUrl(item.logo) || '/defaults/sd/logo.png',
+      foto: getPhotoUrl(item.logo) || '/defaults/sd/logo.png',
+      logo: getPhotoUrl(item.logo) || '/defaults/sd/logo.png',
       emailLogin: item.users?.[0]?.email || '-',
       noHpLogin: item.users?.[0]?.phone || '-',
       jmlSiswa: item.students_count || 0
@@ -205,12 +195,12 @@ const handleViewDetail = id => {
     />
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
-      v-for="(stat, index) in stats"
+        v-for="(stat, index) in stats"
         :key="index"
         :label="stat.label"
         :value="stat.value"
-        :trend="stat.trend"
-        :trendDirection="stat.trendDirection"
+        :loading="isLoading"
+        :sub="stat.sub"
         :icon="stat.icon"
         :variant="stat.variant"
         :illustration="stat.illustration"
@@ -220,6 +210,7 @@ const handleViewDetail = id => {
     <DataTableCard
       :columns="columns"
       :items="tableItems"
+      :loading="isLoading"
       :filters="filters"
       :actions="actions"
       v-model:filterValues="filterValues"

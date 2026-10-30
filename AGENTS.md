@@ -33,14 +33,22 @@ Kamu adalah **Senior Full-Stack Web Developer dengan pengalaman 10+ tahun** yang
 
 ---
 
-## 4. Wajib Reusable Components & Validasi Zod
+## 4. Wajib Reusable Components, Validasi Zod, Loading & Konfirmasi
 
 1. **Gunakan Komponen yang Sudah Ada (Reusable First):**
    - Selalu cek dan gunakan komponen standar di `frontend/src/components/` sebelum membuat elemen baru:
-     - Form: `FormInput`, `FormSelect`, `FormMultiSelect`, `FormDate`, `FormTextArea`, `FormSection`, `ImageUpload` (`@/components/forms/`).
-     - Layout & Data: `PageHeader`, `StatCard`, `DataTableCard`, `DataSheet`.
+     - Form: `FormInput`, `FormSelect`, `FormMultiSelect`, `FormDate`, `FormTextArea`, `FormSection`, `ImageUpload`, `FormFooter` (`@/components/forms/`).
+     - Layout & Data: `PageHeader`, `StatCard`, `DataTableCard`, `BaseDataTable`, `DataSheet`, `FormSheet`.
    - Jika suatu kebutuhan UI/logika belum ada komponennya, **buat komponen/composable baru yang bersifat generic & reusable** agar bisa dipakai ulang di seluruh modul lain.
-2. **Wajib Validasi Form dengan `Zod` (Real-Time):**
+2. **Standar Form Footer, Posisi Tombol Simpan, & Konfirmasi Simpan:**
+   - Tombol **Simpan** pada halaman form **WAJIB** diletakkan di bagian **kanan bawah** menggunakan komponen [`FormFooter.vue`](file:///Users/am/Jobs/gerbang-sekolah/frontend/src/components/forms/FormFooter.vue) (bukan di `PageHeader` bagian atas).
+   - **DILARANG** menampilkan tombol `Batal` di bagian bawah form maupun di `FormSheet` karena sudah tersedia tombol `Kembali` di `PageHeader` atau tombol tutup (`X`) di `Sheet`.
+   - Setiap proses penyimpanan data (baik di halaman form maupun di `FormSheet` / modal) **WAJIB** melewati **Dialog Konfirmasi** terlebih dahulu setelah validasi form lolos (`:before-confirm`).
+3. **Wajib Loading 1-Halaman (`PageLoader`) & Anti-Double-Click (Tanpa Kedip Data Kosong):**
+   - **DILARANG** menampilkan data palsu (*mock/dummy*), membiarkan tampilan berkedip *"Data Tidak Ditemukan"* / angka `0`, atau memakai skeleton pecah-pecah di dalam form saat data masih diambil dari server.
+   - Gunakan komponen loading 1-halaman / 1-layar [`PageLoader.vue`](file:///Users/am/Jobs/gerbang-sekolah/frontend/src/components/ui/page-loader/PageLoader.vue) yang sudah terintegrasi otomatis di [`SidebarLayout.vue`](file:///Users/am/Jobs/gerbang-sekolah/frontend/src/layouts/SidebarLayout.vue) dan [`useApiLoading.js`](file:///Users/am/Jobs/gerbang-sekolah/frontend/src/composables/useApiLoading.js) sehingga setiap perpindahan halaman maupun proses fetch API langsung menampilkan layar loading bertema Gerbang Sekolah yang utuh hingga data siap ditampilkan.
+   - Semua tombol (`Button.vue`, `FormFooter.vue`, `FormSheet.vue`, aksi tabel) wajib terlindungi dari **klik ganda (*anti-double-click*)** menggunakan cooldown klik & penguncian state saat request mutasi (`isMutating` / `loading`) sedang berjalan.
+4. **Wajib Validasi Form dengan `Zod` (Real-Time):**
    - **DILARANG** menulis validasi `if (!form.value.xxx)` manual berulang-ulang di dalam halaman Vue.
    - Semua form **WAJIB** menggunakan composable [`useZodForm`](file:///Users/am/Jobs/gerbang-sekolah/frontend/src/composables/useZodForm.js) dan kumpulan validator reusable di [`validators.js`](file:///Users/am/Jobs/gerbang-sekolah/frontend/src/utils/validators.js) (`v.personName`, `v.nik`, `v.nisn`, `v.requiredEmail`, `v.optionalPhone`, `v.requiredSelect`, dll.).
    - Validasi harus bekerja **real-time**: langsung menampilkan error merah saat user mengetik input yang tidak sesuai aturan (misal huruf di kolom angka atau angka di kolom nama), dan langsung menghilangkan error saat input sudah benar.

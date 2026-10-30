@@ -1,6 +1,6 @@
 <script setup>
-import { computed } from 'vue'
-import { FolderOpen } from 'lucide-vue-next'
+import { computed, ref } from 'vue'
+import { FolderOpen, Loader2 } from 'lucide-vue-next'
 import {
   Table,
   TableBody,
@@ -12,8 +12,11 @@ import {
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
+import { Spinner } from '@/components/ui/spinner'
+import { Skeleton } from '@/components/ui/skeleton'
 import { tableRowFade } from '@/config/motion'
 import Checkbox from '@/components/ui/checkbox/Checkbox.vue'
+import { useApiLoading } from '@/composables/useApiLoading'
 
 const props = defineProps({
   columns: {
@@ -59,8 +62,26 @@ const props = defineProps({
   fixedHeight: {
     type: Boolean,
     default: false
+  },
+  loading: {
+    type: Boolean,
+    default: undefined
   }
 })
+
+const { isFetching, isMutating } = useApiLoading()
+const isTableLoading = computed(() => Boolean(props.loading || isFetching.value))
+const skeletonRowCount = computed(() => Math.max(3, Math.min(props.perPage || 5, 10)))
+
+const rowActionCooling = ref(false)
+const handleRowActionClick = (action, item) => {
+  if (rowActionCooling.value || isMutating.value) return
+  rowActionCooling.value = true
+  setTimeout(() => {
+    rowActionCooling.value = false
+  }, 500)
+  action?.click?.(item)
+}
 
 // ── Inisial dari nama ──────────────────────────────────────────────────────────
 const getInitials = name => {
@@ -139,7 +160,7 @@ const resolveCellClass = column => {
 
 // ── Filler Rows & Empty State ──────────────────────────────────────────────────
 const emptyRowsCount = computed(() => {
-  if (!props.fixedHeight || !props.perPage || props.items.length === 0) return 0
+  if (isTableLoading.value || !props.fixedHeight || !props.perPage || props.items.length === 0) return 0
   return Math.max(0, props.perPage - props.items.length)
 })
 
@@ -194,7 +215,7 @@ const toggleAll = checked => {
     class="relative w-full min-w-0"
     :style="items.length === 0 && !perPage ? { minHeight } : {}"
   >
-    <Table>
+    <Table :loading="false">
       <TableHeader class="bg-muted/50">
         <TableRow>
           <TableHead
@@ -224,8 +245,45 @@ const toggleAll = checked => {
       </TableHeader>
 
       <TableBody>
+        <!-- Skeleton Rows menggunakan komponen Skeleton bawaan saat filter/search dalam tabel -->
+        <template v-if="isTableLoading && items.length === 0">
+          <TableRow
+            v-for="sRow in skeletonRowCount"
+            :key="`skeleton-${sRow}`"
+            class="h-[53px] pointer-events-none select-none"
+          >
+            <TableCell v-if="selectable" class="w-12 text-center">
+              <Skeleton class="mx-auto size-4 rounded" />
+            </TableCell>
+            <TableCell v-if="showRowNumber && !selectable" class="w-12 text-center">
+              <Skeleton class="mx-auto h-3.5 w-5" />
+            </TableCell>
+            <TableCell
+              v-for="column in columns"
+              :key="`sk-col-${column.key}`"
+              :class="resolveCellClass(column)"
+            >
+              <div v-if="column.avatar" class="flex items-center gap-2.5">
+                <Skeleton class="size-7 rounded-full shrink-0" />
+                <Skeleton class="h-3.5 w-32" />
+              </div>
+              <div v-else-if="column.badge" class="flex justify-center">
+                <Skeleton class="h-5 w-16 rounded-full" />
+              </div>
+              <div v-else-if="column.key === 'actions'" class="flex items-center justify-center gap-2">
+                <Skeleton class="size-6 rounded" />
+                <Skeleton class="size-6 rounded" />
+              </div>
+              <div v-else class="flex" :class="column.type === 'number' ? 'justify-center' : 'justify-start'">
+                <Skeleton class="h-3.5 w-24 max-w-full" />
+              </div>
+            </TableCell>
+          </TableRow>
+        </template>
+
         <!-- Data Rows -->
         <TableRow
+          v-else
           v-for="(item, rowIndex) in items"
           :key="item.id || rowIndex"
           class="h-[53px]"
@@ -304,9 +362,11 @@ const toggleAll = checked => {
                   <button
                     v-for="action in rowActions"
                     :key="action.label"
-                    class="flex flex-col items-center justify-center gap-0.5 group/btn focus:outline-none text-muted-foreground hover:text-foreground transition-colors"
+                    type="button"
+                    :disabled="rowActionCooling || isMutating"
+                    class="flex flex-col items-center justify-center gap-0.5 group/btn focus:outline-none text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:pointer-events-none"
                     :title="action.label"
-                    @click="action.click(item)"
+                    @click="handleRowActionClick(action, item)"
                   >
                     <component
                       :is="action.icon"
@@ -329,7 +389,7 @@ const toggleAll = checked => {
 
         <!-- Empty State / No Data Found -->
         <TableRow
-          v-if="items.length === 0"
+          v-if="!isTableLoading && items.length === 0"
           class="border-none hover:bg-transparent!"
         >
           <TableCell
@@ -381,5 +441,16 @@ const toggleAll = checked => {
         </TableRow>
       </TableBody>
     </Table>
+
+    <!-- Indikator Spinner bawaan project saat filter/search/pindah halaman tabel -->
+    <div
+      v-if="isTableLoading && items.length > 0"
+      class="absolute inset-0 z-20 flex items-center justify-center bg-background/50 backdrop-blur-[1px] transition-opacity"
+    >
+      <div class="flex items-center gap-2 rounded-xl bg-card px-3.5 py-2 text-xs font-medium text-foreground shadow-sm border border-border">
+        <Spinner class="size-4 text-primary" />
+        <span>Memuat data...</span>
+      </div>
+    </div>
   </div>
 </template>

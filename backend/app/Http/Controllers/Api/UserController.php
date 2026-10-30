@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
@@ -284,7 +285,7 @@ class UserController extends Controller
 
         if ($request->hasFile('photo')) {
             $path = $request->file('photo')->store('photos', 'public');
-            $userData['photo'] = asset('storage/' . $path);
+            $userData['photo'] = Storage::disk('public')->url($path);
         } else {
             $userData['photo'] = $request->input('photo');
         }
@@ -560,7 +561,7 @@ class UserController extends Controller
 
         if ($request->hasFile('photo')) {
             $path = $request->file('photo')->store('photos', 'public');
-            $userData['photo'] = asset('storage/' . $path);
+            $userData['photo'] = Storage::disk('public')->url($path);
         } else {
             $userData['photo'] = $request->input('photo');
         }

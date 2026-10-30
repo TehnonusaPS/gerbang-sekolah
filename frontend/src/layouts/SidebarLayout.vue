@@ -1,9 +1,11 @@
 <script setup>
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppSidebar from '@/components/AppSidebar.vue'
 import AppMobileNavigation from '@/components/AppMobileNavigation.vue'
 import AppSubNavChips from '@/components/AppSubNavChips.vue'
+import { PageLoader } from '@/components/ui/page-loader'
+import { useApiLoading, triggerPageLoad } from '@/composables/useApiLoading'
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -34,6 +36,21 @@ import {
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
+const { isPageLoading } = useApiLoading()
+
+// Aktifkan PageLoader setiap berpindah rute halaman
+watch(
+  () => route.path,
+  () => {
+    triggerPageLoad(150)
+  },
+  { immediate: true }
+)
+
+const loaderTitle = computed(() => {
+  const pageTitle = route.meta?.title
+  return pageTitle ? `Memuat ${pageTitle}` : 'Memuat Halaman'
+})
 
 const isLoginTransition = computed(() => auth.isJustLoggedIn)
 const sidebarDelay = computed(() => isLoginTransition.value ? 1000 : 100)
@@ -421,11 +438,12 @@ const handleCrumbClick = (e, path) => {
 
       <div
         :class="[
-          'flex flex-1 flex-col gap-4 p-6 pb-20 md:pb-6 text-left transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] min-w-0',
+          'relative flex flex-1 flex-col gap-4 p-6 pb-20 md:pb-6 text-left transition-all duration-500 ease-[cubic-bezier(0.76,0,0.24,1)] min-w-0',
           auth.isLoggingOut ? 'content-exit-active' : ''
         ]"
       >
-        <div class="w-full min-w-0 flex-1">
+        <PageLoader v-if="isPageLoading" :title="loaderTitle" />
+        <div v-show="!isPageLoading" class="w-full min-w-0 flex-1">
           <router-view />
         </div>
       </div>

@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import { toast } from 'vue-sonner'
 import * as financeService from '@/services/superAdminFinanceService'
 import { useAuthStore } from '@/stores/authStore'
@@ -92,12 +93,15 @@ const openEditModal = (plan) => {
   isModalOpen.value = true
 }
 
-const handleSave = async () => {
+const validatePlan = () => {
   if (!form.value.name || !form.value.code) {
     toast.error('Mohon isi nama dan kode paket!')
-    return
+    return false
   }
+  return true
+}
 
+const handleSave = async () => {
   const payload = {
     ...form.value,
     features: form.value.features ? form.value.features.split('\n').filter(Boolean) : []
@@ -381,10 +385,12 @@ const formatCurrency = (val) => {
               <label for="isActive" class="text-sm font-semibold select-none cursor-pointer">Aktifkan dan Publikasikan Paket Ini</label>
             </div>
 
-            <div class="border-t border-border pt-4 flex justify-end gap-3">
-              <Button variant="outline" @click="isModalOpen = false">Batal</Button>
-              <Button @click="handleSave">Simpan</Button>
-            </div>
+            <FormFooter
+              :is-edit="isEditing"
+              entity-name="Paket Langganan"
+              :before-confirm="validatePlan"
+              @save="handleSave"
+            />
           </CardContent>
         </Card>
       </div>

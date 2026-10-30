@@ -38,7 +38,20 @@ return [
             'report' => false,
         ],
 
-        'public' => [
+        // Disk 'public' = disk upload aplikasi.
+        // Jika SUPABASE_S3_KEY diisi → Supabase Storage, selain itu → storage lokal.
+        'public' => env('SUPABASE_S3_KEY') ? [
+            'driver' => 's3',
+            'key' => env('SUPABASE_S3_KEY'),
+            'secret' => env('SUPABASE_S3_SECRET'),
+            'region' => env('SUPABASE_S3_REGION', 'ap-southeast-1'),
+            'bucket' => env('SUPABASE_BUCKET', 'uploads'),
+            'endpoint' => rtrim((string) env('SUPABASE_URL'), '/').'/storage/v1/s3',
+            'url' => rtrim((string) env('SUPABASE_URL'), '/').'/storage/v1/object/public/'.env('SUPABASE_BUCKET', 'uploads'),
+            'use_path_style_endpoint' => true,
+            'throw' => false,
+            'report' => false,
+        ] : [
             'driver' => 'local',
             'root' => storage_path('app/public'),
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',

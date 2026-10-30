@@ -77,7 +77,7 @@ class StaffAttendanceController extends Controller
                 'date'       => Carbon::parse($attendance->date)->translatedFormat('d F Y'),
                 'time_in'    => Carbon::parse($attendance->time_in)->format('H:i'),
                 'status'     => $attendance->status,
-                'image_url'  => Storage::url($attendance->image_path),
+                'image_url'  => Storage::disk('public')->url($attendance->image_path),
             ]
         ]);
     }

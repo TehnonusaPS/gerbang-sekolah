@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Save, User, Users } from 'lucide-vue-next'
 
 import FormSection from '@/components/forms/FormSection.vue'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormSelect from '@/components/forms/FormSelect.vue'
 import FormDate from '@/components/forms/FormDate.vue'
@@ -92,19 +93,7 @@ const simpanPerubahan = () => {
       :back="true"
       @back="batal"
       class="mb-8"
-    >
-      <template #actions>
-        <div class="flex gap-3">
-          <Button @click="batal" variant="outline" class="h-11 px-6 border-white/10 font-bold">Batal</Button>
-          <Button @click="simpanPerubahan" :disabled="isLoading" class="h-11 px-6 bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20">
-            <span v-if="isLoading" class="flex items-center gap-2">
-              <span class="animate-spin h-4 w-4 border-2 border-white/20 border-t-white rounded-full"></span> Menyimpan...
-            </span>
-            <span v-else>Simpan Perubahan</span>
-          </Button>
-        </div>
-      </template>
-    </PageHeader>
+    />
 
     <div class="grid grid-cols-1 gap-6 pb-20 md:pb-0">
       
@@ -147,29 +136,13 @@ const simpanPerubahan = () => {
           <FormInput v-model="form.email" label="Email Aktif" type="email" />
         </div>
       </FormSection>
-      <div class="flex flex-col md:flex-row items-center justify-between gap-4 pt-6">
-        <p class="text-muted-foreground italic text-sm">Terakhir diperbarui: 24 Okt 2023</p>
-        <div class="flex gap-3 w-full md:w-auto hidden md:flex">
-          <Button @click="batal" variant="outline" class="h-11 px-8">Batal</Button>
-          <Button @click="simpanPerubahan" :disabled="isLoading" class="h-11 px-8">
-            <span v-if="isLoading" class="flex items-center gap-2">
-              <span class="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></span> Menyimpan...
-            </span>
-            <span v-else>Simpan Perubahan</span>
-          </Button>
-        </div>
-      </div>
-    </div>
 
-    <!-- Bottom Action Mobile Only -->
-    <div class="md:hidden fixed bottom-0 left-0 w-full p-4 bg-background/90 backdrop-blur-xl border-t flex gap-4 z-50">
-``      <Button @click="batal" variant="outline" class="flex-1 h-11">Batal</Button>
-      <Button @click="simpanPerubahan" :disabled="isLoading" class="flex-[2] h-11">
-        <span v-if="isLoading" class="flex items-center gap-2">
-          <span class="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></span> Menyimpan...
-        </span>
-        <span v-else>Simpan Perubahan</span>
-      </Button>
+      <FormFooter
+        :loading="isLoading"
+        is-edit
+        entity-name="Pendaftaran Siswa"
+        @save="simpanPerubahan"
+      />
     </div>
   </div>
 </template>

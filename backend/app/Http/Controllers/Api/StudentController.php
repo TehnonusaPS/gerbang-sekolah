@@ -287,6 +287,13 @@ class StudentController extends Controller
         $currentUser = $request->user();
         $schoolId = $currentUser->isSuperAdmin() ? $request->input('sekolahId') : $currentUser->school_id;
 
+        if (!$schoolId && $request->filled('kelas')) {
+            $classroom = Classroom::find($request->input('kelas'));
+            if ($classroom) {
+                $schoolId = $classroom->school_id;
+            }
+        }
+
         if (!$schoolId) {
             return response()->json([
                 'status'  => 'error',
@@ -384,12 +391,11 @@ class StudentController extends Controller
             // Foto Profil & Registrasi Biometrik AI
             if ($request->hasFile('foto')) {
                 $path = $request->file('foto')->store('student_faces', 'public');
-                $fullPath = storage_path('app/public/' . $path);
 
                 $embedding = null;
                 try {
                     $response = Http::timeout(60)
-                        ->attach('image', file_get_contents($fullPath), basename($fullPath))
+                        ->attach('image', $request->file('foto')->get(), basename($path))
                         ->attach('name', $fullName)
                         ->post(config('services.ai.url') . '/api/represent');
 
@@ -414,9 +420,7 @@ class StudentController extends Controller
                         if (is_array($other->embedding)) {
                             $sim = $this->cosineSimilarity($embedding, $other->embedding);
                             if ($sim >= 0.75) {
-                                if (file_exists($fullPath)) {
-                                    unlink($fullPath);
-                                }
+                                Storage::disk('public')->delete($path);
                                 throw new \Exception("Foto wajah sudah terdaftar atas nama siswa lain (" . $other->user->name . "). Registrasi ditolak.");
                             }
                         }
@@ -431,9 +435,7 @@ class StudentController extends Controller
                     
                     Cache::forget('student_embeddings:global');
                 } else {
-                    if (file_exists($fullPath)) {
-                        unlink($fullPath);
-                    }
+                    Storage::disk('public')->delete($path);
                     throw new \Exception("Gagal mendeteksi wajah pada foto profil. Pastikan wajah tegak lurus.");
                 }
             }
@@ -642,12 +644,11 @@ class StudentController extends Controller
             // Foto Profil & Registrasi Biometrik AI
             if ($request->hasFile('foto') && $profile) {
                 $path = $request->file('foto')->store('student_faces', 'public');
-                $fullPath = storage_path('app/public/' . $path);
 
                 $embedding = null;
                 try {
                     $response = Http::timeout(60)
-                        ->attach('image', file_get_contents($fullPath), basename($fullPath))
+                        ->attach('image', $request->file('foto')->get(), basename($path))
                         ->attach('name', $fullName)
                         ->post(config('services.ai.url') . '/api/represent');
 
@@ -674,9 +675,7 @@ class StudentController extends Controller
                         if (is_array($other->embedding)) {
                             $sim = $this->cosineSimilarity($embedding, $other->embedding);
                             if ($sim >= 0.75) {
-                                if (file_exists($fullPath)) {
-                                    unlink($fullPath);
-                                }
+                                Storage::disk('public')->delete($path);
                                 throw new \Exception("Foto wajah sudah terdaftar atas nama siswa lain (" . $other->user->name . "). Registrasi ditolak.");
                             }
                         }
@@ -697,9 +696,7 @@ class StudentController extends Controller
                     
                     Cache::forget('student_embeddings:global');
                 } else {
-                    if (file_exists($fullPath)) {
-                        unlink($fullPath);
-                    }
+                    Storage::disk('public')->delete($path);
                     throw new \Exception("Gagal mendeteksi wajah pada foto profil. Pastikan wajah tegak lurus.");
                 }
             }

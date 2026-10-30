@@ -440,20 +440,21 @@ const handleCancel = () => {
     </template>
 
     <!-- Override actions slot to use custom buttons -->
-    <template #actions>
+    <template #actions="{ submit }">
       <Button
+        v-if="mode === 'view'"
         variant="outline"
         size="sm"
         class="h-9 px-4 rounded-xl"
         @click="handleCancel"
       >
-        {{ mode === 'view' ? 'Tutup' : 'Batal' }}
+        Tutup
       </Button>
       <Button
-        v-if="mode !== 'view'"
+        v-else
         size="sm"
         class="h-9 px-5 rounded-xl bg-primary text-primary-foreground font-semibold"
-        @click="handleSave"
+        @click="submit"
       >
         Simpan
       </Button>

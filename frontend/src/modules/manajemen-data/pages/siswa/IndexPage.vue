@@ -2,14 +2,14 @@
 import DataTableCard from '@/components/data-table/DataTableCard.vue'
 import PageHeader from '@/components/page-header/PageHeader.vue'
 import { usePagination } from '@/composables/usePagination'
-import { columns, filters, actions, allItems } from './data/siswa.js'
+import { columns, filters, actions } from './data/siswa.js'
 import StatCard from '@/components/stat-card/StatCard.vue'
 import { useAuthStore } from '@/stores/authStore'
 import { computed, onMounted } from 'vue'
 import { ref, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import DataSheet from '@/components/data-sheet/DataSheet.vue'
-import { rawSiswaItem, siswaSheetSections} from './data/dataSheetDetail.js'
+import { siswaSheetSections } from './data/dataSheetDetail.js'
 import { useRouter } from 'vue-router'
 import { fetchAllSiswa, deleteSiswa, getSiswaDetail } from '@/services/siswaService'
 import { getClassrooms } from '@/services/managementService'
@@ -39,20 +39,16 @@ const stats = computed(() => {
       label: 'TOTAL SISWA',
       value: String(totalVal),
       sub: 'Jumlah Siswa Terdaftar',
-      trend: '+0 bln ini',
-      trendDirection: 'up',
       icon: Users,
-      variant: 'up',
+      variant: 'default',
       color: 'primary'
     },
     {
       label: 'SISWA AKTIF',
       value: String(aktifVal),
       sub: 'Siswa Berstatus Aktif',
-      trend: '+0 bln ini',
-      trendDirection: 'up',
       icon: UserCheck,
-      variant: 'up',
+      variant: 'default',
       color: 'emerald'
     },
     {
@@ -223,7 +219,11 @@ watch(filteredItems, () => {
 const isDetailSheetOpen = ref(false)
 const selectedItemForDetail = ref(null)
 
+const isDetailLoading = ref(false)
 const handleViewDetail = async id => {
+  selectedItemForDetail.value = null
+  isDetailSheetOpen.value = true
+  isDetailLoading.value = true
   try {
     const res = await getSiswaDetail(id)
     const statusMap = {
@@ -250,9 +250,11 @@ const handleViewDetail = async id => {
       hubungan_siswa: relationMap[res.data.hubungan_siswa] || res.data.hubungan_siswa,
       kelas: res.data.kelas_nama || '-'
     }
-    isDetailSheetOpen.value = true
   } catch (err) {
+    isDetailSheetOpen.value = false
     toast.error('Gagal memuat detail siswa')
+  } finally {
+    isDetailLoading.value = false
   }
 }
 
@@ -272,10 +274,11 @@ const handleEdit = (idOrItem) => {
     />
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
-      v-for="(stat, index) in stats"
+        v-for="(stat, index) in stats"
         :key="index"
         :label="stat.label"
         :value="stat.value"
+        :loading="isLoading"
         :sub="stat.sub"
         :trend="stat.trend"
         :trendDirection="stat.trendDirection"
@@ -287,27 +290,29 @@ const handleEdit = (idOrItem) => {
     </div>
 
     <DataTableCard
-    :columns="columns"
-    :items="paginatedItems"
-    :filters="filters"
-    :actions="actionButton"
-    v-model:filterValues="filterValues"
-    v-model:perPage="perPage"
-    :from="from"
-    :to="to"
-    :total="total"
-    :page="currentPage"
-    @update:page="currentPage = $event"
-    @view="handleViewDetail"
-    v-bind="!isKepalaSekolah ? { onEdit: handleEdit, onDelete: deleteItem } : {}"
-  />
+      :columns="columns"
+      :items="paginatedItems"
+      :loading="isLoading"
+      :filters="filters"
+      :actions="actionButton"
+      v-model:filterValues="filterValues"
+      v-model:perPage="perPage"
+      :from="from"
+      :to="to"
+      :total="total"
+      :page="currentPage"
+      @update:page="currentPage = $event"
+      @view="handleViewDetail"
+      v-bind="!isKepalaSekolah ? { onEdit: handleEdit, onDelete: deleteItem } : {}"
+    />
 
   </div>
 
   <!-- Detail Sheet -->
   <DataSheet
     v-model:open="isDetailSheetOpen"
-    :item="selectedItemForDetail || rawSiswaItem"
+    :item="selectedItemForDetail"
+    :loading="isDetailLoading"
     title-key="nama"
     description-key="nisn"
     description-prefix="NISN: "

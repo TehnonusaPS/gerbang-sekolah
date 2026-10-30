@@ -9,6 +9,7 @@ import { ref, computed, watch } from 'vue'
 import { toast } from 'vue-sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Plus, Trash2, Coffee, Clock, AlertCircle } from 'lucide-vue-next'
 import { getTimeSlots, saveTimeSlotsBulk } from '@/services/scheduleService'
@@ -170,8 +171,9 @@ const slotValidationList = computed(() => {
   })
 })
 
-async function handleSave() {
-  // Check for any validation error
+const isSaving = ref(false)
+
+function validateSlots() {
   for (let i = 0; i < slots.value.length; i++) {
     const v = slotValidationList.value[i]
     if (v && v.message) {
@@ -179,11 +181,15 @@ async function handleSave() {
       toast.error('Urutan Jam Pelajaran Salah', {
         description: `[${slot.label || 'Jam ' + slot.slot_number}]: ${v.message}`
       })
-      return
+      return false
     }
   }
+  return true
+}
 
+async function handleSave() {
   slots.value.sort((a, b) => a.slot_number - b.slot_number)
+  isSaving.value = true
 
   try {
     const payload = slots.value.map(slot => ({
@@ -201,13 +207,15 @@ async function handleSave() {
   } catch (err) {
     console.error('Error saving time slots:', err)
     toast.error('Gagal menyimpan jam pelajaran.')
+  } finally {
+    isSaving.value = false
   }
 }
 </script>
 
 <template>
   <Sheet :open="open" @update:open="emit('update:open', $event)">
-    <SheetContent :show-close-button="false" class="sm:max-w-[500px] flex flex-col h-full text-left p-6">
+    <SheetContent class="sm:max-w-[500px] flex flex-col h-full text-left p-6">
       
       <!-- Modal Header -->
       <SheetHeader class="border-b border-border/60 pb-3.5 text-left">
@@ -412,23 +420,14 @@ async function handleSave() {
       </div>
 
       <!-- Footer Action Buttons -->
-      <div class="border-t border-border/60 pt-3.5 flex items-center justify-end gap-2 shrink-0">
-        <Button
-          type="button"
-          variant="ghost"
-          class="text-xs font-bold rounded-xl cursor-pointer"
-          @click="emit('update:open', false)"
-        >
-          Batal
-        </Button>
-        <Button
-          type="button"
-          class="text-xs font-bold rounded-xl cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 border-none px-6 h-9 shadow-xs"
-          @click="handleSave"
-        >
-          Simpan Jam Pelajaran
-        </Button>
-      </div>
+      <FormFooter
+        :loading="isSaving"
+        is-edit
+        label="Simpan Jam Pelajaran"
+        entity-name="Konfigurasi Jam Pelajaran"
+        :before-confirm="validateSlots"
+        @save="handleSave"
+      />
 
     </SheetContent>
   </Sheet>

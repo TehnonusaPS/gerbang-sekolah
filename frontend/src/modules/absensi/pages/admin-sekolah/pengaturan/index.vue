@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { getAbsensiSettings, updateAbsensiSettings } from '@/services/api/absensi'
 import PageHeader from '@/components/page-header/PageHeader.vue'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import { glassFade, glassSlide } from '@/config/motion'
 
 // ─── STATE ──────────────────────────────────────────────────
@@ -31,12 +32,15 @@ async function loadAbsensiSettings() {
   }
 }
 
-async function handleSave() {
+function validateForm() {
   if (!attendanceLateThreshold.value) {
     toast.error('Waktu wajib diisi')
-    return
+    return false
   }
+  return true
+}
 
+async function handleSave() {
   isSubmitting.value = true
   try {
     const response = await updateAbsensiSettings({
@@ -60,15 +64,6 @@ async function handleSave() {
 onMounted(() => {
   loadAbsensiSettings()
 })
-
-const actions = computed(() => [
-  {
-    label: isSubmitting.value ? 'Menyimpan...' : 'Simpan Pengaturan',
-    icon: Save,
-    loading: isSubmitting.value,
-    click: handleSave
-  }
-])
 </script>
 
 <template>
@@ -82,7 +77,6 @@ const actions = computed(() => [
     <PageHeader
       title="Pengaturan Batas Jam Masuk"
       description="Konfigurasi waktu operasional absensi masuk untuk seluruh guru dan staff sekolah."
-      :actions="actions"
     />
 
     <div class="grid gap-6 md:grid-cols-3">
@@ -125,16 +119,15 @@ const actions = computed(() => [
             </p>
           </div>
 
-          <div class="flex justify-start pt-4 border-t">
-            <Button 
-              @click="handleSave" 
-              :disabled="isPageLoading || isSubmitting"
-              class="h-10 px-6 gap-2"
-            >
-              <Save class="size-4" />
-              {{ isSubmitting ? 'Menyimpan...' : 'Simpan Pengaturan' }}
-            </Button>
-          </div>
+          <FormFooter
+            :loading="isSubmitting"
+            :disabled="isPageLoading"
+            is-edit
+            label="Simpan Pengaturan"
+            entity-name="Pengaturan Absensi"
+            :before-confirm="validateForm"
+            @save="handleSave"
+          />
         </CardContent>
       </Card>
 

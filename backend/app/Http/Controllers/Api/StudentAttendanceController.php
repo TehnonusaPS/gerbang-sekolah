@@ -338,12 +338,11 @@ class StudentAttendanceController extends Controller
         foreach ($filesToProcess as $labelKey => $file) {
             $label = is_string($labelKey) ? $labelKey : 'front';
             $path = $file->store('student_biometrics', 'public');
-            $fullPath = storage_path('app/public/' . $path);
             $embedding = null;
 
             try {
-                if (file_exists($fullPath)) {
-                    $response = Http::attach('image', file_get_contents($fullPath), basename($fullPath))
+                if ($path) {
+                    $response = Http::attach('image', $file->get(), basename($path))
                         ->attach('name', $studentProfile->user->name)
                         ->post($this->getAiUrl() . '/api/represent');
 
@@ -359,9 +358,7 @@ class StudentAttendanceController extends Controller
             }
 
             if (!$embedding) {
-                if (file_exists($fullPath)) {
-                    unlink($fullPath);
-                }
+                Storage::disk('public')->delete($path);
                 return response()->json([
                     'success' => false,
                     'message' => "Gagal mendeteksi wajah pada posisi [{$label}]. Pastikan posisi wajah terlihat jelas di depan kamera."
@@ -374,9 +371,7 @@ class StudentAttendanceController extends Controller
                 if (is_array($otherEmbedding)) {
                     $sim = $this->cosineSimilarity($embedding, $otherEmbedding);
                     if ($sim >= $duplicateThreshold) {
-                        if (file_exists($fullPath)) {
-                            unlink($fullPath);
-                        }
+                        Storage::disk('public')->delete($path);
                         $otherName = $other->studentProfile->user->name ?? 'Siswa Lain';
                         return response()->json([
                             'success' => false,

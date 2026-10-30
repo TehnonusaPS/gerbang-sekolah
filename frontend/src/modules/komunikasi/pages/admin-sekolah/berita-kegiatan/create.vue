@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Trash2, UploadCloud } from 'lucide-vue-next'
 import { useBeritaKegiatanStore } from '@/stores/beritaKegiatanStore'
 import PageHeader from '@/components/page-header/PageHeader.vue'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import { glassFade } from '@/config/motion'
 
 const router = useRouter()
@@ -94,7 +95,7 @@ function handleCancel() {
   router.push('/komunikasi/berita-kegiatan')
 }
 
-function handleSave() {
+function validateForm() {
   if (
     !formData.value.judul ||
     !formData.value.kategori ||
@@ -102,9 +103,12 @@ function handleSave() {
     !formData.value.isi
   ) {
     toast.error('Mohon lengkapi semua field yang wajib diisi.')
-    return
+    return false
   }
+  return true
+}
 
+function handleSave() {
   store.add({
     judul: formData.value.judul,
     kategori: formData.value.kategori,
@@ -285,22 +289,10 @@ function handleSave() {
     </Card>
 
     <!-- Bottom Action Buttons -->
-    <div class="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pt-2 w-full">
-      <Button
-        variant="outline"
-        size="lg"
-        @click="handleCancel"
-        class="rounded-xl px-6 h-11 sm:h-12 text-sm font-semibold border-border hover:bg-muted hover:text-foreground w-full sm:w-auto"
-      >
-        Batal
-      </Button>
-      <Button
-        size="lg"
-        @click="handleSave"
-        class="rounded-xl px-8 h-11 sm:h-12 text-sm font-bold shadow-md hover:shadow-lg transition-shadow w-full sm:w-auto"
-      >
-        Simpan
-      </Button>
-    </div>
+    <FormFooter
+      entity-name="Berita Kegiatan"
+      :before-confirm="validateForm"
+      @save="handleSave"
+    />
   </div>
 </template>

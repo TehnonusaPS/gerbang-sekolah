@@ -7,6 +7,7 @@ import PageHeader from '@/components/page-header/PageHeader.vue'
 import { Save, Send, User, Users } from 'lucide-vue-next'
 
 import FormSection from '@/components/forms/FormSection.vue'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import FormInput from '@/components/forms/FormInput.vue'
 import FormSelect from '@/components/forms/FormSelect.vue'
 import FormDate from '@/components/forms/FormDate.vue'
@@ -72,10 +73,6 @@ const submitPendaftaran = () => {
       description="Lengkapi formulir pendaftaran di bawah ini secara akurat. Data yang Anda masukkan akan diproses oleh tim administrasi Gerbang Sekolah."
       :back="true"
       @back="router.push('/administrasi/loket')"
-      :actions="[
-        { label: 'Simpan Draf', click: simpanDraf, variant: 'outline', icon: Save },
-        { label: 'Submit Pendaftaran', click: submitPendaftaran, variant: 'default', icon: Send }
-      ]"
       class="mb-8"
     />
 
@@ -119,12 +116,12 @@ const submitPendaftaran = () => {
           <FormInput v-model="form.email" label="Email Aktif" placeholder="example@mail.com" type="email" />
         </div>
       </FormSection>
-    </div>
 
-    <!-- Bottom Action Mobile Only -->
-    <div class="md:hidden fixed bottom-0 left-0 w-full p-4 bg-surface/90 backdrop-blur-xl border-t border-white/10 flex gap-4 z-50">
-      <Button @click="simpanDraf" variant="outline" class="flex-1 h-11 rounded-lg border-white/10 text-on-surface font-bold text-sm">Draft</Button>
-      <Button @click="submitPendaftaran" class="flex-[2] h-11 rounded-lg bg-primary text-primary-foreground font-bold text-sm">Submit Now</Button>
+      <FormFooter
+        label="Simpan Pendaftaran"
+        entity-name="Pendaftaran Siswa Baru"
+        @save="submitPendaftaran"
+      />
     </div>
   </div>
 </template>

@@ -1,4 +1,5 @@
 <script setup>
+import { computed, watch } from 'vue'
 import { Image, SquareUserRound, BriefcaseBusiness, UserCog } from 'lucide-vue-next'
 import { Separator } from '@/components/ui/separator'
 import ImageUpload from '@/components/forms/ImageUpload.vue'
@@ -8,8 +9,9 @@ import FormDate from '@/components/forms/FormDate.vue'
 import FormSection from '@/components/forms/FormSection.vue'
 import FormSelect from '@/components/forms/FormSelect.vue'
 import FormMultiSelect from '@/components/forms/FormMultiSelect.vue'
+import BentoFormLayout from '@/components/forms/BentoFormLayout.vue'
+import { getPhotoUrl } from '@/utils/getPhotoUrl'
 import { useAuthStore } from '@/stores/authStore'
-import { computed, watch } from 'vue'
 
 const props = defineProps({
   form: { type: Object, required: true },
@@ -36,6 +38,15 @@ const filteredJabatanOptions = computed(() => {
     return props.jabatanOptions.filter(opt => !['J001', 'J002'].includes(opt.value))
   }
   return props.jabatanOptions
+})
+
+const computedPreview = computed(() => {
+  if (props.imagePreview) return props.imagePreview
+  const raw = props.form?.foto || props.form?.photo
+  if (raw && typeof raw === 'string') {
+    return getPhotoUrl(raw)
+  }
+  return ''
 })
 
 const handleImageChange = file => {
@@ -81,12 +92,15 @@ const filteredSubjectOptions = computed(() => {
 })
 
 watch(
-  () => props.form.jabatan,
+  () => props.form.unit_kerja,
   () => {
-    if (!isTeacher.value) {
+    if (isAdminSekolah.value) return
+    const schoolUnits = selectedSchoolUnitIds.value
+    if (schoolUnits.length === 0) {
       props.form.subject_ids = []
     }
-  }
+  },
+  { deep: true }
 )
 
 watch(
@@ -104,13 +118,13 @@ watch(
 </script>
 
 <template>
-  <div class="grid gap-6 md:grid-cols-3 items-start">
-    <!-- Kolom Kiri: Foto Profil & Akun Pengguna (1 Kolom) -->
-    <div class="space-y-6">
+  <BentoFormLayout>
+    <!-- ================= KOLOM KIRI (35% LEBAR) ================= -->
+    <template #left>
       <!-- 1. Foto Profil -->
       <FormSection title="Foto Profil (Opsional)" description="Upload foto profil formal guru atau staff" :icon="Image">
         <ImageUpload
-          :preview="imagePreview"
+          :preview="computedPreview"
           note="Format: JPG atau PNG. Maksimal 2MB. Rasio 1:1"
           :error="errors.foto"
           @change="handleImageChange"
@@ -138,10 +152,10 @@ watch(
           />
         </div>
       </FormSection>
-    </div>
+    </template>
 
-    <!-- Kolom Kanan: Informasi Pribadi & Informasi Kepegawaian (2 Kolom) -->
-    <div class="md:col-span-2 space-y-6">
+    <!-- ================= KOLOM KANAN (65% LEBAR) ================= -->
+    <template #right>
       <!-- 1. Informasi Pribadi -->
       <FormSection title="Informasi Pribadi" description="Identitas diri, data kelahiran, kualifikasi pendidikan, dan domisili" :icon="SquareUserRound">
         <!-- Grup A: Nama & Gelar -->
@@ -336,6 +350,6 @@ watch(
           />
         </div>
       </FormSection>
-    </div>
-  </div>
+    </template>
+  </BentoFormLayout>
 </template>

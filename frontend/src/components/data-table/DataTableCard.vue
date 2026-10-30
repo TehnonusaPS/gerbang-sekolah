@@ -67,6 +67,10 @@ const props = defineProps({
   fixedHeight: {
     type: Boolean,
     default: false
+  },
+  loading: {
+    type: Boolean,
+    default: undefined
   }
 })
 
@@ -100,9 +104,16 @@ const deleteItemLabel = computed(() => {
   return item.nama ?? item.name ?? item.username ?? item.title ?? item.label ?? ''
 })
 
-const confirmDelete = () => {
+const isDeleting = ref(false)
+const confirmDelete = async () => {
+  if (isDeleting.value) return
   if (props.onDelete && pendingDeleteItem.value) {
-    props.onDelete(pendingDeleteItem.value.id, pendingDeleteItem.value)
+    isDeleting.value = true
+    try {
+      await props.onDelete(pendingDeleteItem.value.id, pendingDeleteItem.value)
+    } finally {
+      isDeleting.value = false
+    }
   }
   deleteDialogOpen.value = false
   pendingDeleteItem.value = null
@@ -190,6 +201,7 @@ const illustrationUrl = computed(() => {
       class="relative z-10"
       :columns="columns"
       :items="items"
+      :loading="loading"
       :row-actions="resolvedRowActions"
       :row-number-offset="(from ?? 1) - 1"
       :min-height="minHeight"
@@ -241,12 +253,13 @@ const illustrationUrl = computed(() => {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel @click="cancelDelete">Batal</AlertDialogCancel>
+          <AlertDialogCancel :disabled="isDeleting" @click="cancelDelete">Batal</AlertDialogCancel>
           <AlertDialogAction
+            :disabled="isDeleting"
             class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             @click="confirmDelete"
           >
-            Hapus
+            {{ isDeleting ? 'Menghapus...' : 'Hapus' }}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

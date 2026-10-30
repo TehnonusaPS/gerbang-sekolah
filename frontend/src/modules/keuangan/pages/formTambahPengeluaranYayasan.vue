@@ -14,6 +14,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'vue-sonner'
 import PageHeader from '@/components/page-header/PageHeader.vue'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import DatePicker from '@/components/date-picker/DatePicker.vue'
 import { getLocalTimeZone, today } from '@internationalized/date'
 import { formatDate } from '@/utils/formatDate'
@@ -95,16 +96,19 @@ const defaultPengeluaran = [
   }
 ]
 
-const handleSubmit = () => {
+const validateForm = () => {
   if (!form.value.deskripsi) {
     toast.error('Mohon isi deskripsi pengeluaran!')
-    return
+    return false
   }
   if (!form.value.jumlah || form.value.jumlah <= 0) {
     toast.error('Mohon isi nominal pengeluaran yang valid!')
-    return
+    return false
   }
+  return true
+}
 
+const handleSubmit = () => {
   isSubmitting.value = true
 
   setTimeout(() => {
@@ -263,39 +267,13 @@ const handleSubmit = () => {
           </Field>
 
           <!-- Buttons -->
-          <div class="border-t border-border/80 pt-6 flex items-center justify-end gap-3.5">
-            <Button
-              type="button"
-              variant="outline"
-              class="px-5 h-11 rounded-lg font-semibold border-2 hover:bg-muted/50"
-              @click="router.push('/keuangan/kelola-dana-yayasan')"
-            >
-              Batal
-            </Button>
-
-            <Button
-              type="submit"
-              class="px-6 h-11 rounded-lg font-bold shadow-md bg-primary text-primary-foreground hover:bg-primary/90 transition-all hover:-translate-y-0.5 flex items-center gap-2"
-              :disabled="isSubmitting"
-            >
-              <span
-                v-if="isSubmitting"
-                class="flex items-center gap-1.5"
-              >
-                <span
-                  class="w-4 h-4 border-2 border-primary-foreground border-t-transparent animate-spin rounded-full"
-                ></span>
-                Menyimpan...
-              </span>
-              <span
-                v-else
-                class="flex items-center gap-2"
-              >
-                Simpan Pengeluaran
-                <CheckCircle2 class="w-4.5 h-4.5" />
-              </span>
-            </Button>
-          </div>
+          <FormFooter
+            :loading="isSubmitting"
+            label="Simpan Pengeluaran"
+            entity-name="Pengeluaran Yayasan"
+            :before-confirm="validateForm"
+            @save="handleSubmit"
+          />
         </form>
       </Card>
 

@@ -21,7 +21,7 @@ class LandingPageConfigController extends Controller
             
             // Return full url to the client
             return response()->json([
-                'url' => asset('storage/' . $path)
+                'url' => Storage::disk('public')->url($path)
             ]);
         }
 

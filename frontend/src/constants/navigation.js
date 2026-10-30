@@ -33,11 +33,6 @@ export const navMain = [
     excludeRoles: ['guru', 'siswa', 'orang_tua'],
     items: [
       { 
-        title: 'Siswa', 
-        url: '/manajemen-data/siswa',
-        roles: ['admin_sekolah', 'tata_usaha', 'kepala_sekolah', 'wali_kelas']
-      },
-      { 
         title: 'Yayasan', 
         url: '/manajemen-data/yayasan',
         roles: ['superadmin']
@@ -48,14 +43,14 @@ export const navMain = [
         roles: ['superadmin', 'admin_yayasan']
       },
       { 
-        title: 'Pengguna', 
-        url: '/manajemen-data/hak-akses',
-        roles: ['superadmin']
-      },
-      { 
         title: 'Guru dan Staff', 
         url: '/manajemen-data/guru-staff',
-        roles: ['admin_yayasan', 'admin_sekolah', 'kepala_sekolah']
+        roles: ['superadmin', 'admin_yayasan', 'admin_sekolah', 'kepala_sekolah']
+      },
+      { 
+        title: 'Siswa', 
+        url: '/manajemen-data/siswa',
+        roles: ['superadmin', 'admin_sekolah', 'tata_usaha', 'kepala_sekolah', 'wali_kelas']
       },
       { 
         title: 'Monitoring Kelas', 

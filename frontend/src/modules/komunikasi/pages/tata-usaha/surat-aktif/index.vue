@@ -11,6 +11,7 @@ import { toast } from 'vue-sonner'
 import DataTableCard from '@/components/data-table/DataTableCard.vue'
 import SuratAktifPrintModal from '../../../components/SuratAktifPrintModal.vue'
 import PageHeader from '@/components/page-header/PageHeader.vue'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import StatCard from '@/components/stat-card/StatCard.vue'
 import { glassSlide, glassFade } from '@/config/motion'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
@@ -459,14 +460,11 @@ async function handleSave() {
           </Accordion>
         </div>
 
-        <div class="border-t border-border pt-4 flex items-center justify-end gap-2 shrink-0">
-          <Button type="button" variant="ghost" class="text-xs font-bold rounded-xl" @click="isFormSheetOpen = false">
-            Batal
-          </Button>
-          <Button type="button" class="text-xs font-bold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-none border-none" @click="handleSave">
-            {{ isEditMode ? 'Simpan Perubahan' : 'Simpan' }}
-          </Button>
-        </div>
+        <FormFooter
+          :is-edit="isEditMode"
+          entity-name="Surat Keterangan Aktif"
+          @save="handleSave"
+        />
       </SheetContent>
     </Sheet>
 

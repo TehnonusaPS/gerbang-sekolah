@@ -1,7 +1,8 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { toast } from 'vue-sonner'
 import { Button } from '@/components/ui/button'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -99,17 +100,31 @@ watch(() => formItem.value.teacher_id, () => {
   checkConflict()
 })
 
-async function handleSave() {
+const isSaving = ref(false)
+const saveSummary = computed(() => {
+  const subjectName = subjects.value.find(s => String(s.id) === String(formItem.value.subject_id))?.name
+  const teacherName = teachers.value.find(t => String(t.id) === String(formItem.value.teacher_id))?.nama
+  return [
+    { label: 'Hari & Sesi', value: `${props.selectedSlot?.day_name || ''} • ${props.selectedSlot?.slot_label || ''}` },
+    { label: 'Mata Pelajaran', value: subjectName },
+    { label: 'Guru Pengajar', value: teacherName }
+  ]
+})
+
+function validateForm() {
   if (!formItem.value.subject_id || !formItem.value.teacher_id) {
     toast.error('Gagal Menyimpan', { description: 'Harap lengkapi mata pelajaran dan guru pengajar.' })
-    return
+    return false
   }
 
   if (conflictWarning.value) {
     toast.error('Gagal Menyimpan', { description: 'Ada konflik jadwal untuk guru terpilih.' })
-    return
+    return false
   }
+  return true
+}
 
+async function handleSave() {
   const payload = {
     academic_year_id: props.academicYearId,
     classroom_id: props.classroomId,
@@ -119,6 +134,7 @@ async function handleSave() {
     day_of_week: props.selectedSlot.day_of_week
   }
 
+  isSaving.value = true
   try {
     if (props.isEditMode && props.editItem) {
       await updateSchedule(props.editItem.id, payload)
@@ -132,6 +148,8 @@ async function handleSave() {
   } catch (err) {
     const errorMsg = err.response?.data?.message || 'Gagal menyimpan jadwal pelajaran.'
     toast.error('Gagal Menyimpan', { description: errorMsg })
+  } finally {
+    isSaving.value = false
   }
 }
 
@@ -150,7 +168,7 @@ async function handleDelete() {
 
 <template>
   <Sheet :open="open" @update:open="emit('update:open', $event)">
-    <SheetContent :show-close-button="false" class="sm:max-w-[460px] flex flex-col h-full text-left p-6">
+    <SheetContent class="sm:max-w-[460px] flex flex-col h-full text-left p-6">
       
       <!-- Modal Header -->
       <SheetHeader class="border-b border-border/60 pb-3.5 text-left">
@@ -282,24 +300,17 @@ async function handleDelete() {
           </Button>
         </div>
 
-        <div class="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            class="text-xs font-bold rounded-xl cursor-pointer h-9"
-            @click="emit('update:open', false)"
-          >
-            Batal
-          </Button>
-          <Button
-            type="button"
-            class="text-xs font-bold rounded-xl cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 border-none px-6 h-9 shadow-xs"
-            @click="handleSave"
-            :disabled="isCheckingConflict"
-          >
-            Simpan Jadwal
-          </Button>
-        </div>
+        <FormFooter
+          :loading="isSaving"
+          :disabled="isCheckingConflict"
+          :is-edit="isEditMode"
+          label="Simpan Jadwal"
+          entity-name="Jadwal Pelajaran"
+          :summary-items="saveSummary"
+          :before-confirm="validateForm"
+          @save="handleSave"
+          class="border-none pt-0"
+        />
       </div>
 
     </SheetContent>

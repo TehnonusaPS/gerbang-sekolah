@@ -23,3 +23,21 @@ export async function getUser() {
   const response = await api.get('/user')
   return response.data
 }
+
+/**
+ * Update Profile — perbarui profil & foto user yang sedang login.
+ */
+export async function updateProfile(formData) {
+  const response = await api.post('/user/profile', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+  return response.data
+}
+
+/**
+ * Update Password — ubah password user yang sedang login.
+ */
+export async function updatePassword(data) {
+  const response = await api.put('/user/password', data)
+  return response.data
+}

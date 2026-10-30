@@ -10,6 +10,8 @@ import { useZodForm } from '@/composables/useZodForm'
 import { toast } from 'vue-sonner'
 import FormFooter from '@/components/forms/FormFooter.vue'
 import { getFoundation, updateFoundation } from '@/services/managementService'
+import { getPhotoUrl } from '@/utils/getPhotoUrl.js'
+import { glassFade, glassSlide } from '@/config/motion'
 
 const router = useRouter()
 const route = useRoute()
@@ -62,11 +64,11 @@ onMounted(async () => {
       no_sk: foundation.decree_number || '',
       tanggal_sk: foundation.decree_date ? foundation.decree_date.split('T')[0] : '',
       emailLogin: foundation.users && foundation.users[0] ? foundation.users[0].email : '',
+      noHpLogin: foundation.users && foundation.users[0] ? foundation.users[0].phone : '',
       logo: foundation.logo || null
     }
     if (foundation.logo) {
-      const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api').replace(/\/api$/, '')
-      imagePreview.value = foundation.logo.startsWith('http') ? foundation.logo : `${baseUrl}/storage/${foundation.logo}`
+      imagePreview.value = getPhotoUrl(foundation.logo)
     }
     clearErrors()
   } catch (err) {
@@ -115,6 +117,7 @@ const handleSubmit = async () => {
     if (form.value.no_sk) formData.append('decree_number', form.value.no_sk)
     if (form.value.tanggal_sk) formData.append('decree_date', form.value.tanggal_sk)
     if (form.value.emailLogin) formData.append('emailLogin', form.value.emailLogin)
+    if (form.value.noHpLogin) formData.append('noHpLogin', form.value.noHpLogin)
     if (logoFile.value) {
       formData.append('logo', logoFile.value)
     }
@@ -139,27 +142,46 @@ const handleSubmit = async () => {
     isLoading.value = false
   }
 }
-
-const goToList = () => {
-  router.push('/manajemen-data/yayasan')
-}
 </script>
 
 <template>
-  <div class="space-y-6 p-1 pb-16">
+  <div
+    v-motion
+    :initial="glassFade.initial"
+    :visible-once="glassFade.visible"
+    class="space-y-6 p-1 pb-16 text-left"
+  >
     <!-- Header dengan Tombol Kembali -->
-    <PageHeader back title="Edit Data Yayasan"
-      description="Lengkapi formulir berikut untuk memperbarui data yayasan." />
+    <PageHeader
+      back
+      title="Edit Data Yayasan"
+      description="Lengkapi formulir berikut untuk memperbarui data yayasan."
+    />
 
-    <YayasanForm v-model:form="form" :image-preview="imagePreview" :status-options="statusOptions" :errors="formErrors"
-      @image-change="handleImage" />
+    <div
+      v-motion
+      :initial="glassSlide.initial"
+      :visible-once="{ ...glassSlide.visible, transition: { ...glassSlide.visible.transition, delay: 100 } }"
+    >
+      <YayasanForm
+        v-model:form="form"
+        :image-preview="imagePreview"
+        :status-options="statusOptions"
+        :errors="formErrors"
+        @image-change="handleImage"
+      />
+    </div>
 
     <FormFooter
       :loading="isLoading"
+      is-edit
       submit-label="Simpan Perubahan"
       confirm-title="Konfirmasi Perubahan Data Yayasan"
       confirm-button-label="Ya, Simpan Perubahan"
       :entity-name="form.nama"
+      :summary-items="[
+        { label: 'Email Administrator', value: form.emailLogin }
+      ]"
       :before-confirm="onBeforeConfirm"
       @submit="handleSubmit"
     />

@@ -11,6 +11,10 @@ defineProps({
   required: {
     type: Boolean,
     default: false
+  },
+  loading: {
+    type: Boolean,
+    default: false
   }
 })
 </script>
@@ -45,6 +49,8 @@ defineProps({
       </CardDescription>
     </CardHeader>
 
-    <CardContent class="space-y-4 flex-1 flex flex-col"><slot /></CardContent>
+    <CardContent class="space-y-4 flex-1 flex flex-col">
+      <slot />
+    </CardContent>
   </Card>
 </template>

@@ -1,7 +1,7 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { toast } from 'vue-sonner'
-import { Button } from '@/components/ui/button'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import { Input } from '@/components/ui/input'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -105,15 +105,20 @@ function validateForm() {
   }
 
   formErrors.value = errors
-  return Object.keys(errors).length === 0
+  if (Object.keys(errors).length > 0) {
+    toast.error('Gagal Menyimpan', { description: 'Harap periksa kembali isian formulir Anda.' })
+    return false
+  }
+  return true
 }
 
-async function handleSave() {
-  if (!validateForm()) {
-    toast.error('Gagal Menyimpan', { description: 'Harap periksa kembali isian formulir Anda.' })
-    return
-  }
+const isSaving = ref(false)
+const saveSummary = computed(() => [
+  { label: 'Tahun Ajaran', value: formItem.value.tahun }
+])
 
+async function handleSave() {
+  isSaving.value = true
   try {
     if (props.isEditMode) {
       const payload = {
@@ -153,13 +158,15 @@ async function handleSave() {
     emit('saved')
   } catch (err) {
     toast.error('Gagal menyimpan tahun ajaran')
+  } finally {
+    isSaving.value = false
   }
 }
 </script>
 
 <template>
   <Sheet :open="open" @update:open="emit('update:open', $event)">
-    <SheetContent :show-close-button="false" class="sm:max-w-[480px] flex flex-col h-full gap-2 text-left p-6">
+    <SheetContent class="sm:max-w-[480px] flex flex-col h-full gap-2 text-left p-6">
       <!-- Header -->
       <SheetHeader class="border-b border-border/60 pb-3 text-left">
         <div class="flex items-center gap-2.5">
@@ -331,23 +338,14 @@ async function handleSave() {
       </div>
 
       <!-- Footer -->
-      <div class="border-t border-border/60 pt-3.5 flex items-center justify-end gap-2 shrink-0">
-        <Button
-          type="button"
-          variant="ghost"
-          class="text-xs font-bold rounded-xl cursor-pointer h-9 px-4"
-          @click="emit('update:open', false)"
-        >
-          Batal
-        </Button>
-        <Button
-          type="button"
-          class="text-xs font-bold rounded-xl cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 border-none h-9 px-5 shadow-xs"
-          @click="handleSave"
-        >
-          {{ isEditMode ? 'Simpan Perubahan' : 'Simpan' }}
-        </Button>
-      </div>
+      <FormFooter
+        :loading="isSaving"
+        :is-edit="isEditMode"
+        entity-name="Tahun Ajaran"
+        :summary-items="saveSummary"
+        :before-confirm="validateForm"
+        @save="handleSave"
+      />
     </SheetContent>
   </Sheet>
 </template>

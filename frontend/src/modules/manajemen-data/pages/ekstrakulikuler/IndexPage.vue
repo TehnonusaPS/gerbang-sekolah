@@ -25,6 +25,7 @@ import {
   SheetDescription
 } from '@/components/ui/sheet'
 import EkskulForm from './components/EkskulForm.vue'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import { Award, Plus, Eye, Pencil, Trash2, ToggleLeft, ToggleRight } from 'lucide-vue-next'
 import { getEkskul, saveEkskul, columns, filters } from './data/mockEkskul'
 
@@ -108,22 +109,14 @@ const validateForm = () => {
     errors.status = 'Status wajib dipilih.'
   }
   formErrors.value = errors
-  return Object.keys(errors).length === 0
-}
-
-const handleSave = () => {
-  if (!validateForm()) {
+  if (Object.keys(errors).length > 0) {
     toast.error('Gagal Menyimpan', {
       description: 'Harap lengkapi semua field yang wajib diisi.'
     })
-    return
+    return false
   }
 
   const nama = formItem.value.nama.trim()
-  const deskripsi = formItem.value.deskripsi.trim()
-  const status = formItem.value.status
-
-  // Check unique name
   const isDuplicate = ekskuls.value.some(s => {
     const isSameName = s.nama.toLowerCase() === nama.toLowerCase()
     if (isEditMode.value) {
@@ -137,8 +130,21 @@ const handleSave = () => {
     toast.error('Nama Sudah Digunakan', {
       description: `Ekstrakulikuler dengan nama "${nama}" sudah ada.`
     })
-    return
+    return false
   }
+
+  return true
+}
+
+const saveSummary = computed(() => [
+  { label: 'Nama Ekstrakurikuler', value: formItem.value.nama },
+  { label: 'Status', value: getStatusLabel(formItem.value.status) }
+])
+
+const handleSave = () => {
+  const nama = formItem.value.nama.trim()
+  const deskripsi = formItem.value.deskripsi.trim()
+  const status = formItem.value.status
 
   if (isEditMode.value) {
     const updated = ekskuls.value.map(s => {
@@ -401,7 +407,6 @@ const confirmDelete = () => {
     <!-- Form Sheet (Create / Edit) -->
     <Sheet v-model:open="isFormSheetOpen">
       <SheetContent
-        :show-close-button="false"
         class="sm:max-w-[500px] flex flex-col h-full gap-2"
       >
         <SheetHeader class="border-b border-border pb-3 text-left">
@@ -424,23 +429,13 @@ const confirmDelete = () => {
           />
         </div>
 
-        <div class="border-t border-border pt-4 flex items-center justify-end gap-2 shrink-0">
-          <Button
-            type="button"
-            variant="ghost"
-            class="text-xs font-bold rounded-xl cursor-pointer"
-            @click="isFormSheetOpen = false"
-          >
-            Batal
-          </Button>
-          <Button
-            type="button"
-            class="text-xs font-bold rounded-xl cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 shadow-none border-none"
-            @click="handleSave"
-          >
-            {{ isEditMode ? 'Simpan Perubahan' : 'Simpan' }}
-          </Button>
-        </div>
+        <FormFooter
+          :is-edit="isEditMode"
+          entity-name="Ekstrakurikuler"
+          :summary-items="saveSummary"
+          :before-confirm="validateForm"
+          @save="handleSave"
+        />
       </SheetContent>
     </Sheet>
 

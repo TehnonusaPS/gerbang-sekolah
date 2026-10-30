@@ -1,4 +1,5 @@
 <script setup>
+import { getPhotoUrl } from '@/utils/getPhotoUrl'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import PageHeader from '@/components/page-header/PageHeader.vue'
@@ -70,11 +71,11 @@ onMounted(async () => {
       no_akreditasi: school.accreditation_number,
       curriculum_id: school.curriculum_id ? String(school.curriculum_id) : '',
       emailLogin: school.users && school.users[0] ? school.users[0].email : '',
-      noHpLogin: school.users && school.users[0] ? school.users[0].phone : ''
+      noHpLogin: school.users && school.users[0] ? school.users[0].phone : '',
+      logo: school.logo || null
     }
     if (school.logo) {
-      const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api').replace(/\/api$/, '')
-      imagePreview.value = school.logo.startsWith('http') ? school.logo : `${baseUrl}/storage/${school.logo}`
+      imagePreview.value = getPhotoUrl(school.logo)
     }
   } catch (err) {
     toast.error('Gagal mengambil data sekolah')

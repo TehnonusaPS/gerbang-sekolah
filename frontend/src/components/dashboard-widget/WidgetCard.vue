@@ -20,12 +20,16 @@ const props = defineProps({
   footerClass: { type: String, default: '' },
   cardClass: { type: String, default: '' },
   delay: { type: Number, default: 0 },
-  illustration: { type: String, default: '' }
+  illustration: { type: String, default: '' },
+  loading: { type: Boolean, default: undefined }
 })
 
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
+import { useApiLoading } from '@/composables/useApiLoading'
 const auth = useAuthStore()
+const { isFetching } = useApiLoading()
+const isWidgetLoading = computed(() => Boolean(props.loading || isFetching.value))
 const computedDelay = computed(() => (auth.isJustLoggedIn ? 1400 : 0) + props.delay)
 
 const illustrationUrl = computed(() => {

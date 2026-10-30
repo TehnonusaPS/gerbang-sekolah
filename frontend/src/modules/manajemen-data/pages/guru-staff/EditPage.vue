@@ -1,4 +1,5 @@
 <script setup>
+import { getPhotoUrl } from '@/utils/getPhotoUrl'
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import PageHeader from '@/components/page-header/PageHeader.vue'
@@ -184,8 +185,7 @@ const loadTeacher = async () => {
 
     const photoPath = user.photo || data.foto
     if (photoPath) {
-      const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api').replace(/\/api$/, '')
-      imagePreview.value = photoPath.startsWith('http') ? photoPath : `${baseUrl}/storage/${photoPath}`
+      imagePreview.value = getPhotoUrl(photoPath)
     }
   } catch (err) {
     console.error('Error loading teacher details:', err)

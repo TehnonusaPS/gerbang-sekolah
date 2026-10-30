@@ -1,9 +1,11 @@
 <script setup>
 import { ref } from 'vue'
+import { toast } from 'vue-sonner'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import {
   Select,
   SelectContent,
@@ -22,6 +24,15 @@ import {
 } from 'lucide-vue-next'
 
 const paymentMethod = ref('cash')
+const isSaving = ref(false)
+
+const handleSavePengeluaran = () => {
+  isSaving.value = true
+  setTimeout(() => {
+    isSaving.value = false
+    toast.success('Pengeluaran kas kecil berhasil disimpan')
+  }, 500)
+}
 
 const recentActivities = ref([
   {
@@ -164,19 +175,12 @@ const recentActivities = ref([
             </div>
           </div>
 
-          <div class="border-t border-border pt-6 mt-2 flex gap-4 items-center">
-            <Button
-              class="bg-primary text-primary-foreground hover:bg-primary/90 px-6 h-11 flex items-center gap-2 font-semibold"
-            >
-              Simpan Pengeluaran
-              <CheckCircle2 class="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              class="font-semibold"
-              >Batal</Button
-            >
-          </div>
+          <FormFooter
+            :loading="isSaving"
+            entity-name="Pengeluaran Kas Kecil"
+            label="Simpan Pengeluaran"
+            @save="handleSavePengeluaran"
+          />
         </div>
       </Card>
 

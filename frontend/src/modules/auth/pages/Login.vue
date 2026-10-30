@@ -317,6 +317,7 @@ onUnmounted(() => {
               <Button
                 type="submit"
                 class="w-full h-10 text-sm font-semibold mt-1 !bg-[#0071FF] hover:!bg-[#0060db] active:!bg-[#0052bd] !text-white rounded-lg shadow-md shadow-[#0071FF]/25 transition-all [&::after]:!hidden [&::before]:!hidden !border-none cursor-pointer"
+                :loading="isLoading"
                 :disabled="isLoading"
               >
                 {{ isLoading ? 'Memproses...' : 'Masuk Sekarang' }}

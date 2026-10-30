@@ -1,4 +1,5 @@
 <script setup>
+import { getPhotoUrl } from '@/utils/getPhotoUrl'
 import DataTableCard from '@/components/data-table/DataTableCard.vue'
 import PageHeader from '@/components/page-header/PageHeader.vue'
 import { columns, filters, actions } from './data/guruStaff.js'
@@ -25,12 +26,14 @@ const stats = computed(() => {
   const guruVal = list.filter(item => ['guru', 'wali_kelas', 'kepala_sekolah'].includes(item.role)).length
   const staffVal = list.filter(item => ['tata_usaha', 'admin_sekolah', 'admin_yayasan'].includes(item.role)).length
 
+  const guruProgress = totalVal > 0 ? Math.round((guruVal / totalVal) * 100) : 0
+  const staffProgress = totalVal > 0 ? Math.round((staffVal / totalVal) * 100) : 0
+
   return [
     {
       label: 'TOTAL PEGAWAI',
       value: String(totalVal),
-      trend: '+8.4% bln ini',
-      trendDirection: 'up',
+      sub: 'Total Guru & Staff Terdaftar',
       icon: School,
       illustration: 'globe',
       variant: 'primary'
@@ -38,8 +41,7 @@ const stats = computed(() => {
     {
       label: 'PEGAWAI AKTIF',
       value: String(aktifVal),
-      trend: '+12 Baru',
-      trendDirection: 'up',
+      sub: 'Pegawai Berstatus Aktif',
       icon: BookCheck,
       illustration: 'school_bell',
       variant: 'emerald'
@@ -47,8 +49,8 @@ const stats = computed(() => {
     {
       label: 'TOTAL GURU',
       value: String(guruVal),
-      sub: 'Kehadiran',
-      progress: 98,
+      sub: 'Proporsi Tenaga Pendidik',
+      progress: guruProgress,
       icon: GraduationCap,
       illustration: 'open_book',
       variant: 'amber'
@@ -56,8 +58,8 @@ const stats = computed(() => {
     {
       label: 'TOTAL STAFF',
       value: String(staffVal),
-      sub: 'Kehadiran',
-      progress: 90,
+      sub: 'Proporsi Tenaga Kependidikan',
+      progress: staffProgress,
       icon: BookX,
       illustration: 'abc_board',
       variant: 'violet'
@@ -75,13 +77,6 @@ const fetchTeachers = async () => {
   try {
     const params = {}
     const res = await getTeachers(params)
-    const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api').replace(/\/api$/, '')
-    const getPhotoUrl = (path) => {
-      if (!path) return null
-      if (path.startsWith('http')) return path
-      return `${baseUrl}/storage/${path}`
-    }
-
     tableItems.value = res.data.map(item => ({
       ...item,
       id: item.id,
@@ -168,10 +163,11 @@ const handleViewDetail = id => {
     />
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
-      v-for="(stat, index) in stats"
+        v-for="(stat, index) in stats"
         :key="index"
         :label="stat.label"
         :value="stat.value"
+        :loading="isLoading"
         :trend="stat.trend"
         :trendDirection="stat.trendDirection"
         :icon="stat.icon"
@@ -185,6 +181,7 @@ const handleViewDetail = id => {
     <DataTableCard
       :columns="columns"
       :items="paginatedItems"
+      :loading="isLoading"
       :filters="filters"
       :actions="actions"
       v-model:filterValues="filterValues"

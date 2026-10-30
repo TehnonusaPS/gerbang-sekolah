@@ -4,8 +4,8 @@ import { toast } from 'vue-sonner'
 
 import PageHeader from '@/components/page-header/PageHeader.vue'
 import DataSheet from '@/components/data-sheet/DataSheet.vue'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
-import { Button } from '@/components/ui/button'
 
 import KelasStatCards from './components/KelasStatCards.vue'
 import KelasTable from './components/KelasTable.vue'
@@ -122,16 +122,23 @@ const validateForm = () => {
   if (!formItem.value.status) errors.status = 'Status wajib dipilih.'
   
   formErrors.value = errors
-  return Object.keys(errors).length === 0
+  if (Object.keys(errors).length > 0) {
+    toast.error('Gagal Menyimpan', { description: 'Harap lengkapi semua field yang wajib diisi.' })
+    return false
+  }
+  return true
 }
 
-const handleSave = async () => {
-  if (!validateForm()) {
-    toast.error('Gagal Menyimpan', { description: 'Harap lengkapi semua field yang wajib diisi.' })
-    return
-  }
+const isSaving = ref(false)
+const saveSummary = computed(() => [
+  { label: 'Nama Kelas', value: formItem.value.name },
+  { label: 'Tingkat', value: formItem.value.grade ? `Kelas ${formItem.value.grade}` : '-' },
+  { label: 'Kapasitas', value: formItem.value.capacity ? `${formItem.value.capacity} Siswa` : '-' }
+])
 
+const handleSave = async () => {
   const data = { ...formItem.value }
+  isSaving.value = true
 
   try {
     if (isEditMode.value) {
@@ -145,6 +152,8 @@ const handleSave = async () => {
     isFormSheetOpen.value = false
   } catch (err) {
     toast.error('Gagal menyimpan kelas')
+  } finally {
+    isSaving.value = false
   }
 }
 
@@ -225,8 +234,7 @@ const rowActions = [
   },
   {
     label: 'Hapus',
-    icon: Trash2,
-    click: item => handleDelete(item.id)
+    icon: Trash2
   }
 ]
 </script>
@@ -243,8 +251,10 @@ const rowActions = [
 
     <!-- Data Table & Filters -->
     <KelasTable 
-      :items="kelasList" 
+      :items="kelasList"
+      :loading="isLoading"
       @create="handleCreate"
+      @delete="handleDelete"
       :rowActions="rowActions"
     />
 
@@ -260,7 +270,7 @@ const rowActions = [
 
     <!-- Form Sheet (Create / Edit) -->
     <Sheet v-model:open="isFormSheetOpen">
-      <SheetContent :show-close-button="false" class="sm:max-w-[500px] flex flex-col h-full gap-2">
+      <SheetContent class="sm:max-w-[500px] flex flex-col h-full gap-2">
         <SheetHeader class="border-b border-border pb-3 text-left">
           <SheetTitle class="text-base font-bold text-foreground">
             {{ isEditMode ? 'Edit Kelas' : 'Tambah Kelas' }}
@@ -274,23 +284,14 @@ const rowActions = [
           <KelasForm :form="formItem" :errors="formErrors" :teacher-options="teacherOptions"/>
         </div>
 
-        <div class="border-t border-border pt-4 flex items-center justify-end gap-2 shrink-0">
-          <Button
-            type="button"
-            variant="ghost"
-            class="text-xs font-bold rounded-xl cursor-pointer"
-            @click="isFormSheetOpen = false"
-          >
-            Batal
-          </Button>
-          <Button
-            type="button"
-            class="text-xs font-bold rounded-xl cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 shadow-none border-none"
-            @click="handleSave"
-          >
-            {{ isEditMode ? 'Simpan Perubahan' : 'Simpan' }}
-          </Button>
-        </div>
+        <FormFooter
+          :loading="isSaving"
+          :is-edit="isEditMode"
+          entity-name="Kelas"
+          :summary-items="saveSummary"
+          :before-confirm="validateForm"
+          @save="handleSave"
+        />
       </SheetContent>
     </Sheet>
 

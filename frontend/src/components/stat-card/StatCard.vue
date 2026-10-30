@@ -5,6 +5,7 @@ import { Progress } from '@/components/ui/progress'
 import RollingNumber from '@/components/ui/rolling-number/RollingNumber.vue'
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
+import { useApiLoading } from '@/composables/useApiLoading'
 
 const props = defineProps({
   label: { type: String, required: true },
@@ -28,8 +29,12 @@ const props = defineProps({
     type: String,
     default: ''
   },
-  delay: { type: Number, default: 0 }
+  delay: { type: Number, default: 0 },
+  loading: { type: Boolean, default: undefined }
 })
+
+const { isFetching } = useApiLoading()
+const isCardLoading = computed(() => Boolean(props.loading || isFetching.value))
 
 const auth = useAuthStore()
 const computedDelay = computed(() => (auth.isJustLoggedIn ? 1400 : 0) + props.delay)

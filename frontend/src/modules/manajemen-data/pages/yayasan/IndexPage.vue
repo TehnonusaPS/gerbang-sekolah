@@ -8,6 +8,7 @@ import { toast } from 'vue-sonner'
 import DataSheet from '@/components/data-sheet/DataSheet.vue'
 import { yayasanSheetSections } from './data/dataSheetDetail.js'
 import { getFoundations, deleteFoundation } from '@/services/managementService'
+import { getPhotoUrl } from '@/utils/getPhotoUrl.js'
 import { Building2, ShieldCheck, ShieldAlert, ShieldX } from 'lucide-vue-next'
 
 const perPage = ref(5)
@@ -25,28 +26,11 @@ const statsData = ref({
   inactive: 0
 })
 
-const fetchStats = async () => {
-  try {
-    const res = await getFoundations({ per_page: 1000 })
-    // getFoundations might return pagination data structure or simple array depending on role
-    const list = Array.isArray(res.data) ? res.data : (res.data.data || [])
-    statsData.value = {
-      total: list.length,
-      aktif: list.filter(item => item.status === 'active').length,
-      trial: list.filter(item => item.status === 'trial').length,
-      inactive: list.filter(item => item.status === 'inactive').length
-    }
-  } catch (err) {
-    console.error('Gagal mengambil data statistik yayasan', err)
-  }
-}
-
 const stats = computed(() => [
   {
     label: 'TOTAL YAYASAN',
     value: String(statsData.value.total),
-    trend: '+8.4% bln ini',
-    trendDirection: 'up',
+    sub: 'Total Yayasan Terdaftar',
     icon: Building2,
     illustration: 'globe',
     variant: 'primary'
@@ -54,8 +38,7 @@ const stats = computed(() => [
   {
     label: 'YAYASAN AKTIF',
     value: String(statsData.value.aktif),
-    trend: '+12 Baru',
-    trendDirection: 'up',
+    sub: 'Yayasan Berstatus Aktif',
     icon: ShieldCheck,
     illustration: 'school_bell',
     variant: 'emerald'
@@ -63,8 +46,7 @@ const stats = computed(() => [
   {
     label: 'YAYASAN SEDANG TRIAL',
     value: String(statsData.value.trial),
-    trend: '-2 Yayasan',
-    trendDirection: 'down',
+    sub: 'Yayasan Masa Percobaan',
     icon: ShieldAlert,
     illustration: 'pencil',
     variant: 'amber'
@@ -72,8 +54,7 @@ const stats = computed(() => [
   {
     label: 'YAYASAN TIDAK AKTIF',
     value: String(statsData.value.inactive),
-    trend: '-1 Yayasan',
-    trendDirection: 'up',
+    sub: 'Yayasan Nonaktif',
     icon: ShieldX,
     illustration: 'ruler',
     variant: 'violet'
@@ -115,33 +96,25 @@ const fetchFoundations = async () => {
       params.status = statusMap[filterValues.value.status] || filterValues.value.status
     }
     const res = await getFoundations(params)
-    const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api').replace(/\/api$/, '')
-    const getLogoUrl = (path) => {
-      if (!path) return null
-      if (path.startsWith('http')) return path
-      return `${baseUrl}/storage/${path}`
-    }
 
     tableItems.value = res.data.data.map(item => ({
       ...item,
       id: item.id,
       nama: item.name,
-      kode: item.code,
+      kode: item.code || '-',
       tanggal_berdiri: item.established_date ? item.established_date.split('T')[0] : '-',
-      alamat: item.address,
-      email: item.email,
-      no_hp: item.phone,
-      website: item.website,
-      no_akta: item.deed_number,
+      alamat: item.address || '-',
+      email: item.email || '-',
+      no_hp: item.phone || '-',
+      website: item.website || '-',
+      no_akta: item.deed_number || '-',
       tanggal_akta: item.deed_date ? item.deed_date.split('T')[0] : '-',
-      no_sk: item.decree_number,
+      no_sk: item.decree_number || '-',
       tanggal_sk: item.decree_date ? item.decree_date.split('T')[0] : '-',
-      logo: getLogoUrl(item.logo) || '/defaults/sd/logo.png',
-      foto: getLogoUrl(item.logo) || '/defaults/sd/logo.png',
+      logo: getPhotoUrl(item.logo, '/defaults/sd/logo.png'),
+      foto: getPhotoUrl(item.logo, '/defaults/sd/logo.png'),
       status: item.status === 'active' ? 'Aktif' : (item.status === 'inactive' ? 'Nonaktif' : 'Trial'),
       emailLogin: item.users?.[0]?.email || '-',
-      noHpLogin: item.users?.[0]?.phone || '-',
-      // Mapped fields
       jmlSekolah: item.schools_count || 0,
       jmlPengguna: item.users_count || 0
     }))
@@ -166,7 +139,6 @@ const fetchFoundations = async () => {
 
 onMounted(() => {
   fetchFoundations()
-  fetchStats()
 })
 
 // Watch search and status filter to reset page to 1
@@ -190,7 +162,6 @@ const deleteItem = async (id, item) => {
       description: `${item.nama} telah dihapus dari sistem.`
     })
     fetchFoundations()
-    fetchStats()
   } catch (err) {
     toast.error('Gagal menghapus yayasan')
   }
@@ -218,21 +189,22 @@ const handleViewDetail = id => {
 
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
-      v-for="(stat, index) in stats"
-      :key="index"
-      :label="stat.label"
-      :value="stat.value"
-      :trend="stat.trend"
-      :trendDirection="stat.trendDirection"
-      :icon="stat.icon"
-      :variant="stat.variant"
-      :illustration="stat.illustration"
+        v-for="(stat, index) in stats"
+        :key="index"
+        :label="stat.label"
+        :value="stat.value"
+        :loading="isLoading"
+        :sub="stat.sub"
+        :icon="stat.icon"
+        :variant="stat.variant"
+        :illustration="stat.illustration"
       />
-     </div>
+    </div>
 
     <DataTableCard
       :columns="columns"
       :items="tableItems"
+      :loading="isLoading"
       :filters="filters"
       :actions="actions"
       v-model:filterValues="filterValues"

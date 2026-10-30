@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class Foundation extends Model
 {
@@ -108,6 +109,6 @@ class Foundation extends Model
         if (filter_var($value, FILTER_VALIDATE_URL)) {
             return $value;
         }
-        return asset('storage/' . $value);
+        return Storage::disk('public')->url($value);
     }
 }

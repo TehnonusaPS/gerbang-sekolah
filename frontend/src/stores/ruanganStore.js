@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import * as ruanganService from '@/services/ruanganService'
 import { useAuthStore } from '@/stores/authStore'
+import { getPhotoUrl } from '@/utils/getPhotoUrl'
 
 export const useRuanganStore = defineStore('ruangan', {
   state: () => ({
@@ -25,7 +26,7 @@ export const useRuanganStore = defineStore('ruangan', {
           facilities: item.facilities || [],
           school_id: item.school_id,
           school_name: item.school ? item.school.name : null,
-          foto: item.foto ? `http://127.0.0.1:8000/storage/${item.foto}` : null,
+          foto: getPhotoUrl(item.foto),
         }))
       } catch (err) {
         console.error('Failed to fetch ruangan:', err)

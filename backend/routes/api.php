@@ -121,6 +121,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/landing-page/schools/{id}', [LandingPageConfigController::class, 'updateSchoolConfig']);
 
     Route::get('/user', [AuthController::class, 'user']);
+    Route::post('/user/profile', [AuthController::class, 'updateProfile']);
+    Route::put('/user/profile', [AuthController::class, 'updateProfile']);
+    Route::put('/user/password', [AuthController::class, 'updatePassword']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Chat routes

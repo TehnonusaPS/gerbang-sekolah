@@ -229,16 +229,14 @@ class SubjectMaterialController extends Controller
             ], 404);
         }
 
-        $filePath = storage_path("app/public/{$material->file_path}");
-
-        if (!file_exists($filePath)) {
+        if (!Storage::disk('public')->exists($material->file_path)) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'File fisik tidak ditemukan di server.',
             ], 404);
         }
 
-        return response()->download($filePath, $material->file_name);
+        return Storage::disk('public')->download($material->file_path, $material->file_name);
     }
 
     /**
