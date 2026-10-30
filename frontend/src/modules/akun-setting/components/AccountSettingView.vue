@@ -462,8 +462,8 @@ const handleSave = async () => {
       :description="`Kelola informasi profil pribadi dan pengaturan keamanan akun ${roleTitle} Anda`"
     />
 
-    <!-- Formulir Grid 3-Kolom Standar Pembuatan Data Gerbang Sekolah -->
-    <form @submit.prevent="handleSave">
+    <!-- Formulir Grid Standar Pembuatan Data Gerbang Sekolah -->
+    <form class="space-y-6" @submit.prevent="handleSave">
       <BentoFormLayout>
         <!-- Kolom Kiri: Foto Profil / Logo & Akun Pengguna / Password (35%) -->
         <template #left>
@@ -1261,7 +1261,7 @@ const handleSave = async () => {
 
       <!-- Tombol Simpan FormFooter Sesuai AGENTS.md (Kanan Bawah, Dialog Konfirmasi, Anti-Double-Click) -->
       <FormFooter
-        submit-text="Simpan Perubahan Akun"
+        submit-label="Simpan Perubahan Akun"
         :loading="isSaving"
         confirm-title="Simpan Perubahan Akun?"
         confirm-description="Apakah Anda yakin data profil dan pengaturan akun yang Anda masukkan sudah benar?"
