@@ -323,7 +323,7 @@ watch(
         :total="total"
         :page="currentPage"
         @update:page="currentPage = $event"
-        @edit="$router.push('/manajemen-data/manajemen-kelas/edit')"
+        @edit="$router.push(`/manajemen-data/siswa/edit?id=${$event}`)"
         @delete="deleteItem"
       >
         <template #cell-kehadiran="{ item }">

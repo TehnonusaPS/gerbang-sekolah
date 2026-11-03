@@ -12,6 +12,8 @@ import KelasTable from './components/KelasTable.vue'
 import KelasForm from './components/KelasForm.vue'
 import router from '@/router/index.js'
 import { getClassrooms, createClassroom, updateClassroom, deleteClassroom, getTeachers } from '@/services/managementService'
+import { useZodForm } from '@/composables/useZodForm'
+import { kelasSchema } from './data/kelasSchema'
 
 import {
   Eye,
@@ -61,7 +63,6 @@ onMounted(() => {
 // --- Form Sheet State & Methods ---
 const isFormSheetOpen = ref(false)
 const isEditMode = ref(false)
-const formErrors = ref({})
 const formItem = ref({
   id: '',
   name: '',
@@ -75,9 +76,15 @@ const formItem = ref({
   status: 'active'
 })
 
+const {
+  errors: formErrors,
+  validate: validateForm,
+  clearErrors
+} = useZodForm(kelasSchema, formItem)
+
 const handleCreate = () => {
   isEditMode.value = false
-  formErrors.value = {}
+  clearErrors()
   formItem.value = {
     id: '',
     name: '',
@@ -95,7 +102,7 @@ const handleCreate = () => {
 
 const handleEdit = (item) => {
   isEditMode.value = true
-  formErrors.value = {}
+  clearErrors()
   formItem.value = {
     ...item,
     grade: item.grade != null ? String(item.grade) : '',
@@ -104,21 +111,6 @@ const handleEdit = (item) => {
       : ''
   }
   isFormSheetOpen.value = true
-}
-
-const validateForm = () => {
-  const errors = {}
-  if (!formItem.value.name?.trim()) errors.name = 'Nama kelas wajib diisi.'
-  if (!formItem.value.grade) errors.grade = 'Tingkat wajib dipilih.'
-  if (!formItem.value.capacity) errors.capacity = 'Kapasitas wajib diisi.'
-  if (!formItem.value.status) errors.status = 'Status wajib dipilih.'
-  
-  formErrors.value = errors
-  if (Object.keys(errors).length > 0) {
-    toast.error('Gagal Menyimpan', { description: 'Harap lengkapi semua field yang wajib diisi.' })
-    return false
-  }
-  return true
 }
 
 const isSaving = ref(false)

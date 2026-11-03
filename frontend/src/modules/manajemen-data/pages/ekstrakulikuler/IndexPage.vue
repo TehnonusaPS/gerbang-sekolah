@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { usePagination } from '@/composables/usePagination'
 import { useAuthStore } from '@/stores/authStore'
+import { useZodForm } from '@/composables/useZodForm'
 import {
   Dialog,
   DialogContent,
@@ -27,25 +28,48 @@ import {
 import EkskulForm from './components/EkskulForm.vue'
 import FormFooter from '@/components/forms/FormFooter.vue'
 import { Award, Plus, Eye, Pencil, Trash2, ToggleLeft, ToggleRight } from 'lucide-vue-next'
-import { getEkskul, saveEkskul, columns, filters } from './data/mockEkskul'
+import { columns, filters } from './data/ekskulConfig'
+import { ekskulSchema } from './data/ekskulSchema'
+import {
+  fetchAllEkskul,
+  createEkskul,
+  updateEkskul,
+  deleteEkskul,
+  toggleEkskulStatus
+} from '@/services/ekskulService'
 
 const auth = useAuthStore()
 
 // --- Role & Permissions ---
 const role = computed(() => auth.user?.role || 'admin_sekolah')
-const isAdminSekolah = computed(() => role.value === 'admin_sekolah')
-const isKepalaSekolah = computed(() => role.value === 'kepala_sekolah')
+const canManage = computed(() => ['superadmin', 'admin_yayasan', 'admin_sekolah'].includes(role.value))
 
 // --- State ---
 const ekskuls = ref([])
-const perPage = ref(5)
+const isLoading = ref(false)
+const isSaving = ref(false)
+const perPage = ref(10)
 const filterValues = ref({
   search: '',
   status: 'all'
 })
 
+// --- Fetch Data from API ---
+const loadEkskuls = async () => {
+  isLoading.value = true
+  try {
+    const res = await fetchAllEkskul()
+    ekskuls.value = res.data || []
+  } catch (err) {
+    console.error('Gagal memuat ekskul:', err)
+    toast.error('Gagal memuat data ekstrakulikuler')
+  } finally {
+    isLoading.value = false
+  }
+}
+
 onMounted(() => {
-  ekskuls.value = getEkskul()
+  loadEkskuls()
 })
 
 // --- Computed Stats ---
@@ -65,7 +89,6 @@ function getStatusBadgeVariant(status) {
 // --- Form Sheet State & Methods ---
 const isFormSheetOpen = ref(false)
 const isEditMode = ref(false)
-const formErrors = ref({})
 const formItem = ref({
   id: '',
   nama: '',
@@ -73,9 +96,15 @@ const formItem = ref({
   status: 'aktif'
 })
 
+const {
+  errors: formErrors,
+  validate: validateForm,
+  clearErrors
+} = useZodForm(ekskulSchema, formItem)
+
 const handleCreate = () => {
   isEditMode.value = false
-  formErrors.value = {}
+  clearErrors()
   formItem.value = {
     id: '',
     nama: '',
@@ -87,7 +116,7 @@ const handleCreate = () => {
 
 const handleEdit = item => {
   isEditMode.value = true
-  formErrors.value = {}
+  clearErrors()
   formItem.value = {
     id: item.id,
     nama: item.nama,
@@ -97,83 +126,39 @@ const handleEdit = item => {
   isFormSheetOpen.value = true
 }
 
-const validateForm = () => {
-  const errors = {}
-  if (!formItem.value.nama?.trim()) {
-    errors.nama = 'Nama ekstrakulikuler wajib diisi.'
-  }
-  if (!formItem.value.deskripsi?.trim()) {
-    errors.deskripsi = 'Deskripsi wajib diisi.'
-  }
-  if (!formItem.value.status) {
-    errors.status = 'Status wajib dipilih.'
-  }
-  formErrors.value = errors
-  if (Object.keys(errors).length > 0) {
-    toast.error('Gagal Menyimpan', {
-      description: 'Harap lengkapi semua field yang wajib diisi.'
-    })
-    return false
-  }
-
-  const nama = formItem.value.nama.trim()
-  const isDuplicate = ekskuls.value.some(s => {
-    const isSameName = s.nama.toLowerCase() === nama.toLowerCase()
-    if (isEditMode.value) {
-      return isSameName && s.id !== formItem.value.id
-    }
-    return isSameName
-  })
-
-  if (isDuplicate) {
-    formErrors.value.nama = `Ekstrakulikuler "${nama}" sudah terdaftar.`
-    toast.error('Nama Sudah Digunakan', {
-      description: `Ekstrakulikuler dengan nama "${nama}" sudah ada.`
-    })
-    return false
-  }
-
-  return true
-}
-
 const saveSummary = computed(() => [
-  { label: 'Nama Ekstrakurikuler', value: formItem.value.nama },
+  { label: 'Nama Ekstrakulikuler', value: formItem.value.nama },
   { label: 'Status', value: getStatusLabel(formItem.value.status) }
 ])
 
-const handleSave = () => {
-  const nama = formItem.value.nama.trim()
-  const deskripsi = formItem.value.deskripsi.trim()
-  const status = formItem.value.status
-
-  if (isEditMode.value) {
-    const updated = ekskuls.value.map(s => {
-      if (s.id === formItem.value.id) {
-        return { ...s, nama, deskripsi, status }
-      }
-      return s
-    })
-    ekskuls.value = updated
-    saveEkskul(updated)
-    toast.success('Berhasil Diperbarui', {
-      description: `Ekstrakulikuler "${nama}" telah diperbarui.`
-    })
-  } else {
-    const newItem = {
-      id: String(Date.now()),
-      nama,
-      deskripsi,
-      status
+const handleSave = async () => {
+  isSaving.value = true
+  try {
+    const payload = {
+      nama: formItem.value.nama.trim(),
+      deskripsi: formItem.value.deskripsi ? formItem.value.deskripsi.trim() : null,
+      status: formItem.value.status
     }
-    const updated = [newItem, ...ekskuls.value]
-    ekskuls.value = updated
-    saveEkskul(updated)
-    toast.success('Berhasil Ditambahkan', {
-      description: `Ekstrakulikuler "${nama}" telah ditambahkan.`
-    })
-  }
 
-  isFormSheetOpen.value = false
+    if (isEditMode.value) {
+      await updateEkskul(formItem.value.id, payload)
+      toast.success('Berhasil Diperbarui', {
+        description: `Ekstrakulikuler "${payload.nama}" telah diperbarui.`
+      })
+    } else {
+      await createEkskul(payload)
+      toast.success('Berhasil Ditambahkan', {
+        description: `Ekstrakulikuler "${payload.nama}" telah ditambahkan.`
+      })
+    }
+    isFormSheetOpen.value = false
+    await loadEkskuls()
+  } catch (err) {
+    const msg = err.response?.data?.message || 'Gagal menyimpan ekstrakulikuler'
+    toast.error('Gagal Menyimpan', { description: msg })
+  } finally {
+    isSaving.value = false
+  }
 }
 
 // --- Search & Filter ---
@@ -182,7 +167,7 @@ const filteredItems = computed(() => {
     const searchVal = filterValues.value.search?.trim().toLowerCase() || ''
     const searchMatch =
       !searchVal ||
-      item.nama.toLowerCase().includes(searchVal) ||
+      item.nama?.toLowerCase().includes(searchVal) ||
       (item.deskripsi || '').toLowerCase().includes(searchVal)
 
     const statusVal = filterValues.value.status
@@ -200,7 +185,7 @@ watch(filteredItems, () => {
 
 // --- Header Action Button ---
 const headerActions = computed(() => {
-  if (!isAdminSekolah.value) return []
+  if (!canManage.value) return []
   return [
     {
       label: 'Tambah Ekskul',
@@ -215,7 +200,7 @@ const isDetailSheetOpen = ref(false)
 const selectedItemForDetail = ref(null)
 
 const handleViewDetail = id => {
-  const item = ekskuls.value.find(s => s.id === id)
+  const item = ekskuls.value.find(s => String(s.id) === String(id))
   if (item) {
     selectedItemForDetail.value = item
     isDetailSheetOpen.value = true
@@ -246,42 +231,45 @@ const detailSections = computed(() => {
 })
 
 // --- Toggle Status ---
-const handleToggleStatus = item => {
+const handleToggleStatus = async item => {
   const nextStatus = item.status === 'aktif' ? 'nonaktif' : 'aktif'
-  const updated = ekskuls.value.map(s => {
-    if (s.id === item.id) {
-      return { ...s, status: nextStatus }
-    }
-    return s
-  })
-  ekskuls.value = updated
-  saveEkskul(updated)
-  toast.success(nextStatus === 'aktif' ? 'Ekskul Diaktifkan' : 'Ekskul Dinonaktifkan', {
-    description: `Ekstrakulikuler "${item.nama}" kini berstatus ${nextStatus}.`
-  })
+  try {
+    await toggleEkskulStatus(item.id, nextStatus)
+    item.status = nextStatus
+    toast.success(nextStatus === 'aktif' ? 'Ekskul Diaktifkan' : 'Ekskul Dinonaktifkan', {
+      description: `Ekstrakulikuler "${item.nama}" kini berstatus ${nextStatus}.`
+    })
+  } catch (err) {
+    toast.error('Gagal mengubah status ekstrakulikuler')
+  }
 }
 
 // --- Delete ---
 const isDeleteConfirmOpen = ref(false)
 const selectedItemToDelete = ref(null)
+const isDeleting = ref(false)
 
 const openDeleteConfirm = item => {
   selectedItemToDelete.value = item
   isDeleteConfirmOpen.value = true
 }
 
-const confirmDelete = () => {
+const confirmDelete = async () => {
   if (!selectedItemToDelete.value) return
-
-  const updated = ekskuls.value.filter(s => s.id !== selectedItemToDelete.value.id)
-  ekskuls.value = updated
-  saveEkskul(updated)
-  isDeleteConfirmOpen.value = false
-
-  toast.success('Berhasil Dihapus', {
-    description: `Ekstrakulikuler "${selectedItemToDelete.value.nama}" telah dihapus.`
-  })
-  selectedItemToDelete.value = null
+  isDeleting.value = true
+  try {
+    await deleteEkskul(selectedItemToDelete.value.id)
+    toast.success('Berhasil Dihapus', {
+      description: `Ekstrakulikuler "${selectedItemToDelete.value.nama}" telah dihapus.`
+    })
+    isDeleteConfirmOpen.value = false
+    selectedItemToDelete.value = null
+    await loadEkskuls()
+  } catch (err) {
+    toast.error('Gagal menghapus ekstrakulikuler')
+  } finally {
+    isDeleting.value = false
+  }
 }
 </script>
 
@@ -319,6 +307,7 @@ const confirmDelete = () => {
     <DataTableCard
       :columns="columns"
       :items="paginatedItems"
+      :loading="isLoading"
       :filters="filters"
       v-model:filterValues="filterValues"
       v-model:perPage="perPage"
@@ -340,7 +329,7 @@ const confirmDelete = () => {
         <div class="flex items-center justify-center gap-3">
           <!-- Detail (Always Available) -->
           <button
-            class="flex flex-col items-center justify-center gap-0.5 group/btn focus:outline-none text-muted-foreground hover:text-foreground transition-colors"
+            class="flex flex-col items-center justify-center gap-0.5 group/btn focus:outline-none text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
             title="Detail"
             @click="handleViewDetail(item.id)"
           >
@@ -348,11 +337,11 @@ const confirmDelete = () => {
             <span class="text-[9px] font-semibold leading-none">Detail</span>
           </button>
 
-          <!-- Aksi Admin Sekolah -->
-          <template v-if="isAdminSekolah">
+          <!-- Aksi Pengelola (Admin Sekolah / Superadmin / Yayasan) -->
+          <template v-if="canManage">
             <!-- Edit -->
             <button
-              class="flex flex-col items-center justify-center gap-0.5 group/btn focus:outline-none text-muted-foreground hover:text-foreground transition-colors"
+              class="flex flex-col items-center justify-center gap-0.5 group/btn focus:outline-none text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               title="Edit"
               @click="handleEdit(item)"
             >
@@ -362,7 +351,7 @@ const confirmDelete = () => {
 
             <!-- Hapus -->
             <button
-              class="flex flex-col items-center justify-center gap-0.5 group/btn focus:outline-none text-muted-foreground hover:text-foreground transition-colors"
+              class="flex flex-col items-center justify-center gap-0.5 group/btn focus:outline-none text-muted-foreground hover:text-rose-600 transition-colors cursor-pointer"
               title="Hapus"
               @click="openDeleteConfirm(item)"
             >
@@ -372,7 +361,7 @@ const confirmDelete = () => {
 
             <!-- Toggle Status -->
             <button
-              class="flex flex-col items-center justify-center gap-0.5 group/btn focus:outline-none transition-colors"
+              class="flex flex-col items-center justify-center gap-0.5 group/btn focus:outline-none transition-colors cursor-pointer"
               :class="
                 item.status === 'aktif'
                   ? 'text-emerald-500 hover:text-emerald-600'
@@ -406,9 +395,7 @@ const confirmDelete = () => {
 
     <!-- Form Sheet (Create / Edit) -->
     <Sheet v-model:open="isFormSheetOpen">
-      <SheetContent
-        class="sm:max-w-[500px] flex flex-col h-full gap-2"
-      >
+      <SheetContent class="sm:max-w-[500px] flex flex-col h-full gap-2">
         <SheetHeader class="border-b border-border pb-3 text-left">
           <SheetTitle class="text-base font-bold text-foreground">
             {{ isEditMode ? 'Edit Ekstrakulikuler' : 'Tambah Ekstrakulikuler' }}
@@ -430,11 +417,12 @@ const confirmDelete = () => {
         </div>
 
         <FormFooter
+          :loading="isSaving"
           :is-edit="isEditMode"
           entity-name="Ekstrakurikuler"
           :summary-items="saveSummary"
           :before-confirm="validateForm"
-          @save="handleSave"
+          @submit="handleSave"
         />
       </SheetContent>
     </Sheet>
@@ -461,6 +449,7 @@ const confirmDelete = () => {
             type="button"
             variant="ghost"
             class="text-xs font-bold rounded-xl cursor-pointer"
+            :disabled="isDeleting"
             @click="isDeleteConfirmOpen = false"
           >
             Batal
@@ -468,9 +457,10 @@ const confirmDelete = () => {
           <Button
             type="button"
             class="text-xs font-bold rounded-xl cursor-pointer bg-rose-500 text-white hover:bg-rose-600 border-none shadow-none"
+            :disabled="isDeleting"
             @click="confirmDelete"
           >
-            Ya, Hapus
+            {{ isDeleting ? 'Menghapus...' : 'Ya, Hapus' }}
           </Button>
         </DialogFooter>
       </DialogContent>

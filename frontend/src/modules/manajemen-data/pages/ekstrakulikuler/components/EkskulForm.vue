@@ -44,10 +44,9 @@ defineProps({
             <FormTextArea
               v-model="form.deskripsi"
               label="Deskripsi"
-              placeholder="Tuliskan penjelasan singkat mengenai kegiatan ekstrakulikuler ini..."
+              placeholder="Tuliskan penjelasan singkat mengenai kegiatan ekstrakulikuler ini (opsional)..."
               :error="errors.deskripsi"
               :rows="4"
-              required
             />
             <FormSelect
               v-model="form.status"
