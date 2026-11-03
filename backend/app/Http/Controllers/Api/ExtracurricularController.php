@@ -104,7 +104,7 @@ class ExtracurricularController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isSuperAdmin() && !$user->hasRole(['admin_yayasan', 'admin_sekolah'])) {
+        if (!$user->isSuperAdmin() && !$user->hasAnyRole(['admin_yayasan', 'admin_sekolah'])) {
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Hanya Admin Sekolah yang dapat menambah data ekstrakulikuler.',
@@ -208,7 +208,7 @@ class ExtracurricularController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isSuperAdmin() && !$user->hasRole(['admin_yayasan', 'admin_sekolah'])) {
+        if (!$user->isSuperAdmin() && !$user->hasAnyRole(['admin_yayasan', 'admin_sekolah'])) {
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Hanya Admin Sekolah yang dapat mengubah data ekstrakulikuler.',
@@ -278,7 +278,7 @@ class ExtracurricularController extends Controller
     {
         $user = $request->user();
 
-        if (!$user->isSuperAdmin() && !$user->hasRole(['admin_yayasan', 'admin_sekolah'])) {
+        if (!$user->isSuperAdmin() && !$user->hasAnyRole(['admin_yayasan', 'admin_sekolah'])) {
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Hanya Admin Sekolah yang dapat menghapus data ekstrakulikuler.',
