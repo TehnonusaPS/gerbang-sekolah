@@ -8,11 +8,9 @@ export const getPhotoUrl = (filename) => {
   const cleanFilename = filename.trim();
   const apiBase = api?.defaults?.baseURL || import.meta.env.VITE_API_BASE_URL || '';
   const backendBase = apiBase.replace(/\/api\/?$/, '');
-  // Prioritaskan URL Supabase Storage; fallback ke backend lokal
-  const supabaseUrl = (
-    import.meta.env.VITE_SUPABASE_URL ||
-    'https://lfjcgqrjerzzijgazhjl.supabase.co'
-  ).replace(/\/$/, '');
+  // Gunakan URL Supabase Storage jika VITE_SUPABASE_URL diisi; jika kosong otomatis ke storage lokal backend
+  const rawSupabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim().replace(/\/$/, '');
+  const supabaseUrl = rawSupabaseUrl && !rawSupabaseUrl.includes('<project-ref>') ? rawSupabaseUrl : '';
   const storageBase = supabaseUrl
     ? `${supabaseUrl}/storage/v1/object/public/uploads`
     : `${backendBase}/storage`;
@@ -36,7 +34,7 @@ export const getPhotoUrl = (filename) => {
       const isAppStoragePath = /^\/?storage\//i.test(parsed.pathname);
 
       // Normalisasi jika merupakan URL aset dari backend lokal
-      if (isBackendHost && isAppStoragePath && supabaseUrl) {
+      if (isBackendHost && isAppStoragePath) {
         const cleanPath = parsed.pathname.replace(/^\/?storage\//i, '');
         return `${storageBase}/${cleanPath}`;
       }
