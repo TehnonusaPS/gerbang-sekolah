@@ -64,6 +64,7 @@ export const siswaSheetSections = [
     fields: [
       { label: 'Tahun Masuk', key: 'tahun_masuk' },
       { label: 'Kelas', key: 'kelas' },
+      { label: 'Ekstrakurikuler', key: 'ekskul_label' },
       { label: 'Status', key: 'status' }
     ]
   },

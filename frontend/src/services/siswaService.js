@@ -16,7 +16,11 @@ export async function createSiswa(data) {
         if (key === "foto" && typeof data[key] === "string") {
           continue
         }
-        formData.append(key, data[key])
+        if (Array.isArray(data[key])) {
+          data[key].forEach(val => formData.append(`${key}[]`, val))
+        } else {
+          formData.append(key, data[key])
+        }
       }
     }
   }
@@ -40,7 +44,11 @@ export async function updateSiswa(id, data) {
         if (key === "foto" && typeof data[key] === "string") {
           continue
         }
-        formData.append(key, data[key])
+        if (Array.isArray(data[key])) {
+          data[key].forEach(val => formData.append(`${key}[]`, val))
+        } else {
+          formData.append(key, data[key])
+        }
       }
     }
   }

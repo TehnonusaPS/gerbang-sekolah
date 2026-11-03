@@ -328,7 +328,7 @@ class StudentController extends Controller
         
         $query = User::whereHas('role', function ($q) {
             $q->where('name', 'siswa');
-        })->with(['school', 'studentProfile.classroom.school', 'studentProfile.parents.user']);
+        })->with(['school', 'studentProfile.classroom.school', 'studentProfile.parents.user', 'studentProfile.extracurriculars']);
 
         // Role Scope
         if ($user->isSuperAdmin()) {
@@ -396,6 +396,7 @@ class StudentController extends Controller
                 'jenisKelamin'   => $profile ? $this->mapGenderToFe($profile->gender) : '',
                 'agama'          => $profile ? ($profile->religion ?? '') : '',
                 'alamat'         => $profile ? $profile->address : '',
+                'ekskul'         => $profile ? $profile->extracurriculars->map(fn($e) => ['id' => (string)$e->id, 'nama' => $e->name])->values()->toArray() : [],
                 'tahunMasuk'     => $profile && $profile->enrollment_date ? $profile->enrollment_date->format('Y') : '',
                 'status'         => $profile ? $this->mapStatusToFe($profile->status) : 'Aktif',
                 'payment_status' => \App\Models\StudentBill::where('student_id', $student->id)
@@ -616,6 +617,14 @@ class StudentController extends Controller
             // 3. Sync Parents (Ayah, Ibu, Wali) & Login Account
             $parentCreds = $this->syncStudentParents($request, $studentProfile, $studentUser, $parentRole);
 
+            // 4. Sync Ekstrakurikuler
+            if ($request->has('ekskul')) {
+                $ekskulInput = $request->input('ekskul');
+                $ekskulIds = is_array($ekskulInput) ? $ekskulInput : (is_string($ekskulInput) && strlen($ekskulInput) ? explode(',', $ekskulInput) : [$ekskulInput]);
+                $ekskulIds = array_filter($ekskulIds, fn($val) => !empty($val));
+                $studentProfile->extracurriculars()->sync($ekskulIds);
+            }
+
             DB::commit();
 
             return response()->json([
@@ -658,7 +667,7 @@ class StudentController extends Controller
      */
     public function show(Request $request, string $id): JsonResponse
     {
-        $student = User::with(['school', 'studentProfile.classroom', 'studentProfile.parents.user'])->find($id);
+        $student = User::with(['school', 'studentProfile.classroom', 'studentProfile.parents.user', 'studentProfile.extracurriculars'])->find($id);
 
         if (!$student) {
             return response()->json([
@@ -687,6 +696,8 @@ class StudentController extends Controller
             'sekolahId'      => $student->school_id ? (string) $student->school_id : ($profile && $profile->classroom && $profile->classroom->school_id ? (string) $profile->classroom->school_id : ''),
             'kelas'          => $profile && $profile->classroom_id ? (string)$profile->classroom_id : '',
             'kelas_nama'     => $profile && $profile->classroom ? $profile->classroom->name : '-',
+            'ekskul'         => $profile ? $profile->extracurriculars->pluck('id')->map(fn($eid) => (string)$eid)->values()->toArray() : [],
+            'ekskul_detail'  => $profile ? $profile->extracurriculars->map(fn($e) => ['id' => (string)$e->id, 'nama' => $e->name])->values()->toArray() : [],
             'status'         => $profile ? $this->mapStatusToFe($profile->status) : 'Aktif',
             'tahun_masuk'    => $profile && $profile->enrollment_date ? $profile->enrollment_date->format('Y-m-d') : '',
             'email'          => $rawStudentEmail,
@@ -870,6 +881,14 @@ class StudentController extends Controller
             if ($profile) {
                 $parentRole = Role::where('name', 'orang_tua')->first();
                 $this->syncStudentParents($request, $profile, $studentUser, $parentRole);
+            }
+
+            // 4. Sync Ekstrakurikuler
+            if ($profile && $request->has('ekskul')) {
+                $ekskulInput = $request->input('ekskul');
+                $ekskulIds = is_array($ekskulInput) ? $ekskulInput : (is_string($ekskulInput) && strlen($ekskulInput) ? explode(',', $ekskulInput) : [$ekskulInput]);
+                $ekskulIds = array_filter($ekskulIds, fn($val) => !empty($val));
+                $profile->extracurriculars()->sync($ekskulIds);
             }
 
             DB::commit();

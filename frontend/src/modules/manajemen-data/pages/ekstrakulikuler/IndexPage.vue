@@ -223,6 +223,7 @@ const detailSections = computed(() => {
       title: 'Informasi Ekstrakulikuler',
       fields: [
         { label: 'Nama Ekstrakulikuler', value: selectedItemForDetail.value.nama },
+        { label: 'Jumlah Anggota', value: `${selectedItemForDetail.value.jumlah_anggota ?? 0} Siswa` },
         { label: 'Deskripsi', value: selectedItemForDetail.value.deskripsi || '-', textarea: true },
         { label: 'Status', value: getStatusLabel(selectedItemForDetail.value.status) }
       ]
@@ -318,6 +319,12 @@ const confirmDelete = async () => {
       @update:page="currentPage = $event"
     >
       <!-- Custom Badge Status -->
+      <template #cell-jumlah_anggota="{ value }">
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary">
+          {{ value ?? 0 }} Siswa
+        </span>
+      </template>
+
       <template #cell-status="{ value }">
         <Badge :variant="getStatusBadgeVariant(value)">
           {{ getStatusLabel(value) }}

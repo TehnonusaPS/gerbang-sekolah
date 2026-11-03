@@ -235,9 +235,13 @@ const handleViewDetail = async id => {
   isDetailLoading.value = true
   try {
     const res = await getSiswaDetail(id)
+    const ekskulNames = Array.isArray(res.data.ekskul_detail) && res.data.ekskul_detail.length > 0
+      ? res.data.ekskul_detail.map(e => e.nama).join(', ')
+      : '-'
     selectedItemForDetail.value = {
       ...res.data,
-      kelas: res.data.kelas_nama || '-'
+      kelas: res.data.kelas_nama || '-',
+      ekskul_label: ekskulNames
     }
   } catch (err) {
     isDetailSheetOpen.value = false

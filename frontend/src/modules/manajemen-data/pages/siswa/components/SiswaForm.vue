@@ -10,6 +10,7 @@ import FormTextArea from '@/components/forms/FormTextArea.vue'
 import FormDate from '@/components/forms/FormDate.vue'
 import FormSection from '@/components/forms/FormSection.vue'
 import FormSelect from '@/components/forms/FormSelect.vue'
+import FormMultiSelect from '@/components/forms/FormMultiSelect.vue'
 import BentoFormLayout from '@/components/forms/BentoFormLayout.vue'
 import { getPhotoUrl } from '@/utils/getPhotoUrl'
 import { useAuthStore } from '@/stores/authStore'
@@ -21,6 +22,7 @@ const props = defineProps({
   sekolahOptions: { type: Array, default: () => [] },
   statusOptions: { type: Array, default: () => [] },
   kelasOptions: { type: Array, default: () => [] },
+  ekskulOptions: { type: Array, default: () => [] },
   pekerjaanOptions: { type: Array, default: () => [] },
   agamaOptions: { type: Array, default: () => [] },
   kelaminOptions: { type: Array, default: () => [] },
@@ -47,6 +49,13 @@ const filteredKelasOptions = computed(() => {
   const selectedSchoolId = String(props.form.sekolahId || '')
   if (!selectedSchoolId) return []
   return props.kelasOptions.filter(opt => !opt.school_id || String(opt.school_id) === selectedSchoolId)
+})
+
+const filteredEkskulOptions = computed(() => {
+  if (!isSuperAdmin.value) return props.ekskulOptions
+  const selectedSchoolId = String(props.form.sekolahId || '')
+  if (!selectedSchoolId) return []
+  return props.ekskulOptions.filter(opt => !opt.school_id || String(opt.school_id) === selectedSchoolId)
 })
 
 watch(
@@ -238,6 +247,15 @@ const hasWaliErrors = computed(() =>
             :options="filteredKelasOptions"
             :disabled="isReadOnlyAcademic || (isSuperAdmin && !form.sekolahId)"
             :error="errors.kelas"
+          />
+          <FormMultiSelect
+            v-model="form.ekskul"
+            label="Ekstrakulikuler (Opsional)"
+            :placeholder="isSuperAdmin && !form.sekolahId ? 'Pilih sekolah terlebih dahulu' : 'Pilih ekstrakulikuler siswa...'"
+            item-name="ekstrakulikuler"
+            :options="filteredEkskulOptions"
+            :disabled="isReadOnlyAcademic || (isSuperAdmin && !form.sekolahId)"
+            :error="errors.ekskul"
           />
           <FormSelect v-model="form.status" label="Status" placeholder="Pilih status" :options="statusOptions" :disabled="isReadOnlyAcademic" :required="!isReadOnlyAcademic" :error="errors.status"/>
         </div>

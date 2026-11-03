@@ -51,7 +51,7 @@ class ExtracurricularController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $query = Extracurricular::query();
+        $query = Extracurricular::withCount('students');
 
         if ($user->isSuperAdmin()) {
             if ($request->has('school_id')) {
@@ -83,11 +83,12 @@ class ExtracurricularController extends Controller
 
         $formatted = $ekskuls->map(function ($item) {
             return [
-                'id'        => (string) $item->id,
-                'nama'      => $item->name,
-                'deskripsi' => $item->description,
-                'status'    => $this->mapDbToStatus($item->is_active),
-                'school_id' => $item->school_id,
+                'id'             => (string) $item->id,
+                'nama'           => $item->name,
+                'deskripsi'      => $item->description,
+                'jumlah_anggota' => (int) ($item->students_count ?? 0),
+                'status'         => $this->mapDbToStatus($item->is_active),
+                'school_id'      => $item->school_id,
             ];
         });
 
@@ -192,11 +193,12 @@ class ExtracurricularController extends Controller
         return response()->json([
             'status' => 'success',
             'data'   => [
-                'id'        => (string) $ekskul->id,
-                'nama'      => $ekskul->name,
-                'deskripsi' => $ekskul->description,
-                'status'    => $this->mapDbToStatus($ekskul->is_active),
-                'school_id' => $ekskul->school_id,
+                'id'             => (string) $ekskul->id,
+                'nama'           => $ekskul->name,
+                'deskripsi'      => $ekskul->description,
+                'jumlah_anggota' => (int) $ekskul->students()->count(),
+                'status'         => $this->mapDbToStatus($ekskul->is_active),
+                'school_id'      => $ekskul->school_id,
             ],
         ]);
     }

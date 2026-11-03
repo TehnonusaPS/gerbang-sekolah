@@ -17,6 +17,7 @@ export const defaultForm = {
   sekolahId: '',
   kelas: '',
   kelasId: '',
+  ekskul: [],
   // Data Ayah
   nama_ayah: '',
   pekerjaan_ayah: '',

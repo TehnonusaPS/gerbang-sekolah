@@ -21,6 +21,7 @@ export const createSiswaSchema = ({ isSuperAdmin = false } = {}) =>
       sekolahId: isSuperAdmin ? v.requiredSelect('Sekolah') : z.any(),
       tahun_masuk: v.requiredDate('Tahun masuk', { notFuture: true }),
       kelas: v.optionalString(),
+      ekskul: z.any().optional(),
       status: v.requiredSelect('Status'),
 
       // 3. Informasi Identitas Siswa

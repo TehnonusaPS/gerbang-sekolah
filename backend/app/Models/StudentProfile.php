@@ -97,4 +97,17 @@ class StudentProfile extends Model
             'parent_profile_id'
         )->withTimestamps();
     }
+
+    /**
+     * Get all extracurricular activities enrolled by this student.
+     */
+    public function extracurriculars(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Extracurricular::class,
+            'extracurricular_student',
+            'student_profile_id',
+            'extracurricular_id'
+        )->withTimestamps();
+    }
 }

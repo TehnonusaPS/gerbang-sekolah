@@ -11,6 +11,7 @@ import { createSiswaSchema, fieldErrorMap } from './data/siswaSchema'
 import { useZodForm } from '@/composables/useZodForm'
 import { toast } from 'vue-sonner'
 import { getClassrooms, getFoundations, getSchools } from '@/services/managementService'
+import { fetchAllEkskul } from '@/services/ekskulService'
 import { getSiswaDetail, updateSiswa } from '@/services/siswaService'
 import { getPhotoUrl } from '@/utils/getPhotoUrl'
 
@@ -24,6 +25,7 @@ const studentId = route.query.id
 const yayasanOptions = ref([])
 const sekolahOptions = ref([])
 const activeClassrooms = ref([])
+const activeEkskuls = ref([])
 const form = ref({ ...defaultForm })
 
 const {
@@ -37,12 +39,13 @@ const {
 
 onMounted(async () => {
   try {
-    const requests = [getClassrooms()]
+    const requests = [getClassrooms(), fetchAllEkskul()]
     if (isSuperAdmin.value) {
       requests.push(getFoundations({ per_page: 1000 }), getSchools({ per_page: 1000 }))
     }
-    const [resClass, resFoundations, resSchools] = await Promise.all(requests)
+    const [resClass, resEkskul, resFoundations, resSchools] = await Promise.all(requests)
     activeClassrooms.value = resClass.data || []
+    activeEkskuls.value = resEkskul.data || []
 
     if (isSuperAdmin.value) {
       const fList = Array.isArray(resFoundations?.data) ? resFoundations.data : (resFoundations?.data?.data || [])
@@ -76,6 +79,7 @@ onMounted(async () => {
       form.value = {
         ...defaultForm,
         ...res.data,
+        ekskul: Array.isArray(res.data.ekskul) ? res.data.ekskul.map(String) : [],
         foundation_id: foundationIdStr,
         sekolahId: schoolIdStr,
         tanggal_lahir: res.data.tanggal_lahir || '',
@@ -101,6 +105,14 @@ const classes = computed(() => {
     return list.filter(item => item.value === String(auth.user?.kelasId))
   }
   return list
+})
+
+const ekskulOptions = computed(() => {
+  return activeEkskuls.value.map(e => ({
+    label: e.nama,
+    value: String(e.id),
+    school_id: e.school_id ? String(e.school_id) : ''
+  }))
 })
 
 const router = useRouter()
@@ -189,6 +201,7 @@ const goToList = () => {
       :sekolah-options="sekolahOptions"
       :status-options="statusOptions"
       :kelas-options="classes"
+      :ekskul-options="ekskulOptions"
       :pekerjaan-options="pekerjaanOptions"
       :agama-options="agamaOptions"
       :kelamin-options="kelaminOptions"
