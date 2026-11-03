@@ -103,6 +103,14 @@ class ExtracurricularController extends Controller
     public function store(Request $request): JsonResponse
     {
         $user = $request->user();
+
+        if (!$user->isSuperAdmin() && !$user->hasRole(['admin_yayasan', 'admin_sekolah'])) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Hanya Admin Sekolah yang dapat menambah data ekstrakulikuler.',
+            ], 403);
+        }
+
         $schoolId = $this->getSchoolScope($request, $user);
 
         if ($schoolId === -1) {
@@ -199,6 +207,14 @@ class ExtracurricularController extends Controller
     public function update(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
+
+        if (!$user->isSuperAdmin() && !$user->hasRole(['admin_yayasan', 'admin_sekolah'])) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Hanya Admin Sekolah yang dapat mengubah data ekstrakulikuler.',
+            ], 403);
+        }
+
         $ekskul = Extracurricular::find($id);
 
         if (!$ekskul) {
@@ -261,6 +277,14 @@ class ExtracurricularController extends Controller
     public function destroy(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
+
+        if (!$user->isSuperAdmin() && !$user->hasRole(['admin_yayasan', 'admin_sekolah'])) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Hanya Admin Sekolah yang dapat menghapus data ekstrakulikuler.',
+            ], 403);
+        }
+
         $ekskul = Extracurricular::find($id);
 
         if (!$ekskul) {

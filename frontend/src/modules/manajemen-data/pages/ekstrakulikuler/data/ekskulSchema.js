@@ -6,3 +6,4 @@ export const ekskulSchema = z.object({
   deskripsi: v.optionalString({ max: 500 }),
   status: v.requiredSelect('Status').default('aktif')
 })
+

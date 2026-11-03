@@ -16,3 +16,4 @@ export const kelasSchema = z.object({
   ),
   status: v.requiredSelect('Status kelas')
 })
+

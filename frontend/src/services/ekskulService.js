@@ -29,3 +29,4 @@ export async function toggleEkskulStatus(id, newStatus) {
   const response = await api.put(`/management/extracurriculars/${id}`, { status: newStatus })
   return response.data
 }
+
