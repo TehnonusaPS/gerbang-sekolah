@@ -24,5 +24,6 @@ export const defaultForm = {
   noHpLogin: '',
   password_lama: '',
   password_baru: '',
-  password_baru_confirmation: ''
+  password_baru_confirmation: '',
+  logo: null
 }

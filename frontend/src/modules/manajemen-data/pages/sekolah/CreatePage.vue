@@ -8,6 +8,8 @@ import SuccessAccountDialog from '@/components/dialogs/SuccessAccountDialog.vue'
 import SekolahForm from './components/SekolahForm.vue'
 import FormFooter from '@/components/forms/FormFooter.vue'
 import { defaultForm } from './data/defaultForm'
+import { createSekolahSchema, fieldErrorMap } from './data/sekolahSchema'
+import { useZodForm } from '@/composables/useZodForm'
 import { toast } from 'vue-sonner'
 import { getFoundations, createSchool, getRoles, createUser } from '@/services/managementService'
 import { glassFade, glassSlide } from '@/config/motion'
@@ -35,9 +37,20 @@ const form = ref({ ...defaultForm })
 const imagePreview = ref('')
 const logoFile = ref(null)
 
+const {
+  errors: formErrors,
+  validate,
+  setServerErrors
+} = useZodForm(
+  () => createSekolahSchema({ isEdit: false, isSuperAdmin: isSuperAdmin.value }),
+  form,
+  { fieldMap: fieldErrorMap }
+)
+
 const handleImage = (file) => {
-  logoFile.value = file
-  imagePreview.value = URL.createObjectURL(file)
+  logoFile.value = file || null
+  form.value.logo = file || null
+  imagePreview.value = file ? URL.createObjectURL(file) : ''
 }
 
 const showSuccessModal = ref(false)
@@ -48,27 +61,14 @@ const generatedAccount = ref({
   password: ''
 })
 
-const formErrors = ref({})
-
 // Trigger confirmation dialog before actual save
 function onBeforeConfirm() {
-  formErrors.value = {}
+  if (isLoading.value) return false
 
-  let foundationId = isSuperAdmin.value ? form.value.yayasan : auth.user?.foundation_id
-
-  if (isSuperAdmin.value && !foundationId) {
-    formErrors.value.foundation_id = 'Pilihan yayasan wajib dipilih.'
-  }
-  if (!form.value.nama?.trim()) formErrors.value.name = 'Nama sekolah wajib diisi.'
-  
-  const loginEmail = form.value.emailLogin?.trim() || form.value.email?.trim()
-  const loginPhone = form.value.noHpLogin?.trim() || form.value.no_hp?.trim()
-
-  if (!loginEmail) formErrors.value.emailLogin = 'Email login administrator wajib diisi.'
-  if (!loginPhone) formErrors.value.noHpLogin = 'No. HP login administrator wajib diisi.'
-
-  if (Object.keys(formErrors.value).length > 0) {
-    toast.error('Gagal Menyimpan', { description: 'Harap lengkapi semua isian wajib terlebih dahulu.' })
+  if (!validate()) {
+    toast.error('Gagal Menyimpan', {
+      description: formErrors.value.logo || 'Harap lengkapi semua data formulir sebelum menyimpan.'
+    })
     return false
   }
 
@@ -76,94 +76,29 @@ function onBeforeConfirm() {
 }
 
 const handleSubmit = async () => {
-  formErrors.value = {}
+  if (isLoading.value) return
 
-  let foundationId = isSuperAdmin.value ? form.value.yayasan : auth.user?.foundation_id
-
-  // Client-side Validation: All fields must be filled
-  const errors = {}
-  if (!logoFile.value) {
-    errors.logo = 'Logo sekolah harus diunggah'
-  }
-  if (!form.value.email) {
-    errors.email = 'E-mail sekolah harus diisi'
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
-    errors.email = 'Format e-mail tidak valid'
-  }
-  if (!form.value.no_hp) {
-    errors.phone = 'No. Telp harus diisi'
-  }
-  if (!form.value.nama) {
-    errors.name = 'Nama sekolah harus diisi'
-  }
-  if (!form.value.npsn) {
-    errors.npsn = 'NPSN harus diisi'
-  }
-  if (isSuperAdmin.value && !form.value.yayasan) {
-    errors.foundation_id = 'Yayasan harus dipilih'
-  }
-  if (!form.value.jenjang) {
-    errors.level = 'Jenjang pendidikan harus dipilih'
-  }
-  if (!form.value.tanggal_berdiri) {
-    errors.established_date = 'Tanggal berdiri harus diisi'
-  }
-  if (!form.value.status) {
-    errors.status = 'Status harus dipilih'
-  }
-  if (!form.value.alamat) {
-    errors.address = 'Alamat lengkap harus diisi'
-  }
-  if (!form.value.no_sk) {
-    errors.decree_number = 'No. SK Pendirian harus diisi'
-  }
-  if (!form.value.tanggal_sk) {
-    errors.decree_date = 'Tanggal SK Pendirian harus diisi'
-  }
-  if (!form.value.no_izin) {
-    errors.permit_number = 'No. Izin Operasional harus diisi'
-  }
-  if (!form.value.tanggal_izin) {
-    errors.permit_date = 'Tanggal Izin Operasional harus diisi'
-  }
-  if (!form.value.akreditasi) {
-    errors.accreditation = 'Akreditasi harus dipilih'
-  }
-  if (!form.value.tanggal_akreditasi) {
-    errors.accreditation_date = 'Tanggal akreditasi harus diisi'
-  }
-  if (!form.value.no_akreditasi) {
-    errors.accreditation_number = 'No. SK Akreditasi harus diisi'
-  }
-  if (!form.value.emailLogin) {
-    errors.emailLogin = 'E-mail login administrator harus diisi'
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.emailLogin)) {
-    errors.emailLogin = 'Format e-mail login tidak valid'
-  }
-  if (!form.value.noHpLogin) {
-    errors.noHpLogin = 'No. HP login administrator harus diisi'
-  }
-
-  if (Object.keys(errors).length > 0) {
-    formErrors.value = errors
+  if (!validate()) {
     toast.error('Gagal Menyimpan', {
-      description: 'Harap lengkapi semua data formulir sebelum menyimpan.'
+      description: formErrors.value.logo || 'Harap lengkapi semua data formulir sebelum menyimpan.'
     })
     return
   }
+
+  let foundationId = isSuperAdmin.value ? form.value.yayasan : auth.user?.foundation_id
 
   if (!foundationId) {
     toast.error('Gagal', { description: 'Yayasan tidak boleh kosong.' })
     return
   }
 
-  // isLoading.value = true
+  isLoading.value = true
 
   let newSchoolId = null
   const loginEmail = form.value.emailLogin?.trim() || form.value.email?.trim()
   const loginPhone = form.value.noHpLogin?.trim() || form.value.no_hp?.trim()
-  const schoolEmail = form.value.email?.trim() || loginEmail
-  const schoolPhone = form.value.no_hp?.trim() || loginPhone
+  const schoolEmail = form.value.email?.trim()
+  const schoolPhone = form.value.no_hp?.trim()
 
   // 1. Create the school using FormData
   try {
@@ -195,13 +130,7 @@ const handleSubmit = async () => {
     const resSchool = await createSchool(formData)
     newSchoolId = resSchool.data.id
   } catch (err) {
-    if (err.response?.status === 422 && err.response?.data?.errors) {
-      const serverErrors = err.response.data.errors
-      const localErrors = {}
-      Object.keys(serverErrors).forEach(key => {
-        localErrors[key] = serverErrors[key][0]
-      })
-      formErrors.value = localErrors
+    if (setServerErrors(err)) {
       toast.error('Gagal', { description: 'Terdapat kesalahan validasi pada data sekolah.' })
     } else {
       const errorMsg = err.response?.data?.message || 'Gagal menyimpan data sekolah.'

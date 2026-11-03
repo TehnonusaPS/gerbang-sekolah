@@ -139,12 +139,12 @@ class ClassroomController extends Controller
         if (!$academicYearId) {
             $activeYear = AcademicYear::where('school_id', $schoolId)
                 ->where('is_active', true)
-                ->first();
+                ->first() ?: AcademicYear::where('school_id', $schoolId)->latest('id')->first();
             if (!$activeYear) {
-                return response()->json([
-                    'status'  => 'error',
-                    'message' => 'No active academic year found for this school. Please specify academic_year_id.',
-                ], 400);
+                $activeYear = AcademicYear::create(array_merge(
+                    AcademicYear::defaultAttributesForDate(now()),
+                    ['school_id' => $schoolId]
+                ));
             }
             $academicYearId = $activeYear->id;
         }

@@ -65,7 +65,7 @@ const handleLogin = async () => {
         router.push('/dashboard')
       }
     } else {
-      error.value = 'Email atau password salah.'
+      error.value = 'Email / NISN atau password salah.'
     }
   } catch (e) {
     error.value = e.message || 'Terjadi kesalahan saat login.'
@@ -212,13 +212,13 @@ onUnmounted(() => {
                   for="email"
                   class="text-xs sm:text-sm font-semibold text-white lg:text-foreground/90"
                 >
-                  Email
+                  Email / NISN
                 </label>
                 <Input
                   id="email"
-                  type="email"
+                  type="text"
                   v-model="email"
-                  placeholder="Masukkan Email Anda"
+                  placeholder="Masukkan Email atau NISN Anda"
                   required
                   class="h-10 px-3 text-sm rounded-lg border-input bg-white/95 text-slate-900 lg:bg-background lg:text-foreground shadow-xs focus-visible:ring-2 focus-visible:ring-[#0071FF]/30 focus-visible:border-[#0071FF] transition-all"
                 />

@@ -17,8 +17,17 @@ import { getPhotoUrl } from '@/utils/getPhotoUrl.js'
 import { Users, UserCheck, UserRound, UserRoundCheck } from 'lucide-vue-next'
 
 const auth = useAuthStore()
+const isSuperAdmin = computed(() => auth.user?.role === 'superadmin')
 const isWaliKelas = computed(() => auth.user?.role === 'wali_kelas')
 const isKepalaSekolah = computed(() => auth.user?.role === 'kepala_sekolah')
+
+const tableColumns = computed(() =>
+  columns.map(col =>
+    col.key === 'kelas' && isSuperAdmin.value
+      ? { ...col, key: 'sekolah', label: 'Sekolah Asal' }
+      : col
+  )
+)
 const perPage = ref(5)
 const tableItems = ref([])
 const activeClassrooms = ref([])
@@ -226,28 +235,8 @@ const handleViewDetail = async id => {
   isDetailLoading.value = true
   try {
     const res = await getSiswaDetail(id)
-    const statusMap = {
-      '1': 'Aktif',
-      '0': 'Nonaktif',
-      '2': 'Pindah',
-      '3': 'Lulus'
-    }
-    const genderMap = {
-      'JK01': 'Laki-laki',
-      'JK02': 'Perempuan'
-    }
-    const relationMap = {
-      'ayah': 'Ayah',
-      'ibu': 'Ibu',
-      'wali': 'Wali',
-      'lainnya': 'Lainnya'
-    }
     selectedItemForDetail.value = {
       ...res.data,
-      status: statusMap[res.data.status] || res.data.status,
-      jenis_kelamin: genderMap[res.data.jenis_kelamin] || res.data.jenis_kelamin,
-      kelamin_wali: genderMap[res.data.kelamin_wali] || res.data.kelamin_wali,
-      hubungan_siswa: relationMap[res.data.hubungan_siswa] || res.data.hubungan_siswa,
       kelas: res.data.kelas_nama || '-'
     }
   } catch (err) {
@@ -290,7 +279,7 @@ const handleEdit = (idOrItem) => {
     </div>
 
     <DataTableCard
-      :columns="columns"
+      :columns="tableColumns"
       :items="paginatedItems"
       :loading="isLoading"
       :filters="filters"

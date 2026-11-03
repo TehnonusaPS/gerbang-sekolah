@@ -8,6 +8,8 @@ import { useAuthStore } from '@/stores/authStore'
 import SekolahForm from './components/SekolahForm.vue'
 import FormFooter from '@/components/forms/FormFooter.vue'
 import { defaultForm } from './data/defaultForm'
+import { createSekolahSchema, fieldErrorMap } from './data/sekolahSchema'
+import { useZodForm } from '@/composables/useZodForm'
 import { toast } from 'vue-sonner'
 import { getSchool, updateSchool, getFoundations } from '@/services/managementService'
 import { glassFade } from '@/config/motion'
@@ -25,9 +27,26 @@ const form = ref({ ...defaultForm })
 const imagePreview = ref('')
 const logoFile = ref(null)
 
+const {
+  errors: formErrors,
+  validate,
+  clearErrors,
+  setServerErrors
+} = useZodForm(
+  () =>
+    createSekolahSchema({
+      isEdit: true,
+      hasExistingLogo: Boolean(imagePreview.value),
+      isSuperAdmin: isSuperAdmin.value
+    }),
+  form,
+  { fieldMap: fieldErrorMap }
+)
+
 const handleImage = (file) => {
-  logoFile.value = file
-  imagePreview.value = URL.createObjectURL(file)
+  logoFile.value = file || null
+  form.value.logo = file || null
+  imagePreview.value = file ? URL.createObjectURL(file) : ''
 }
 
 onMounted(async () => {
@@ -79,6 +98,7 @@ onMounted(async () => {
     if (school.logo) {
       imagePreview.value = getPhotoUrl(school.logo)
     }
+    clearErrors()
   } catch (err) {
     toast.error('Gagal mengambil data sekolah')
     router.push('/manajemen-data/sekolah')
@@ -87,15 +107,12 @@ onMounted(async () => {
   }
 })
 
-const formErrors = ref({})
-
 function onBeforeConfirm() {
-  formErrors.value = {}
-  if (!form.value.nama?.trim()) formErrors.value.name = 'Nama sekolah wajib diisi.'
-  if (!form.value.email?.trim()) formErrors.value.email = 'Email sekolah wajib diisi.'
-
-  if (Object.keys(formErrors.value).length > 0) {
-    toast.error('Gagal Menyimpan', { description: 'Harap lengkapi semua isian wajib terlebih dahulu.' })
+  if (isLoading.value) return false
+  if (!validate()) {
+    toast.error('Gagal Menyimpan', {
+      description: formErrors.value.logo || 'Harap lengkapi semua data formulir sebelum menyimpan.'
+    })
     return false
   }
 
@@ -103,73 +120,11 @@ function onBeforeConfirm() {
 }
 
 const handleSubmit = async () => {
-  formErrors.value = {}
+  if (isLoading.value) return
 
-  // Client-side Validation: All fields must be filled
-  const errors = {}
-  if (!form.value.email) {
-    errors.email = 'E-mail sekolah harus diisi'
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
-    errors.email = 'Format e-mail tidak valid'
-  }
-  if (!form.value.no_hp) {
-    errors.phone = 'No. Telp harus diisi'
-  }
-  if (!form.value.nama) {
-    errors.name = 'Nama sekolah harus diisi'
-  }
-  if (!form.value.npsn) {
-    errors.npsn = 'NPSN harus diisi'
-  }
-  if (isSuperAdmin.value && !form.value.yayasan) {
-    errors.foundation_id = 'Yayasan harus dipilih'
-  }
-  if (!form.value.jenjang) {
-    errors.level = 'Jenjang pendidikan harus dipilih'
-  }
-  if (!form.value.tanggal_berdiri) {
-    errors.established_date = 'Tanggal berdiri harus diisi'
-  }
-  if (!form.value.status) {
-    errors.status = 'Status harus dipilih'
-  }
-  if (!form.value.alamat) {
-    errors.address = 'Alamat lengkap harus diisi'
-  }
-  if (!form.value.no_sk) {
-    errors.decree_number = 'No. SK Pendirian harus diisi'
-  }
-  if (!form.value.tanggal_sk) {
-    errors.decree_date = 'Tanggal SK Pendirian harus diisi'
-  }
-  if (!form.value.no_izin) {
-    errors.permit_number = 'No. Izin Operasional harus diisi'
-  }
-  if (!form.value.tanggal_izin) {
-    errors.permit_date = 'Tanggal Izin Operasional harus diisi'
-  }
-  if (!form.value.akreditasi) {
-    errors.accreditation = 'Akreditasi harus dipilih'
-  }
-  if (!form.value.tanggal_akreditasi) {
-    errors.accreditation_date = 'Tanggal akreditasi harus diisi'
-  }
-  if (!form.value.no_akreditasi) {
-    errors.accreditation_number = 'No. SK Akreditasi harus diisi'
-  }
-  if (!form.value.emailLogin) {
-    errors.emailLogin = 'E-mail login administrator harus diisi'
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.emailLogin)) {
-    errors.emailLogin = 'Format e-mail login tidak valid'
-  }
-  if (!form.value.noHpLogin) {
-    errors.noHpLogin = 'No. HP login administrator harus diisi'
-  }
-
-  if (Object.keys(errors).length > 0) {
-    formErrors.value = errors
+  if (!validate()) {
     toast.error('Gagal Menyimpan', {
-      description: 'Harap lengkapi semua data formulir sebelum menyimpan.'
+      description: formErrors.value.logo || 'Harap lengkapi semua data formulir sebelum menyimpan.'
     })
     return
   }

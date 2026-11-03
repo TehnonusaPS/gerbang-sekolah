@@ -9,6 +9,7 @@ defineProps({
   modelValue: String,
   error: String,
   required: Boolean,
+  disabled: Boolean,
   rows: {
     type: Number,
     default: 4
@@ -20,20 +21,24 @@ defineEmits(['update:modelValue'])
 
 <template>
   <Field :data-invalid="!!error">
-    <FieldLabel>
-      {{ label }}
-      <span
-        v-if="required"
-        class="text-destructive"
-        >*</span
-      >
-    </FieldLabel>
+    <div class="flex items-center justify-between gap-2">
+      <FieldLabel>
+        {{ label }}
+        <span
+          v-if="required"
+          class="text-destructive"
+          >*</span
+        >
+      </FieldLabel>
+      <slot name="label-extra" />
+    </div>
 
     <FieldContent>
       <Textarea
         :rows="rows"
         :placeholder="placeholder"
         :model-value="modelValue"
+        :disabled="disabled"
         :aria-invalid="!!error"
         @update:model-value="$emit('update:modelValue', $event)"
         :class="{

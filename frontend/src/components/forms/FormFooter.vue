@@ -59,10 +59,11 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['submit'])
+const emit = defineEmits(['submit', 'save'])
 
 const { isFetching, isMutating } = useApiLoading()
 const isConfirmOpen = ref(false)
+const isConfirming = ref(false)
 const isSubmitLocked = ref(false)
 
 const isBusy = computed(() => Boolean(props.loading || isMutating.value || isSubmitLocked.value))
@@ -73,7 +74,7 @@ const visibleSummaryItems = computed(() =>
 )
 
 const handleClickSave = async () => {
-  if (isButtonDisabled.value) return
+  if (isButtonDisabled.value || isConfirmOpen.value || isConfirming.value) return
 
   if (!props.confirm) {
     isSubmitLocked.value = true
@@ -81,15 +82,21 @@ const handleClickSave = async () => {
       isSubmitLocked.value = false
     }, 800)
     emit('submit')
+    emit('save')
     return
   }
 
-  if (props.beforeConfirm) {
-    const canProceed = await props.beforeConfirm()
-    if (canProceed === false) return
-  }
+  isConfirming.value = true
+  try {
+    if (props.beforeConfirm) {
+      const canProceed = await props.beforeConfirm()
+      if (canProceed === false) return
+    }
 
-  isConfirmOpen.value = true
+    isConfirmOpen.value = true
+  } finally {
+    isConfirming.value = false
+  }
 }
 
 const handleConfirmSubmit = () => {
@@ -100,6 +107,7 @@ const handleConfirmSubmit = () => {
   }, 800)
   isConfirmOpen.value = false
   emit('submit')
+  emit('save')
 }
 </script>
 
@@ -108,6 +116,7 @@ const handleConfirmSubmit = () => {
     <Button
       type="button"
       size="lg"
+      :cooldown-ms="0"
       :disabled="isButtonDisabled"
       class="gap-2 px-8 h-11 text-sm font-semibold shadow-sm w-full sm:w-auto transition-all"
       @click="handleClickSave"
@@ -121,7 +130,11 @@ const handleConfirmSubmit = () => {
     </Button>
 
     <Dialog :open="isConfirmOpen" @update:open="val => (isConfirmOpen = val)">
-      <DialogContent class="sm:max-w-md bg-card dark:bg-zinc-900 border border-border dark:border-zinc-800">
+      <DialogContent
+        class="sm:max-w-md bg-card dark:bg-zinc-900 border border-border dark:border-zinc-800"
+        @pointer-down-outside.prevent
+        @interact-outside.prevent
+      >
         <DialogHeader>
           <div class="flex items-center gap-3">
             <div class="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">

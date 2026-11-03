@@ -22,7 +22,7 @@ class SchoolController extends Controller
         $user = $request->user();
 
         if ($user->isSuperAdmin()) {
-            $query = School::with('foundation:id,name,code', 'users:id,school_id,email,phone')->withCount('students');
+            $query = School::with('foundation:id,name,code', 'curriculum:id,name,code,level', 'users:id,school_id,email,phone')->withCount('students');
 
             if ($request->has('search')) {
                 $search = $request->input('search');
@@ -66,7 +66,7 @@ class SchoolController extends Controller
         }
 
         if ($user->hasRole('admin_yayasan')) {
-            $query = School::with('foundation:id,name,code', 'users:id,school_id,email,phone')
+            $query = School::with('foundation:id,name,code', 'curriculum:id,name,code,level', 'users:id,school_id,email,phone')
                 ->withCount('students')
                 ->where('foundation_id', $user->foundation_id);
 
@@ -109,7 +109,7 @@ class SchoolController extends Controller
         }
 
         if ($user->school_id) { // admin_sekolah, kepala_sekolah, tata_usaha, wali_kelas
-            $school = School::with('foundation:id,name,code')->withCount('students')->find($user->school_id);
+            $school = School::with('foundation:id,name,code', 'curriculum:id,name,code,level')->withCount('students')->find($user->school_id);
             if (!$school) {
                 return response()->json([
                     'status'  => 'error',
@@ -217,6 +217,12 @@ class SchoolController extends Controller
 
         $school = School::create($data);
 
+        // Auto create default active AcademicYear dynamically based on creation date
+        \App\Models\AcademicYear::firstOrCreate(
+            ['school_id' => $school->id, 'is_active' => true],
+            \App\Models\AcademicYear::defaultAttributesForDate($school->created_at)
+        );
+
         // Auto sync mandatory subjects from curriculum
         $this->syncSchoolSubjectsFromCurriculum($school);
 
@@ -233,7 +239,7 @@ class SchoolController extends Controller
     public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
-        $school = School::with('foundation:id,name,code')->find($id);
+        $school = School::with('foundation:id,name,code', 'curriculum:id,name,code,level')->find($id);
 
         if (!$school) {
             return response()->json([
@@ -306,6 +312,7 @@ class SchoolController extends Controller
             'accreditation'        => 'nullable|string|max:10',
             'accreditation_date'   => 'nullable|date',
             'accreditation_number' => 'nullable|string|max:255',
+            'curriculum_id'        => 'nullable|exists:curriculums,id',
             'logo'                 => 'nullable|image|max:2048',
             'password'             => 'nullable|string|min:8',
         ];
@@ -346,6 +353,9 @@ class SchoolController extends Controller
         }
 
         $school->update($data);
+
+        // Auto sync mandatory subjects from curriculum when school is updated
+        $this->syncSchoolSubjectsFromCurriculum($school);
 
         // Update administrator user details if provided in request
         $adminUser = User::where('school_id', $school->id)

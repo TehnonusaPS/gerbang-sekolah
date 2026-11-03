@@ -376,105 +376,43 @@ export const allItems = computed(() => [
 ])
 
 export const statusOptions = [
-  {
-    label: 'Aktif',
-    value: '1'
-  },
-  {
-    label: 'Tidak Aktif',
-    value: '0'
-  },
-  {
-    label: 'Pindah',
-    value: '2'
-  },
-  {
-    label: 'Lulus',
-    value: '3'
-  }
+  { label: 'Aktif', value: 'Aktif' },
+  { label: 'Nonaktif', value: 'Nonaktif' },
+  { label: 'Pindah', value: 'Pindah' },
+  { label: 'Lulus', value: 'Lulus' }
 ]
 
 export const agamaOptions = [
-  {
-    label: 'Islam',
-    value: 'A01'
-  },
-  {
-    label: 'Kristen',
-    value: 'A02'
-  },
-  {
-    label: 'Katolik',
-    value: 'A03'
-  },
-  {
-    label: 'Buddha',
-    value: 'A04'
-  },
-  {
-    label: 'Hindu',
-    value: 'A05'
-  },
-  {
-    label: 'Konghucu',
-    value: 'A06'
-  }
+  { label: 'Islam', value: 'Islam' },
+  { label: 'Kristen', value: 'Kristen' },
+  { label: 'Katolik', value: 'Katolik' },
+  { label: 'Buddha', value: 'Buddha' },
+  { label: 'Hindu', value: 'Hindu' },
+  { label: 'Konghucu', value: 'Konghucu' }
 ]
 
 export const kelaminOptions = [
-  {
-    label: 'Laki-laki',
-    value: 'JK01'
-  },
-  {
-    label: 'Perempuan',
-    value: 'JK02'
-  }
+  { label: 'Laki-laki', value: 'Laki-laki' },
+  { label: 'Perempuan', value: 'Perempuan' }
 ]
+
 export const pekerjaanOptions = [
-  {
-    label: 'PNS',
-    value: 'pns'
-  },
-  {
-    label: 'BUMN',
-    value: 'bumn'
-  },
-  {
-    label: 'Wiraswasta',
-    value: 'wiraswasta'
-  },
-  {
-    label: 'Pegawai Swasta',
-    value: 'pegawai swasta'
-  },
-  {
-    label: 'Ibu Rumah Tangga',
-    value: 'ibu rumah tangga'
-  },
-  {
-    label: 'Lainnya',
-    value: 'lainnya'
-  }
+  { label: 'PNS', value: 'PNS' },
+  { label: 'BUMN', value: 'BUMN' },
+  { label: 'Wiraswasta', value: 'Wiraswasta' },
+  { label: 'Pegawai Swasta', value: 'Pegawai Swasta' },
+  { label: 'Ibu Rumah Tangga', value: 'Ibu Rumah Tangga' },
+  { label: 'Lainnya', value: 'Lainnya' }
 ]
 
 export const hubunganOptions = [
-  {
-    label: 'Ayah',
-    value: 'ayah'
-  },
-  {
-    label: 'Ibu',
-    value: 'ibu'
-  },
-  {
-    label: 'Wali',
-    value: 'wali'
-  },
-  {
-    label: 'Lainnya',
-    value: 'lainnya'
-  }
+  { label: 'Kakek', value: 'Kakek' },
+  { label: 'Nenek', value: 'Nenek' },
+  { label: 'Paman', value: 'Paman' },
+  { label: 'Bibi', value: 'Bibi' },
+  { label: 'Kakak', value: 'Kakak' },
+  { label: 'Saudara lainnya', value: 'Saudara lainnya' },
+  { label: 'Orang lain', value: 'Orang lain' }
 ]
 
 export const kelasOptions = [

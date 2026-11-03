@@ -10,48 +10,51 @@ import { agamaOptions, jabatanOptions, kelaminOptions, pendidikanOptions, status
 import { createGuruStaffSchema } from './data/guruStaffSchema'
 import { useZodForm } from '@/composables/useZodForm'
 import SuccessAccountDialog from '@/components/dialogs/SuccessAccountDialog.vue'
-import { createTeacher, getFoundation, getSchools } from '@/services/managementService'
+import { createTeacher, getFoundations, getSchools } from '@/services/managementService'
 import { toast } from 'vue-sonner'
 import { fetchAllSubjects } from '@/services/subjectService'
 
 const auth = useAuthStore()
 const router = useRouter()
 const isLoading = ref(false)
+const yayasanOptions = ref([])
 const unitOptions = ref([])
 const subjectOptions = ref([])
 
+const isSuperAdmin = computed(() => auth.user?.role === 'superadmin')
 const isAdminSekolah = computed(() => auth.user?.role === 'admin_sekolah')
+
+const loadYayasanOptions = async () => {
+  if (!isSuperAdmin.value) return
+  try {
+    const res = await getFoundations({ per_page: 1000 })
+    const list = Array.isArray(res.data) ? res.data : (res.data?.data || [])
+    yayasanOptions.value = list.map(f => ({
+      label: f.name,
+      value: String(f.id)
+    }))
+  } catch (err) {
+    console.error('Failed to load foundations', err)
+  }
+}
 
 const loadUnitOptions = async () => {
   if (isAdminSekolah.value) return
   try {
-    const resSchools = await getSchools()
-    const options = resSchools.data.data.map(s => ({
+    const resSchools = await getSchools({ per_page: 1000 })
+    const list = Array.isArray(resSchools.data) ? resSchools.data : (resSchools.data?.data || [])
+    unitOptions.value = list.map(s => ({
       label: s.name,
-      value: 'S' + String(s.id).padStart(4, '0')
+      value: 'S' + String(s.id).padStart(4, '0'),
+      foundation_id: String(s.foundation_id || '')
     }))
-
-    if (auth.user?.foundation_id) {
-      try {
-        const resFd = await getFoundation(auth.user.foundation_id)
-        options.unshift({
-          label: resFd.data.name,
-          value: 'Y' + String(auth.user.foundation_id).padStart(4, '0')
-        })
-      } catch (err) {
-        options.unshift({
-          label: 'Yayasan',
-          value: 'Y' + String(auth.user.foundation_id).padStart(4, '0')
-        })
-      }
-    }
-    unitOptions.value = options
   } catch (err) {
     console.error('Failed to load schools', err)
   }
 }
 
 onMounted(() => {
+  loadYayasanOptions()
   loadUnitOptions()
   loadSubjectOptions()
 })
@@ -85,73 +88,7 @@ const {
   errors: formErrors,
   validate,
   setServerErrors
-} = useZodForm(() => createGuruStaffSchema({ isAdminSekolah: isAdminSekolah.value }), form)
-
-const mapValueToAgama = (value) => {
-  const map = {
-    'A01': 'Islam',
-    'A02': 'Kristen',
-    'A03': 'Katolik',
-    'A04': 'Buddha',
-    'A05': 'Hindu',
-    'A06': 'Konghucu'
-  }
-  return map[value] || value
-}
-
-const mapValueToPernikahan = (value) => {
-  const map = {
-    'SP01': 'Belum Menikah',
-    'SP02': 'Menikah',
-    'SP03': 'Janda',
-    'SP04': 'Duda'
-  }
-  return map[value] || value
-}
-
-const mapValueToPendidikan = (value) => {
-  const map = {
-    'P01': 'Sekolah Dasar (SD)',
-    'P02': 'Sekolah Menengah Pertama (SMP)',
-    'P03': 'Sekolah Menengah Awal/Kejuruan (SMA/SMK)',
-    'P04': 'Diploma I (D1)',
-    'P05': 'Diploma III (D3)',
-    'P06': 'Diploma IV (D4)',
-    'P07': 'Sarjana (S1)',
-    'P08': 'Magister (S2)',
-    'P09': 'Doktoral (S3)'
-  }
-  return map[value] || value
-}
-
-const mapValueToJabatan = (value) => {
-  const map = {
-    'J001': 'Kepala Yayasan',
-    'J002': 'Staff Yayasan',
-    'J003': 'Kepala Sekolah',
-    'J004': 'Guru',
-    'J005': 'Staff Sekolah',
-    'J006': 'Admin Sekolah'
-  }
-  return map[value] || value
-}
-
-const mapValueToStatusKepegawaian = (value) => {
-  const map = {
-    'SK01': 'Tetap',
-    'SK02': 'Kontrak',
-    'SK03': 'Honorer'
-  }
-  return map[value] || value
-}
-
-const mapValueToKelamin = (value) => {
-  const map = {
-    'JK01': 'Laki-laki',
-    'JK02': 'Perempuan'
-  }
-  return map[value] || value
-}
+} = useZodForm(() => createGuruStaffSchema({ isSuperAdmin: isSuperAdmin.value, isAdminSekolah: isAdminSekolah.value }), form)
 
 const onBeforeConfirm = () => {
   if (!validate()) {
@@ -184,15 +121,16 @@ const handleSubmit = async () => {
     nip_nuptk: form.value.nip_nuptk,
     tempat_lahir: form.value.tempat_lahir,
     tanggal_lahir: form.value.tanggal_lahir,
-    jenis_kelamin: mapValueToKelamin(form.value.jenis_kelamin),
-    agama: mapValueToAgama(form.value.agama),
-    status_pernikahan: mapValueToPernikahan(form.value.status_pernikahan),
-    pendidikan_terakhir: mapValueToPendidikan(form.value.pendidikan_terakhir),
+    jenis_kelamin: form.value.jenis_kelamin,
+    agama: form.value.agama,
+    status_pernikahan: form.value.status_pernikahan,
+    pendidikan_terakhir: form.value.pendidikan_terakhir,
     gelar_depan: form.value.gelar_depan,
     gelar_belakang: form.value.gelar_belakang,
     alamat: form.value.alamat,
-    jabatan: mapValueToJabatan(form.value.jabatan),
-    status_kepegawaian: mapValueToStatusKepegawaian(form.value.status_kepegawaian),
+    jabatan: form.value.jabatan,
+    status_kepegawaian: form.value.status_kepegawaian,
+    foundation_id: form.value.foundation_id,
     unit_kerja: unitKerjaList,
     status_aktif: form.value.status_aktif === 'Aktif' ? 'aktif' : 'nonaktif',
     join_date: form.value.join_date,
@@ -282,6 +220,7 @@ const loadSubjectOptions = async () => {
       :status-pernikahan-options="statusPernikahanOptions"
       :jabatan-options="jabatanOptions"
       :status-kepegawaian-options="statusKepegawaianOptions"
+      :yayasan-options="yayasanOptions"
       :unit-kerja-options="unitOptions"
       :status-options="statusOptions"
       :subject-options="subjectOptions"

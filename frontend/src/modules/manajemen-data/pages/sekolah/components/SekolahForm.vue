@@ -57,6 +57,7 @@ const handleImageChange = (file) => {
         title="Logo Sekolah"
         :description="isReadOnlyInstitutional ? 'Identitas visual resmi unit sekolah (Read-Only)' : 'Unggah identitas visual logo unit sekolah'"
         :icon="Image"
+        :required="!isReadOnlyInstitutional"
       >
         <ImageUpload
           :preview="computedPreview"
@@ -81,7 +82,7 @@ const handleImageChange = (file) => {
             label="E-mail Login Administrator"
             placeholder="Contoh: admin@sdnpbekasi.sch.id"
             :disabled="isReadOnlyInstitutional"
-            :error="errors.emailLogin || errors.email"
+            :error="errors.emailLogin"
             required
           />
 
@@ -91,7 +92,7 @@ const handleImageChange = (file) => {
             placeholder="Contoh: 081234567890"
             numeric-only
             :maxlength="15"
-            :error="errors.noHpLogin || errors.phone"
+            :error="errors.noHpLogin"
           />
 
           <!-- Opsi Ganti Kata Sandi jika diaktifkan (Edit Manajemen Data & Pengaturan Akun) -->
@@ -171,6 +172,7 @@ const handleImageChange = (file) => {
             :options="foundationOptions"
             :disabled="isReadOnlyInstitutional"
             :error="errors.foundation_id || errors.yayasan"
+            :required="!isReadOnlyInstitutional"
           />
           <FormSelect
             v-model="form.jenjang"
@@ -179,6 +181,7 @@ const handleImageChange = (file) => {
             :options="jenjangOptions"
             :disabled="isReadOnlyInstitutional"
             :error="errors.level || errors.jenjang"
+            :required="!isReadOnlyInstitutional"
           />
         </div>
 
@@ -188,6 +191,7 @@ const handleImageChange = (file) => {
             label="Tanggal Berdiri"
             :disabled="isReadOnlyInstitutional"
             :error="errors.established_date || errors.tanggal_berdiri"
+            :required="!isReadOnlyInstitutional"
           />
           <FormSelect
             v-model="form.status"
@@ -196,6 +200,7 @@ const handleImageChange = (file) => {
             :options="statusOptions"
             :disabled="isReadOnlyInstitutional"
             :error="errors.status"
+            :required="!isReadOnlyInstitutional"
           />
         </div>
 
@@ -220,6 +225,7 @@ const handleImageChange = (file) => {
           :rows="3"
           :disabled="isReadOnlyInstitutional"
           :error="errors.address || errors.alamat"
+          :required="!isReadOnlyInstitutional"
         />
       </FormSection>
 
@@ -236,12 +242,14 @@ const handleImageChange = (file) => {
             placeholder="Contoh: SK-002/SDNP/2012"
             :disabled="isReadOnlyInstitutional"
             :error="errors.decree_number || errors.no_sk"
+            :required="!isReadOnlyInstitutional"
           />
           <FormDate
             v-model="form.tanggal_sk"
             label="Tanggal SK Pendirian"
             :disabled="isReadOnlyInstitutional"
             :error="errors.decree_date || errors.tanggal_sk"
+            :required="!isReadOnlyInstitutional"
           />
         </div>
 
@@ -252,12 +260,14 @@ const handleImageChange = (file) => {
             placeholder="Contoh: IZIN-001/2012"
             :disabled="isReadOnlyInstitutional"
             :error="errors.permit_number || errors.no_izin"
+            :required="!isReadOnlyInstitutional"
           />
           <FormDate
             v-model="form.tanggal_izin"
             label="Tanggal Izin Operasional"
             :disabled="isReadOnlyInstitutional"
             :error="errors.permit_date || errors.tanggal_izin"
+            :required="!isReadOnlyInstitutional"
           />
         </div>
 
@@ -269,6 +279,7 @@ const handleImageChange = (file) => {
             :options="akreditasi"
             :disabled="isReadOnlyInstitutional"
             :error="errors.accreditation || errors.akreditasi"
+            :required="!isReadOnlyInstitutional"
           />
           <FormDate
             v-model="form.tanggal_akreditasi"

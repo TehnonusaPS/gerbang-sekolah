@@ -141,13 +141,182 @@ class StudentController extends Controller
     {
         switch ($relation) {
             case 'father':
-                return 'ayah';
+                return 'Ayah';
             case 'mother':
-                return 'ibu';
+                return 'Ibu';
             case 'guardian':
             default:
-                return 'wali';
+                return 'Wali';
         }
+    }
+
+    /**
+     * Extract Ayah, Ibu, Wali, and Login Account data from StudentProfile.
+     */
+    private function extractParentsData(?StudentProfile $profile): array
+    {
+        $parents = $profile ? $profile->parents : collect();
+        $father = $parents->firstWhere('relationship', 'father');
+        $mother = $parents->firstWhere('relationship', 'mother');
+        $guardian = $parents->first(fn($p) => !in_array($p->relationship, ['father', 'mother'], true));
+        $primary = $parents->first(fn($p) => $p->user !== null) ?? $father ?? $mother ?? $guardian;
+
+        $pName = fn(?ParentProfile $p) => $p ? ($p->name ?: ($p->user ? $p->user->name : '')) : '';
+        $pEmail = fn(?ParentProfile $p) => $p ? ($p->email ?: ($p->user ? $p->user->email : '')) : '';
+        $pPhone = fn(?ParentProfile $p) => $p ? ($p->phone ?: ($p->user ? $p->user->phone : '')) : '';
+
+        return [
+            'nama_ayah'      => $pName($father),
+            'pekerjaan_ayah' => $father ? ($father->occupation ?? '') : '',
+            'email_ayah'     => $pEmail($father),
+            'no_hp_ayah'     => $pPhone($father),
+            'alamat_ayah'    => $father ? ($father->address ?? '') : '',
+
+            'nama_ibu'       => $pName($mother),
+            'pekerjaan_ibu'  => $mother ? ($mother->occupation ?? '') : '',
+            'email_ibu'      => $pEmail($mother),
+            'no_hp_ibu'      => $pPhone($mother),
+            'alamat_ibu'     => $mother ? ($mother->address ?? '') : '',
+
+            'nama_wali'      => $pName($guardian),
+            'hubungan_siswa' => $guardian && !in_array($guardian->relationship, ['guardian', 'Wali'], true) ? $guardian->relationship : '',
+            'kelamin_wali'   => $guardian ? $this->mapGenderToFe($guardian->gender) : '',
+            'pekerjaan_wali' => $guardian ? ($guardian->occupation ?? '') : '',
+            'email_wali'     => $pEmail($guardian),
+            'no_hp_wali'     => $pPhone($guardian),
+            'alamat_wali'    => $guardian ? ($guardian->address ?? '') : '',
+
+            'namaWali'       => $pName($primary),
+            'emailLogin'     => $primary && $primary->user ? $primary->user->email : $pEmail($primary),
+            'noHpLogin'      => $primary && $primary->user ? $primary->user->phone : $pPhone($primary),
+        ];
+    }
+
+    /**
+     * Sync Ayah, Ibu, Wali profiles and the Parent Login User account.
+     */
+    private function syncStudentParents(Request $request, StudentProfile $studentProfile, User $studentUser, ?Role $parentRole): array
+    {
+        $existingParents = $studentProfile->parents()->with('user')->get()->keyBy(
+            fn($p) => in_array($p->relationship, ['father', 'mother'], true) ? $p->relationship : 'guardian'
+        );
+        $existingUser = $existingParents->map(fn($p) => $p->user)->filter()->first();
+
+        $primaryName = $request->input('nama_ayah') ?: $request->input('nama_ibu') ?: $request->input('nama_wali') ?: ('Orang Tua ' . $studentUser->name);
+        $loginEmail = $request->input('emailLogin')
+            ?: $request->input('email_ayah')
+            ?: $request->input('email_ibu')
+            ?: $request->input('email_wali')
+            ?: ($existingUser ? $existingUser->email : 'ortu-' . $studentProfile->nisn . '@school.com');
+        $loginPhone = $request->input('noHpLogin')
+            ?: $request->input('no_hp_ayah')
+            ?: $request->input('no_hp_ibu')
+            ?: $request->input('no_hp_wali')
+            ?: ($existingUser ? $existingUser->phone : null);
+
+        $parentUser = $existingUser ?: User::where('email', $loginEmail)->first();
+        if ($parentUser) {
+            $userUpdate = [
+                'name'          => $primaryName,
+                'email'         => $loginEmail,
+                'phone'         => $loginPhone,
+                'school_id'     => $studentUser->school_id,
+                'foundation_id' => $studentUser->foundation_id,
+            ];
+            if ($request->filled('password')) {
+                $userUpdate['password'] = Hash::make($request->input('password'));
+            }
+            $parentUser->update($userUpdate);
+        } elseif ($parentRole) {
+            $parentUser = User::create([
+                'name'          => $primaryName,
+                'email'         => $loginEmail,
+                'password'      => Hash::make($request->input('password') ?: '123456'),
+                'role_id'       => $parentRole->id,
+                'school_id'     => $studentUser->school_id,
+                'foundation_id' => $studentUser->foundation_id,
+                'phone'         => $loginPhone,
+                'is_active'     => true,
+            ]);
+        }
+
+        $specs = [
+            'father' => [
+                'name'         => $request->input('nama_ayah'),
+                'gender'       => 'male',
+                'relationship' => 'father',
+                'occupation'   => $request->input('pekerjaan_ayah'),
+                'email'        => $request->input('email_ayah'),
+                'phone'        => $request->input('no_hp_ayah'),
+                'address'      => $request->input('alamat_ayah'),
+            ],
+            'mother' => [
+                'name'         => $request->input('nama_ibu'),
+                'gender'       => 'female',
+                'relationship' => 'mother',
+                'occupation'   => $request->input('pekerjaan_ibu'),
+                'email'        => $request->input('email_ibu'),
+                'phone'        => $request->input('no_hp_ibu'),
+                'address'      => $request->input('alamat_ibu'),
+            ],
+            'guardian' => [
+                'name'         => $request->input('nama_wali'),
+                'gender'       => $this->mapGenderToDb($request->input('kelamin_wali')),
+                'relationship' => $request->input('hubungan_siswa') ?: 'guardian',
+                'occupation'   => $request->input('pekerjaan_wali'),
+                'email'        => $request->input('email_wali'),
+                'phone'        => $request->input('no_hp_wali'),
+                'address'      => $request->input('alamat_wali'),
+            ],
+        ];
+
+        $userAssigned = false;
+        $parentIds = [];
+
+        foreach ($specs as $rel => $data) {
+            $hasData = !empty($data['name']) || !empty($data['phone']) || !empty($data['address']);
+            $existing = $existingParents->get($rel);
+
+            if (!$hasData) {
+                if ($existing && $existing->user_id && $parentUser && $existing->user_id === $parentUser->id) {
+                    $existing->update(['user_id' => null]);
+                }
+                continue;
+            }
+
+            $assignUserId = null;
+            if (!$userAssigned && $parentUser) {
+                $otherUsingUser = ParentProfile::where('user_id', $parentUser->id)
+                    ->when($existing, fn($q) => $q->where('id', '!=', $existing->id))
+                    ->first();
+                if (!$otherUsingUser) {
+                    $assignUserId = $parentUser->id;
+                    $userAssigned = true;
+                } elseif ($existing && $existing->user_id === $parentUser->id) {
+                    $assignUserId = $parentUser->id;
+                    $userAssigned = true;
+                }
+            }
+
+            $payload = array_merge($data, ['user_id' => $assignUserId]);
+
+            if ($existing) {
+                $existing->update($payload);
+                $parentIds[] = $existing->id;
+            } else {
+                $created = ParentProfile::create($payload);
+                $parentIds[] = $created->id;
+            }
+        }
+
+        if (!empty($parentIds)) {
+            $studentProfile->parents()->sync($parentIds);
+        }
+
+        return [
+            'email' => $loginEmail,
+            'phone' => $loginPhone,
+        ];
     }
 
     /**
@@ -159,7 +328,7 @@ class StudentController extends Controller
         
         $query = User::whereHas('role', function ($q) {
             $q->where('name', 'siswa');
-        })->with(['studentProfile.classroom', 'studentProfile.parents.user']);
+        })->with(['school', 'studentProfile.classroom.school', 'studentProfile.parents.user']);
 
         // Role Scope
         if ($user->isSuperAdmin()) {
@@ -207,33 +376,32 @@ class StudentController extends Controller
 
         $formatted = $students->map(function ($student) {
             $profile = $student->studentProfile;
-            $parent = $profile && $profile->parents->isNotEmpty() ? $profile->parents->first() : null;
+            $parentData = $this->extractParentsData($profile);
+            $schoolName = $student->school
+                ? $student->school->name
+                : ($profile && $profile->classroom && $profile->classroom->school ? $profile->classroom->school->name : '-');
             
-            return [
+            return array_merge([
                 'id'             => $student->id,
                 'nama'           => $student->name,
                 'email'          => $student->email,
                 'no_hp'          => $student->phone,
                 'foto'           => $student->photo ? (str_starts_with($student->photo, 'http') ? $student->photo : asset($student->photo)) : null,
                 'nisn'           => $profile ? $profile->nisn : '',
+                'sekolah'        => $schoolName,
                 'kelasId'        => $profile ? $profile->classroom_id : null,
                 'kelas'          => $profile && $profile->classroom ? $profile->classroom->name : '-',
                 'tempat_lahir'   => $profile ? $profile->birth_place : '',
                 'tanggal_lahir'  => $profile && $profile->birth_date ? $profile->birth_date->format('Y-m-d') : '',
                 'jenisKelamin'   => $profile ? $this->mapGenderToFe($profile->gender) : '',
+                'agama'          => $profile ? ($profile->religion ?? '') : '',
                 'alamat'         => $profile ? $profile->address : '',
                 'tahunMasuk'     => $profile && $profile->enrollment_date ? $profile->enrollment_date->format('Y') : '',
                 'status'         => $profile ? $this->mapStatusToFe($profile->status) : 'Aktif',
                 'payment_status' => \App\Models\StudentBill::where('student_id', $student->id)
                                     ->whereIn('status', ['unpaid', 'partial'])
                                     ->exists() ? 'Belum Lunas' : 'Lunas',
-                'namaWali'       => $parent && $parent->user ? $parent->user->name : '',
-                'hubungan_siswa' => $parent ? $this->mapRelationshipToFe($parent->relationship) : '',
-                'kelamin_wali'   => $parent ? $this->mapGenderToFe($parent->gender) : '',
-                'pekerjaan_wali' => $parent ? $parent->occupation : '',
-                'email_wali'     => $parent && $parent->user ? $parent->user->email : '',
-                'no_hp_wali'     => $parent && $parent->user ? $parent->user->phone : '',
-            ];
+            ], $parentData);
         });
 
         $statsQuery = User::whereHas('role', function ($q) {
@@ -317,7 +485,7 @@ class StudentController extends Controller
             'nama_belakang'  => 'nullable|string|max:100',
             'nisn'           => 'required|string|max:50|unique:student_profiles,nisn',
             'nik'            => 'nullable|string|max:50',
-            'kelas'          => 'required', // classroom_id
+            'kelas'          => 'nullable', // classroom_id
             'status'         => 'required|string',
             'jenis_kelamin'  => 'required|string',
             'tanggal_lahir'  => 'required|date',
@@ -350,7 +518,7 @@ class StudentController extends Controller
         DB::beginTransaction();
         try {
             $fullName = trim($request->nama_depan . ' ' . ($request->nama_belakang ?: ''));
-            $studentEmail = $request->email ?: 'siswa-' . $request->nisn . '@school.com';
+            $studentEmail = $request->email ?: null;
             
             // Handle Photo Upload
             $photoPath = null;
@@ -359,15 +527,19 @@ class StudentController extends Controller
             }
 
             // 1. Create Student User
+            $schoolObj = \App\Models\School::find($schoolId);
+            $foundationId = $schoolObj ? $schoolObj->foundation_id : ($request->input('foundation_id') ?: $currentUser->foundation_id);
+
             $studentUser = User::create([
-                'name'      => $fullName,
-                'email'     => $studentEmail,
-                'password'  => Hash::make('123456'),
-                'role_id'   => $studentRole->id,
-                'school_id' => $schoolId,
-                'phone'     => $request->no_hp,
-                'is_active' => true,
-                'photo'     => $photoPath,
+                'name'          => $fullName,
+                'email'         => $studentEmail,
+                'password'      => Hash::make('123456'),
+                'role_id'       => $studentRole->id,
+                'school_id'     => $schoolId,
+                'foundation_id' => $foundationId,
+                'phone'         => $request->no_hp,
+                'is_active'     => true,
+                'photo'         => $photoPath,
             ]);
 
             // Parse entry year
@@ -377,12 +549,13 @@ class StudentController extends Controller
             // 2. Create Student Profile
             $studentProfile = StudentProfile::create([
                 'user_id'         => $studentUser->id,
-                'classroom_id'    => $request->kelas,
+                'classroom_id'    => $request->kelas ?: null,
                 'nisn'            => $request->nisn,
                 'nik'             => $request->nik,
                 'birth_place'     => $request->tempat_lahir,
                 'birth_date'      => $request->tanggal_lahir,
                 'gender'          => $this->mapGenderToDb($request->jenis_kelamin),
+                'religion'        => $request->agama,
                 'address'         => $request->alamat,
                 'enrollment_date' => $enrollDate,
                 'status'          => $this->mapStatusToDb($request->status),
@@ -440,39 +613,8 @@ class StudentController extends Controller
                 }
             }
 
-            // 3. Create Parent (if provided)
-            if ($request->has('nama_wali') && !empty($request->nama_wali)) {
-                $parentEmail = $request->emailLogin ?: $request->email_wali ?: 'ortu-' . $request->nisn . '@school.com';
-                $parentPhone = $request->noHpLogin ?: $request->no_hp_wali;
-
-                // Create or find parent user account
-                $parentUser = User::where('email', $parentEmail)->first();
-                if (!$parentUser) {
-                    $parentUser = User::create([
-                        'name'      => $request->nama_wali,
-                        'email'     => $parentEmail,
-                        'password'  => Hash::make('123456'),
-                        'role_id'   => $parentRole->id,
-                        'school_id' => $schoolId,
-                        'phone'     => $parentPhone,
-                        'is_active' => true,
-                    ]);
-                }
-
-                // Create parent profile
-                $parentProfile = ParentProfile::updateOrCreate(
-                    ['user_id' => $parentUser->id],
-                    [
-                        'gender'       => $this->mapGenderToDb($request->kelamin_wali),
-                        'relationship' => $this->mapRelationshipToDb($request->hubungan_siswa),
-                        'occupation'   => $request->pekerjaan_wali,
-                        'address'      => $request->alamat,
-                    ]
-                );
-
-                // Pivot association
-                $studentProfile->parents()->syncWithoutDetaching([$parentProfile->id]);
-            }
+            // 3. Sync Parents (Ayah, Ibu, Wali) & Login Account
+            $parentCreds = $this->syncStudentParents($request, $studentProfile, $studentUser, $parentRole);
 
             DB::commit();
 
@@ -481,9 +623,24 @@ class StudentController extends Controller
                 'message' => 'Student created successfully.',
                 'data'    => [
                     'id'       => $studentUser->id,
-                    'email'    => $studentEmail,
-                    'phone'    => $request->no_hp ?: '-',
-                    'password' => '123456'
+                    'nisn'     => $studentProfile->nisn,
+                    'email'    => $parentCreds['email'],
+                    'phone'    => $parentCreds['phone'] ?: '-',
+                    'password' => '123456',
+                    'accounts' => [
+                        [
+                            'title'      => 'Akun Login Siswa',
+                            'loginLabel' => 'NISN Login',
+                            'loginValue' => $studentProfile->nisn,
+                            'password'   => '123456',
+                        ],
+                        [
+                            'title'      => 'Akun Login Orang Tua / Wali',
+                            'loginLabel' => 'E-mail Login',
+                            'loginValue' => $parentCreds['email'],
+                            'password'   => '123456',
+                        ],
+                    ],
                 ]
             ], 201);
 
@@ -501,7 +658,7 @@ class StudentController extends Controller
      */
     public function show(Request $request, string $id): JsonResponse
     {
-        $student = User::with(['studentProfile.classroom', 'studentProfile.parents.user'])->find($id);
+        $student = User::with(['school', 'studentProfile.classroom', 'studentProfile.parents.user'])->find($id);
 
         if (!$student) {
             return response()->json([
@@ -511,9 +668,10 @@ class StudentController extends Controller
         }
 
         $profile = $student->studentProfile;
-        $parent = $profile && $profile->parents->isNotEmpty() ? $profile->parents->first() : null;
+        $parentData = $this->extractParentsData($profile);
+        $rawStudentEmail = $student->email && str_starts_with($student->email, 'siswa-') && str_ends_with($student->email, '@school.com') ? '' : ($student->email ?? '');
 
-        $feForm = [
+        $feForm = array_merge([
             'id'             => $student->id,
             'nama'           => $student->name,
             'nama_depan'     => explode(' ', $student->name)[0],
@@ -522,27 +680,19 @@ class StudentController extends Controller
             'nik'            => $profile ? $profile->nik : '',
             'tempat_lahir'   => $profile ? $profile->birth_place : '',
             'tanggal_lahir'  => $profile && $profile->birth_date ? $profile->birth_date->format('Y-m-d') : '',
-            'jenis_kelamin'  => $profile ? ($profile->gender === 'male' ? 'JK01' : 'JK02') : '',
-            'agama'          => 'Islam', // default or custom mapping if exist
+            'jenis_kelamin'  => $profile ? $this->mapGenderToFe($profile->gender) : '',
+            'agama'          => $profile ? ($profile->religion ?? '') : '',
             'alamat'         => $profile ? $profile->address : '',
-            'kelas'          => $profile ? (string)$profile->classroom_id : '',
+            'foundation_id'  => $student->foundation_id ? (string) $student->foundation_id : ($student->school && $student->school->foundation_id ? (string) $student->school->foundation_id : ''),
+            'sekolahId'      => $student->school_id ? (string) $student->school_id : ($profile && $profile->classroom && $profile->classroom->school_id ? (string) $profile->classroom->school_id : ''),
+            'kelas'          => $profile && $profile->classroom_id ? (string)$profile->classroom_id : '',
             'kelas_nama'     => $profile && $profile->classroom ? $profile->classroom->name : '-',
-            'status'         => $profile ? ($profile->status === 'active' ? '1' : ($profile->status === 'expelled' ? '0' : ($profile->status === 'transferred' ? '2' : '3'))) : '1',
+            'status'         => $profile ? $this->mapStatusToFe($profile->status) : 'Aktif',
             'tahun_masuk'    => $profile && $profile->enrollment_date ? $profile->enrollment_date->format('Y-m-d') : '',
-            'email'          => $student->email,
-            'no_hp'          => $student->phone,
+            'email'          => $rawStudentEmail,
+            'no_hp'          => $student->phone ?? '',
             'foto'           => $student->photo ? (str_starts_with($student->photo, 'http') ? $student->photo : asset($student->photo)) : null,
-            
-            // Parent
-            'nama_wali'      => $parent && $parent->user ? $parent->user->name : '',
-            'hubungan_siswa' => $parent ? $this->mapRelationshipToFe($parent->relationship) : '',
-            'kelamin_wali'   => $parent ? ($parent->gender === 'male' ? 'JK01' : 'JK02') : '',
-            'pekerjaan_wali' => $parent ? $parent->occupation : '',
-            'email_wali'     => $parent && $parent->user ? $parent->user->email : '',
-            'no_hp_wali'     => $parent && $parent->user ? $parent->user->phone : '',
-            'emailLogin'     => $parent && $parent->user ? $parent->user->email : '',
-            'noHpLogin'      => $parent && $parent->user ? $parent->user->phone : '',
-        ];
+        ], $parentData);
 
         return response()->json([
             'status' => 'success',
@@ -582,7 +732,7 @@ class StudentController extends Controller
             'nama_belakang'  => 'nullable|string|max:100',
             'nisn'           => 'required|string|max:50|unique:student_profiles,nisn,' . ($profile ? $profile->id : 'NULL'),
             'nik'            => 'nullable|string|max:50',
-            'kelas'          => 'required',
+            'kelas'          => 'nullable',
             'status'         => 'required|string',
             'jenis_kelamin'  => 'required|string',
             'tanggal_lahir'  => 'required|date',
@@ -616,12 +766,25 @@ class StudentController extends Controller
             }
 
             // 1. Update Student User
-            $studentUser->update([
+            $userUpdate = [
                 'name'  => $fullName,
-                'email' => $request->email ?: $studentUser->email,
+                'email' => $request->email ?: null,
                 'phone' => $request->no_hp,
                 'photo' => $photoPath,
-            ]);
+            ];
+
+            if ($request->user()->isSuperAdmin() && $request->filled('sekolahId')) {
+                $newSchoolId = (int) $request->input('sekolahId');
+                $schoolObj = \App\Models\School::find($newSchoolId);
+                $userUpdate['school_id'] = $newSchoolId;
+                if ($schoolObj) {
+                    $userUpdate['foundation_id'] = $schoolObj->foundation_id;
+                } elseif ($request->filled('foundation_id')) {
+                    $userUpdate['foundation_id'] = (int) $request->input('foundation_id');
+                }
+            }
+
+            $studentUser->update($userUpdate);
 
             // Parse entry year
             $enrollYear = $request->tahun_masuk ? substr($request->tahun_masuk, 0, 4) : date('Y');
@@ -630,12 +793,13 @@ class StudentController extends Controller
             // 2. Update Student Profile
             if ($profile) {
                 $profile->update([
-                    'classroom_id'    => $request->kelas,
+                    'classroom_id'    => $request->kelas ?: null,
                     'nisn'            => $request->nisn,
                     'nik'             => $request->nik,
                     'birth_place'     => $request->tempat_lahir,
                     'birth_date'      => $request->tanggal_lahir,
                     'gender'          => $this->mapGenderToDb($request->jenis_kelamin),
+                    'religion'        => $request->agama ?: $profile->religion,
                     'address'         => $request->alamat,
                     'enrollment_date' => $enrollDate,
                     'status'          => $this->mapStatusToDb($request->status),
@@ -702,58 +866,10 @@ class StudentController extends Controller
                 }
             }
 
-            // 3. Update parent (if provided)
-            if ($request->has('nama_wali') && !empty($request->nama_wali) && $profile) {
-                $parentEmail = $request->emailLogin ?: $request->email_wali ?: 'ortu-' . $request->nisn . '@school.com';
-                $parentPhone = $request->noHpLogin ?: $request->no_hp_wali;
-
-                $parent = $profile->parents->first();
-                if ($parent) {
-                    $parentUpdate = [
-                        'name'  => $request->nama_wali,
-                        'email' => $parentEmail,
-                        'phone' => $parentPhone,
-                    ];
-                    if ($request->has('password') && $request->filled('password')) {
-                        $parentUpdate['password'] = Hash::make($request->input('password'));
-                    }
-                    // Update parent user account
-                    if ($parent->user) {
-                        $parent->user->update($parentUpdate);
-                    }
-
-                    // Update parent profile
-                    $parent->update([
-                        'gender'       => $this->mapGenderToDb($request->kelamin_wali),
-                        'relationship' => $this->mapRelationshipToDb($request->hubungan_siswa),
-                        'occupation'   => $request->pekerjaan_wali,
-                        'address'      => $request->alamat,
-                    ]);
-                } else {
-                    // Create new parent user and profile
-                    $parentRole = Role::where('name', 'orang_tua')->first();
-                    if ($parentRole) {
-                        $parentUser = User::create([
-                            'name'      => $request->nama_wali,
-                            'email'     => $parentEmail,
-                            'password'  => Hash::make('123456'),
-                            'role_id'   => $parentRole->id,
-                            'school_id' => $studentUser->school_id,
-                            'phone'     => $parentPhone,
-                            'is_active' => true,
-                        ]);
-
-                        $newParentProfile = ParentProfile::create([
-                            'user_id'      => $parentUser->id,
-                            'gender'       => $this->mapGenderToDb($request->kelamin_wali),
-                            'relationship' => $this->mapRelationshipToDb($request->hubungan_siswa),
-                            'occupation'   => $request->pekerjaan_wali,
-                            'address'      => $request->alamat,
-                        ]);
-
-                        $profile->parents()->syncWithoutDetaching([$newParentProfile->id]);
-                    }
-                }
+            // 3. Sync Parents (Ayah, Ibu, Wali) & Login Account
+            if ($profile) {
+                $parentRole = Role::where('name', 'orang_tua')->first();
+                $this->syncStudentParents($request, $profile, $studentUser, $parentRole);
             }
 
             DB::commit();

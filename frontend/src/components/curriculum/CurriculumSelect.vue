@@ -85,9 +85,9 @@ const availableOptions = computed(() => {
   // School level: Filter based on level (SD / SMP)
   let items = curriculums.value.filter(c => c.code !== 'KUR-MERDEKA') // Exclude abstract parent in school level
 
-  if (props.levelFilter === 'SD') {
+  if (props.levelFilter === 'SD' || props.levelFilter === 'JP002') {
     items = items.filter(c => c.level === 'SD' || c.level === 'ALL')
-  } else if (props.levelFilter === 'SMP') {
+  } else if (props.levelFilter === 'SMP' || props.levelFilter === 'JP003') {
     items = items.filter(c => c.level === 'SMP' || c.level === 'ALL')
   }
 

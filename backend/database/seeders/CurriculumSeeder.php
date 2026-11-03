@@ -24,8 +24,8 @@ class CurriculumSeeder extends Seeder
             ]
         );
 
-        // 2. Kurikulum 2013 Utama (Payung Yayasan)
-        Curriculum::updateOrCreate(
+        // 2. Kurikulum 2013 Utama (Payung Yayasan & Sekolah)
+        $k13 = Curriculum::updateOrCreate(
             ['code' => 'K13-REVISI'],
             [
                 'name'        => 'Kurikulum 2013 (K13)',
@@ -34,6 +34,64 @@ class CurriculumSeeder extends Seeder
                 'is_active'   => true,
             ]
         );
+
+        $k13SdSubjects = [
+            ['code' => 'PAI', 'name' => 'Pendidikan Agama dan Budi Pekerti', 'phase' => 'KI/KD SD', 'grades' => [1, 2, 3, 4, 5, 6], 'sort' => 1],
+            ['code' => 'PPKN', 'name' => 'Pendidikan Pancasila dan Kewarganegaraan (PPKn)', 'phase' => 'KI/KD SD', 'grades' => [1, 2, 3, 4, 5, 6], 'sort' => 2],
+            ['code' => 'BIN', 'name' => 'Bahasa Indonesia', 'phase' => 'KI/KD SD', 'grades' => [1, 2, 3, 4, 5, 6], 'sort' => 3],
+            ['code' => 'MTK', 'name' => 'Matematika', 'phase' => 'KI/KD SD', 'grades' => [1, 2, 3, 4, 5, 6], 'sort' => 4],
+            ['code' => 'IPA', 'name' => 'Ilmu Pengetahuan Alam (IPA)', 'phase' => 'KI/KD SD', 'grades' => [4, 5, 6], 'sort' => 5],
+            ['code' => 'IPS', 'name' => 'Ilmu Pengetahuan Sosial (IPS)', 'phase' => 'KI/KD SD', 'grades' => [4, 5, 6], 'sort' => 6],
+            ['code' => 'SBDP', 'name' => 'Seni Budaya dan Prakarya (SBdP)', 'phase' => 'KI/KD SD', 'grades' => [1, 2, 3, 4, 5, 6], 'sort' => 7],
+            ['code' => 'PJOK', 'name' => 'Pendidikan Jasmani, Olahraga, dan Kesehatan (PJOK)', 'phase' => 'KI/KD SD', 'grades' => [1, 2, 3, 4, 5, 6], 'sort' => 8],
+        ];
+
+        foreach ($k13SdSubjects as $subj) {
+            CurriculumSubject::updateOrCreate(
+                [
+                    'curriculum_id' => $k13->id,
+                    'code'          => $subj['code'] . '-SD',
+                ],
+                [
+                    'name'           => $subj['name'],
+                    'level'          => 'SD',
+                    'phase'          => $subj['phase'],
+                    'default_grades' => $subj['grades'],
+                    'is_mandatory'   => true,
+                    'sort_order'     => $subj['sort'],
+                ]
+            );
+        }
+
+        $k13SmpSubjects = [
+            ['code' => 'PAI', 'name' => 'Pendidikan Agama dan Budi Pekerti', 'phase' => 'KI/KD SMP', 'grades' => [7, 8, 9], 'sort' => 1],
+            ['code' => 'PPKN', 'name' => 'Pendidikan Pancasila dan Kewarganegaraan (PPKn)', 'phase' => 'KI/KD SMP', 'grades' => [7, 8, 9], 'sort' => 2],
+            ['code' => 'BIN', 'name' => 'Bahasa Indonesia', 'phase' => 'KI/KD SMP', 'grades' => [7, 8, 9], 'sort' => 3],
+            ['code' => 'MTK', 'name' => 'Matematika', 'phase' => 'KI/KD SMP', 'grades' => [7, 8, 9], 'sort' => 4],
+            ['code' => 'IPA', 'name' => 'Ilmu Pengetahuan Alam (IPA)', 'phase' => 'KI/KD SMP', 'grades' => [7, 8, 9], 'sort' => 5],
+            ['code' => 'IPS', 'name' => 'Ilmu Pengetahuan Sosial (IPS)', 'phase' => 'KI/KD SMP', 'grades' => [7, 8, 9], 'sort' => 6],
+            ['code' => 'BIG', 'name' => 'Bahasa Inggris', 'phase' => 'KI/KD SMP', 'grades' => [7, 8, 9], 'sort' => 7],
+            ['code' => 'SBD', 'name' => 'Seni Budaya', 'phase' => 'KI/KD SMP', 'grades' => [7, 8, 9], 'sort' => 8],
+            ['code' => 'PJOK', 'name' => 'Pendidikan Jasmani, Olahraga, dan Kesehatan (PJOK)', 'phase' => 'KI/KD SMP', 'grades' => [7, 8, 9], 'sort' => 9],
+            ['code' => 'PRK', 'name' => 'Prakarya', 'phase' => 'KI/KD SMP', 'grades' => [7, 8, 9], 'sort' => 10],
+        ];
+
+        foreach ($k13SmpSubjects as $subj) {
+            CurriculumSubject::updateOrCreate(
+                [
+                    'curriculum_id' => $k13->id,
+                    'code'          => $subj['code'] . '-SMP',
+                ],
+                [
+                    'name'           => $subj['name'],
+                    'level'          => 'SMP',
+                    'phase'          => $subj['phase'],
+                    'default_grades' => $subj['grades'],
+                    'is_mandatory'   => true,
+                    'sort_order'     => $subj['sort'],
+                ]
+            );
+        }
 
         // 3. Kurikulum Merdeka SD (Spesifik Sekolah SD)
         $kurmerSD = Curriculum::updateOrCreate(

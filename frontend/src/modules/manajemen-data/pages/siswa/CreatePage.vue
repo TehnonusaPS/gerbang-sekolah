@@ -8,25 +8,54 @@ import SuccessAccountDialog from '@/components/dialogs/SuccessAccountDialog.vue'
 import SiswaForm from './components/SiswaForm.vue'
 import FormFooter from '@/components/forms/FormFooter.vue'
 import { defaultForm } from './data/defaultForm'
+import { createSiswaSchema, fieldErrorMap } from './data/siswaSchema'
+import { useZodForm } from '@/composables/useZodForm'
 import { toast } from 'vue-sonner'
-import { getClassrooms } from '@/services/managementService'
+import { getClassrooms, getFoundations, getSchools } from '@/services/managementService'
 import { createSiswa } from '@/services/siswaService'
 
 const auth = useAuthStore()
+const isSuperAdmin = computed(() => auth.user?.role === 'superadmin')
 const isWaliKelas = computed(() => auth.user?.role === 'wali_kelas')
 
+const yayasanOptions = ref([])
+const sekolahOptions = ref([])
 const activeClassrooms = ref([])
+
 onMounted(async () => {
   try {
-    const resClass = await getClassrooms()
-    activeClassrooms.value = resClass.data
+    const requests = [getClassrooms()]
+    if (isSuperAdmin.value) {
+      requests.push(getFoundations({ per_page: 1000 }), getSchools({ per_page: 1000 }))
+    }
+    const [resClass, resFoundations, resSchools] = await Promise.all(requests)
+    activeClassrooms.value = resClass.data || []
+
+    if (isSuperAdmin.value) {
+      const fList = Array.isArray(resFoundations?.data) ? resFoundations.data : (resFoundations?.data?.data || [])
+      yayasanOptions.value = fList.map(f => ({
+        label: f.name,
+        value: String(f.id)
+      }))
+
+      const sList = Array.isArray(resSchools?.data) ? resSchools.data : (resSchools?.data?.data || [])
+      sekolahOptions.value = sList.map(s => ({
+        label: s.name,
+        value: String(s.id),
+        foundation_id: String(s.foundation_id || '')
+      }))
+    }
   } catch (err) {
-    console.error('Gagal mengambil data kelas', err)
+    console.error('Gagal mengambil data referensi siswa', err)
   }
 })
 
 const classes = computed(() => {
-  let list = activeClassrooms.value.map(c => ({ label: c.name, value: String(c.id) }))
+  let list = activeClassrooms.value.map(c => ({
+    label: c.name,
+    value: String(c.id),
+    school_id: c.school_id ? String(c.school_id) : ''
+  }))
   if (isWaliKelas.value) {
     return list.filter(item => item.value === String(auth.user?.kelasId))
   }
@@ -51,84 +80,22 @@ const showSuccessModal = ref(false)
 const generatedAccount = ref({
   email: '',
   phone: '',
-  password: ''
+  password: '',
+  accounts: []
 })
 
-const formErrors = ref({})
+const {
+  errors: formErrors,
+  validate,
+  setServerErrors
+} = useZodForm(() => createSiswaSchema({ isSuperAdmin: isSuperAdmin.value }), form, {
+  fieldMap: fieldErrorMap
+})
 
 const onBeforeConfirm = () => {
-  formErrors.value = {}
-
-  const errors = {}
-  if (!form.value.nama_depan) {
-    errors.first_name = 'Nama depan harus diisi'
-  }
-  if (!form.value.nik) {
-    errors.nik = 'NIK harus diisi'
-  }
-  if (!form.value.nisn) {
-    errors.nisn = 'NISN harus diisi'
-  }
-  if (!form.value.tempat_lahir) {
-    errors.tempat_lahir = 'Tempat lahir harus diisi'
-  }
-  if (!form.value.tanggal_lahir) {
-    errors.tanggal_lahir = 'Tanggal lahir harus diisi'
-  }
-  if (!form.value.jenis_kelamin) {
-    errors.jenis_kelamin = 'Jenis kelamin harus diisi'
-  }
-  if (!form.value.agama) {
-    errors.agama = 'Agama harus diisi'
-  }
-  if (!form.value.email) {
-    errors.email = 'E-mail harus diisi'
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.email)) {
-    errors.email = 'Format e-mail tidak valid'
-  }
-  if (!form.value.no_hp) {
-    errors.phone = 'No. Telp harus diisi'
-  }
-  if (!form.value.alamat) {
-    errors.address = 'Alamat lengkap harus diisi'
-  }
-  if (!form.value.nama_wali) {
-    errors.nama_wali = 'Nama Wali harus diisi'
-  }
-  if (!form.value.hubungan_siswa) {
-    errors.hubungan_siswa = 'Hubungan siswa harus diisi'
-  }
-  if (!form.value.kelamin_wali) {
-    errors.kelamin_wali = 'Jenis Kelamin Wali harus diisi'
-  }
-  if (!form.value.email_wali) {
-    errors.email_wali = 'Email Wali harus diisi'
-  }
-  if (!form.value.no_hp_wali) {
-    errors.no_hp_wali = 'No HP Wali harus diisi'
-  }
-  if (!form.value.emailLogin) {
-    errors.emailLogin = 'E-mail login wali harus diisi'
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.value.emailLogin)) {
-    errors.emailLogin = 'Format e-mail login tidak valid'
-  }
-  if (!form.value.noHpLogin) {
-    errors.noHpLogin = 'No. HP login wali harus diisi'
-  }
-  if (!form.value.tahun_masuk) {
-    errors.tahun_masuk = 'Tahun Masuk harus diisi'
-  }
-  if (!form.value.kelas) {
-    errors.kelas = 'Kelas harus diisi'
-  }
-  if (!form.value.status) {
-    errors.status = 'Status harus diisi'
-  }
-
-  if (Object.keys(errors).length > 0) {
-    formErrors.value = errors
+  if (!validate()) {
     toast.error('Gagal Menyimpan', {
-      description: 'Harap lengkapi semua data formulir sebelum menyimpan.'
+      description: 'Harap periksa kembali kolom yang ditandai merah pada formulir.'
     })
     return false
   }
@@ -136,7 +103,7 @@ const onBeforeConfirm = () => {
 }
 
 const handleSubmit = async () => {
-  if (!onBeforeConfirm()) return
+  if (isLoading.value || !onBeforeConfirm()) return
 
   isLoading.value = true
 
@@ -161,12 +128,32 @@ const handleSubmit = async () => {
     generatedAccount.value = {
       email: res.data.email,
       phone: res.data.phone || '-',
-      password: res.data.password
+      password: res.data.password,
+      accounts: res.data.accounts || [
+        {
+          title: 'Akun Login Siswa',
+          loginLabel: 'NISN Login',
+          loginValue: form.value.nisn,
+          password: res.data.password || '123456'
+        },
+        {
+          title: 'Akun Login Orang Tua / Wali',
+          loginLabel: 'E-mail Login',
+          loginValue: res.data.email || form.value.emailLogin,
+          password: res.data.password || '123456'
+        }
+      ]
     }
     showSuccessModal.value = true
   } catch (err) {
-    const errorMsg = err.response?.data?.message || 'Gagal menambahkan siswa baru.'
-    toast.error('Gagal Menyimpan', { description: errorMsg })
+    if (setServerErrors(err)) {
+      toast.error('Gagal Menyimpan', {
+        description: 'Terdapat kesalahan validasi pada data siswa.'
+      })
+    } else {
+      const errorMsg = err.response?.data?.message || 'Gagal menambahkan siswa baru.'
+      toast.error('Gagal Menyimpan', { description: errorMsg })
+    }
   } finally {
     isLoading.value = false
   }
@@ -190,6 +177,8 @@ const goToList = () => {
     <SiswaForm
       :form="form"
       :image-preview="imagePreview"
+      :yayasan-options="yayasanOptions"
+      :sekolah-options="sekolahOptions"
       :status-options="statusOptions"
       :kelas-options="classes"
       :pekerjaan-options="pekerjaanOptions"
@@ -217,10 +206,11 @@ const goToList = () => {
   <SuccessAccountDialog
     v-model:open="showSuccessModal"
     title="Siswa Berhasil Ditambahkan"
-    description="Data siswa berhasil disimpan dan akun administrator siswa telah dibuat."
+    description="Data siswa berhasil disimpan. Berikut kredensial login untuk akun Siswa dan Orang Tua/Wali."
     :email="generatedAccount.email"
     :phone="generatedAccount.phone"
     :password="generatedAccount.password"
+    :accounts="generatedAccount.accounts"
     @close="goToList"
   />
 </template>

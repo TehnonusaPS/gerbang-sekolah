@@ -1,6 +1,9 @@
 // State Form
 export const defaultForm = {
+  foto: null,
   nama: '',
+  nama_depan: '',
+  nama_belakang: '',
   nik: '',
   nisn: '',
   tempat_lahir: '',
@@ -8,17 +11,37 @@ export const defaultForm = {
   jenis_kelamin: '',
   agama: '',
   alamat: '',
+  email: '',
+  no_hp: '',
+  foundation_id: '',
   sekolahId: '',
+  kelas: '',
   kelasId: '',
+  // Data Ayah
+  nama_ayah: '',
+  pekerjaan_ayah: '',
+  email_ayah: '',
+  no_hp_ayah: '',
+  alamat_ayah: '',
+  // Data Ibu
+  nama_ibu: '',
+  pekerjaan_ibu: '',
+  email_ibu: '',
+  no_hp_ibu: '',
+  alamat_ibu: '',
+  // Data Wali
   nama_wali: '',
   hubungan_siswa: '',
   kelamin_wali: '',
   pekerjaan_wali: '',
   email_wali: '',
   no_hp_wali: '',
+  alamat_wali: '',
   status: '',
   tahun_masuk: '',
-  foto: null,
   emailLogin: '',
-  noHpLogin: ''
+  noHpLogin: '',
+  password_lama: '',
+  password_baru: '',
+  password_baru_confirmation: ''
 }

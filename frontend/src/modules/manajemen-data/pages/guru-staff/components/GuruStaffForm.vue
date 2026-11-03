@@ -22,6 +22,7 @@ const props = defineProps({
   pendidikanOptions: { type: Array, default: () => [] },
   jabatanOptions: { type: Array, default: () => [] },
   statusKepegawaianOptions: { type: Array, default: () => [] },
+  yayasanOptions: { type: Array, default: () => [] },
   unitKerjaOptions: { type: Array, default: () => [] },
   statusOptions: { type: Array, default: () => [] },
   subjectOptions: { type: Array, default: () => [] },
@@ -35,13 +36,34 @@ const props = defineProps({
 const emit = defineEmits(['image-change'])
 const auth = useAuthStore()
 
+const isSuperAdmin = computed(() => auth.user?.role === 'superadmin')
 const isAdminSekolah = computed(() => auth.user?.role === 'admin_sekolah')
 
+const filteredUnitKerjaOptions = computed(() => {
+  const schoolOnlyOptions = props.unitKerjaOptions.filter(opt =>
+    String(opt.value || '').toUpperCase().startsWith('S')
+  )
+  if (!isSuperAdmin.value) return schoolOnlyOptions
+  const selectedFoundationId = String(props.form.foundation_id || '')
+  if (!selectedFoundationId) return []
+  return schoolOnlyOptions.filter(opt => String(opt.foundation_id || '') === selectedFoundationId)
+})
+
+const selectedSchoolUnitIds = computed(() => {
+  const units = Array.isArray(props.form.unit_kerja)
+    ? props.form.unit_kerja
+    : props.form.unit_kerja
+      ? [props.form.unit_kerja]
+      : []
+  return units.map(u => String(u).toUpperCase()).filter(u => u.startsWith('S'))
+})
+
 const filteredJabatanOptions = computed(() => {
-  if (isAdminSekolah.value) {
-    return props.jabatanOptions.filter(opt => !['J001', 'J002'].includes(opt.value))
+  const excluded = ['Kepala Yayasan', 'Staff Yayasan', 'Admin Sekolah', 'J001', 'J002', 'J006']
+  if (selectedSchoolUnitIds.value.length > 1) {
+    excluded.push('Kepala Sekolah', 'J003')
   }
-  return props.jabatanOptions
+  return props.jabatanOptions.filter(opt => !excluded.includes(opt.value))
 })
 
 const computedPreview = computed(() => {
@@ -60,15 +82,6 @@ const handleImageChange = file => {
 const isTeacher = computed(() => {
   const jabatan = String(props.form.jabatan || '').toUpperCase()
   return jabatan === 'GURU' || jabatan === 'J004'
-})
-
-const selectedSchoolUnitIds = computed(() => {
-  const units = Array.isArray(props.form.unit_kerja)
-    ? props.form.unit_kerja
-    : props.form.unit_kerja
-      ? [props.form.unit_kerja]
-      : []
-  return units.map(u => String(u).toUpperCase()).filter(u => u.startsWith('S'))
 })
 
 const unitNameMap = computed(() => {
@@ -96,12 +109,38 @@ const filteredSubjectOptions = computed(() => {
 })
 
 watch(
+  [() => props.form.foundation_id, filteredUnitKerjaOptions],
+  ([foundationId, validUnits]) => {
+    if (!isSuperAdmin.value) return
+    if (!foundationId) {
+      if (Array.isArray(props.form.unit_kerja) && props.form.unit_kerja.length > 0) {
+        props.form.unit_kerja = []
+      }
+      return
+    }
+    if (props.unitKerjaOptions.length === 0) return
+    const validSet = new Set(validUnits.map(o => String(o.value)))
+    const current = Array.isArray(props.form.unit_kerja) ? props.form.unit_kerja : []
+    const next = current.filter(u => validSet.has(String(u)))
+    if (next.length !== current.length) {
+      props.form.unit_kerja = next
+    }
+  }
+)
+
+watch(
   () => props.form.unit_kerja,
   () => {
     if (isAdminSekolah.value) return
     const schoolUnits = selectedSchoolUnitIds.value
     if (schoolUnits.length === 0) {
       props.form.subject_ids = []
+    }
+    if (
+      schoolUnits.length > 1 &&
+      ['KEPALA SEKOLAH', 'J003'].includes(String(props.form.jabatan || '').toUpperCase())
+    ) {
+      props.form.jabatan = ''
     }
   },
   { deep: true }
@@ -314,6 +353,15 @@ watch(
       >
         <!-- Grup A: Penempatan & Jabatan -->
         <div class="grid gap-4 md:grid-cols-2">
+          <FormSelect
+            v-if="isSuperAdmin && !isReadOnlyEmployment"
+            v-model="form.foundation_id"
+            label="Yayasan Naungan"
+            placeholder="Pilih yayasan terlebih dahulu"
+            :options="yayasanOptions"
+            required
+            :error="errors.foundation_id"
+          />
           <FormInput
             v-if="isReadOnlyEmployment"
             :model-value="Array.isArray(form.unit_kerja) ? form.unit_kerja.join(', ') : (form.unit_kerja || form.unit_kerja_label || '-')"
@@ -324,8 +372,9 @@ watch(
             v-else-if="!isAdminSekolah"
             v-model="form.unit_kerja"
             label="Unit Kerja"
-            placeholder="Pilih satu atau lebih unit kerja"
-            :options="unitKerjaOptions"
+            :placeholder="isSuperAdmin && !form.foundation_id ? 'Pilih yayasan terlebih dahulu' : 'Pilih satu atau lebih unit kerja'"
+            :disabled="isSuperAdmin && !form.foundation_id"
+            :options="filteredUnitKerjaOptions"
             :error="errors.unit_kerja"
             item-name="unit kerja"
             searchable
@@ -341,6 +390,7 @@ watch(
           <FormSelect
             v-else
             v-model="form.jabatan"
+            :class="{ 'md:col-span-2': isSuperAdmin && !isReadOnlyEmployment }"
             label="Jabatan"
             placeholder="Pilih jabatan"
             :options="filteredJabatanOptions"

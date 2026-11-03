@@ -61,18 +61,9 @@ export const filters = [
     label: 'Filter Status:',
     placeholder: 'Semua',
     options: [
-      {
-        label: 'Tetap',
-        value: 'tetap'
-      },
-      {
-        label: 'Kontrak',
-        value: 'kontrak'
-      },
-      {
-        label: 'Honorer',
-        value: 'Honorer'
-      }
+      { label: 'Tetap', value: 'Tetap' },
+      { label: 'Kontrak', value: 'Kontrak' },
+      { label: 'Honorer', value: 'Honorer' }
     ]
   }
 ]
@@ -119,150 +110,51 @@ export const columns = [
 ]
 
 export const agamaOptions = [
-  {
-    label: 'Islam',
-    value: 'A01'
-  },
-  {
-    label: 'Kristen',
-    value: 'A02'
-  },
-  {
-    label: 'Katolik',
-    value: 'A03'
-  },
-  {
-    label: 'Buddha',
-    value: 'A04'
-  },
-  {
-    label: 'Hindu',
-    value: 'A05'
-  },
-  {
-    label: 'Konghucu',
-    value: 'A06'
-  },
+  { label: 'Islam', value: 'Islam' },
+  { label: 'Kristen', value: 'Kristen' },
+  { label: 'Katolik', value: 'Katolik' },
+  { label: 'Buddha', value: 'Buddha' },
+  { label: 'Hindu', value: 'Hindu' },
+  { label: 'Konghucu', value: 'Konghucu' }
 ]
 
 export const statusPernikahanOptions = [
-  {
-    label: 'Belum Menikah',
-    value: 'SP01'
-  },
-  {
-    label: 'Menikah',
-    value: 'SP02'
-  },
-  {
-    label: 'Janda',
-    value: 'SP03'
-  },
-  {
-    label: 'Duda',
-    value: 'SP04'
-  }
+  { label: 'Belum Menikah', value: 'Belum Menikah' },
+  { label: 'Menikah', value: 'Menikah' },
+  { label: 'Janda', value: 'Janda' },
+  { label: 'Duda', value: 'Duda' }
 ]
 
 export const kelaminOptions = [
-  {
-    label: 'Laki-laki',
-    value: 'JK01'
-  },
-  {
-    label: 'Perempuan',
-    value: 'JK02'
-  },
+  { label: 'Laki-laki', value: 'Laki-laki' },
+  { label: 'Perempuan', value: 'Perempuan' }
 ]
 
 export const pendidikanOptions = [
-  {
-    label: 'Sekolah Dasar (SD)',
-    value: 'P01'
-  },
-  {
-    label: 'Sekolah Menengah Pertama (SMP)',
-    value: 'P02'
-  },
-  {
-    label: 'Sekolah Menengah Awal/Kejuruan (SMA/SMK)',
-    value: 'P03'
-  },
-  {
-    label: 'Diploma I (D1)',
-    value: 'P04'
-  },
-  {
-    label: 'Diploma III (D3)',
-    value: 'P05'
-  },
-  {
-    label: 'Diploma IV (D4)',
-    value: 'P06'
-  },
-  {
-    label: 'Sarjana (S1)',
-    value: 'P07'
-  },
-  {
-    label: 'Magister (S2)',
-    value: 'P08'
-  },
-  {
-    label: 'Doktoral (S3)',
-    value: 'P09'
-  },
+  { label: 'Sekolah Dasar (SD)', value: 'Sekolah Dasar (SD)' },
+  { label: 'Sekolah Menengah Pertama (SMP)', value: 'Sekolah Menengah Pertama (SMP)' },
+  { label: 'Sekolah Menengah Atas/Kejuruan (SMA/SMK)', value: 'Sekolah Menengah Atas/Kejuruan (SMA/SMK)' },
+  { label: 'Diploma I (D1)', value: 'Diploma I (D1)' },
+  { label: 'Diploma III (D3)', value: 'Diploma III (D3)' },
+  { label: 'Diploma IV (D4)', value: 'Diploma IV (D4)' },
+  { label: 'Sarjana (S1)', value: 'Sarjana (S1)' },
+  { label: 'Magister (S2)', value: 'Magister (S2)' },
+  { label: 'Doktoral (S3)', value: 'Doktoral (S3)' }
 ]
 
 export const jabatanOptions = [
-  {
-    label: 'Kepala Yayasan',
-    value: 'J001'
-  },
-  {
-    label: 'Staff Yayasan',
-    value: 'J002'
-  },
-  {
-    label: 'Kepala Sekolah',
-    value: 'J003'
-  },
-  {
-    label: 'Guru',
-    value: 'J004'
-  },
-  {
-    label: 'Staff Sekolah',
-    value: 'J005'
-  },
-  {
-    label: 'Admin Sekolah',
-    value: 'J006'
-  }
+  { label: 'Kepala Sekolah', value: 'Kepala Sekolah' },
+  { label: 'Guru', value: 'Guru' },
+  { label: 'Staff Sekolah', value: 'Staff Sekolah' }
 ]
 
 export const statusKepegawaianOptions = [
-  {
-    label: 'Tetap',
-    value: 'SK01'
-  },
-  {
-    label: 'Kontrak',
-    value: 'SK02'
-  },
-  {
-    label: 'Honorer',
-    value: 'SK03'
-  },
+  { label: 'Tetap', value: 'Tetap' },
+  { label: 'Kontrak', value: 'Kontrak' },
+  { label: 'Honorer', value: 'Honorer' }
 ]
 
 export const statusOptions = [
-  {
-    label: 'Aktif',
-    value: 'Aktif'
-  },
-  {
-    label: 'Nonaktif',
-    value: 'Nonaktif'
-  },
+  { label: 'Aktif', value: 'Aktif' },
+  { label: 'Nonaktif', value: 'Nonaktif' }
 ]

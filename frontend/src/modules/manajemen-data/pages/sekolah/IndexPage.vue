@@ -2,7 +2,21 @@
 import { getPhotoUrl } from '@/utils/getPhotoUrl'
 import DataTableCard from '@/components/data-table/DataTableCard.vue'
 import PageHeader from '@/components/page-header/PageHeader.vue'
-import { columns, filters, actions } from './data/sekolah.js'
+import { columns, filters, actions, jenjangOptions } from './data/sekolah.js'
+
+const jenjangLabelMap = {
+  ...Object.fromEntries(jenjangOptions.map(opt => [opt.value.toUpperCase(), opt.label])),
+  TK: 'Taman Kanak-Kanak (TK)',
+  SD: 'Sekolah Dasar (SD)',
+  SMP: 'Sekolah Menengah Pertama (SMP)',
+  SMA: 'Sekolah Menengah Atas (SMA)',
+  SMK: 'Sekolah Menengah Kejuruan (SMK)'
+}
+
+const formatJenjang = val => {
+  if (!val) return '-'
+  return jenjangLabelMap[String(val).trim().toUpperCase()] || val
+}
 import StatCard from '@/components/stat-card/StatCard.vue'
 import { useAuthStore } from '@/stores/authStore'
 import { computed } from 'vue'
@@ -112,7 +126,8 @@ const fetchSchools = async () => {
       npsn: item.npsn,
       yayasan: item.foundation ? item.foundation.name : '-',
       namaYayasan: item.foundation ? item.foundation.name : '-',
-      jenjang: item.level,
+      jenjang: formatJenjang(item.level),
+      kurikulum: item.curriculum?.name || '-',
       tanggal_berdiri: item.established_date ? item.established_date.split('T')[0] : '-',
       alamat: item.address,
       alamatSekolah: item.address,

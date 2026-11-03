@@ -104,13 +104,6 @@ const isSMA = computed(() => {
               />
             </div>
 
-            <!-- <FormInput
-              v-model="form.homeroom_teacher"
-              label="Wali Kelas"
-              placeholder="Nama wali kelas (opsional)"
-              :error="errors.homeroom_teacher"
-            /> -->
-
             <FormSelect
               v-model="form.homeroom_teacher_id"
               label="Wali Kelas"

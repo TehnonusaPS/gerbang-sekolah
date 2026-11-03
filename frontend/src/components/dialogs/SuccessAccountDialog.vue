@@ -24,7 +24,11 @@ defineProps({
   },
   email: String,
   phone: String,
-  password: String
+  password: String,
+  accounts: {
+    type: Array,
+    default: () => []
+  }
 })
 
 const emit = defineEmits(['update:open', 'close'])
@@ -66,7 +70,39 @@ const handleOpenChange = value => {
       </DialogHeader>
 
       <div class="space-y-4">
-        <div class="rounded-lg border overflow-hidden bg-muted/40">
+        <div
+          v-if="accounts && accounts.length > 0"
+          :class="['grid gap-3', accounts.length > 1 ? 'sm:grid-cols-2' : 'grid-cols-1']"
+        >
+          <div
+            v-for="(acc, idx) in accounts"
+            :key="idx"
+            class="rounded-lg border overflow-hidden bg-muted/40"
+          >
+            <div class="bg-primary/10 border-b px-4 py-2.5 text-center">
+              <h3 class="font-bold text-sm text-primary">{{ acc.title }}</h3>
+            </div>
+
+            <div class="p-4 space-y-2.5 bg-white/20 text-sm">
+              <div>
+                <div class="text-xs text-muted-foreground">{{ acc.loginLabel || 'Email Login' }}</div>
+                <div class="font-medium break-all">{{ acc.loginValue }}</div>
+              </div>
+
+              <div v-if="acc.phone">
+                <div class="text-xs text-muted-foreground">No. HP Login</div>
+                <div class="font-medium">{{ acc.phone }}</div>
+              </div>
+
+              <div>
+                <div class="text-xs text-muted-foreground">Password Default</div>
+                <div class="font-mono font-semibold text-primary">{{ acc.password }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="rounded-lg border overflow-hidden bg-muted/40">
           <div class="bg-primary/10 border-b px-4 py-3 text-center">
             <h3 class="font-bold text-primary">Informasi Akun Administrator</h3>
           </div>
@@ -90,9 +126,7 @@ const handleOpenChange = value => {
         </div>
 
         <div class="rounded-lg border bg-muted/20 p-3 text-sm text-muted-foreground">
-          Password default telah dikirim ke alamat e-mail{{ phone ? ' dan nomor WhatsApp' : '' }} administrator. Demi
-          keamanan, administrator disarankan untuk segera mengganti password setelah login pertama
-          kali.
+          Demi keamanan, pengguna disarankan untuk segera mengganti password default setelah login pertama kali.
         </div>
       </div>
 

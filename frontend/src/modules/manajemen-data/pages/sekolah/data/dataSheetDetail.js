@@ -36,6 +36,7 @@ export const sekolahSheetSections = [
       { label: 'NPSN', key: 'npsn' },
       { label: 'Yayasan', key: 'yayasan' },
       { label: 'Jenjang Pendidikan', key: 'jenjang' },
+      { label: 'Jenis Kurikulum', key: 'kurikulum' },
       { label: 'Tanggal Berdiri', key: 'tanggal_berdiri' },
       { label: 'Status', key: 'status' }
     ]

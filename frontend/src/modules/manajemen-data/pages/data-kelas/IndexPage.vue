@@ -41,19 +41,11 @@ const fetchTeachers = async () => {
   try {
     const res = await getTeachers()
     const teachers = res.data?.data || res.data || []
-    
-    teacherOptions.value = teachers.map((teacher) => {
-      const teacherId =
-        teacher.id
 
-      const teacherName =
-        teacher.nama
-
-      return {
-        label: teacherName,
-        value: String(teacherId)
-      }
-    })
+    teacherOptions.value = teachers.map(teacher => ({
+      label: teacher.nama,
+      value: String(teacher.id)
+    }))
   } catch (err) {
     console.error('Gagal memuat guru:', err)
     teacherOptions.value = []
@@ -151,7 +143,7 @@ const handleSave = async () => {
     fetchClassrooms()
     isFormSheetOpen.value = false
   } catch (err) {
-    toast.error('Gagal menyimpan kelas')
+    toast.error(err.response?.data?.message || 'Gagal menyimpan kelas')
   } finally {
     isSaving.value = false
   }
@@ -290,7 +282,7 @@ const rowActions = [
           entity-name="Kelas"
           :summary-items="saveSummary"
           :before-confirm="validateForm"
-          @save="handleSave"
+          @submit="handleSave"
         />
       </SheetContent>
     </Sheet>

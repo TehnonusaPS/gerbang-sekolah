@@ -79,10 +79,27 @@ class TeacherController extends Controller
         $unitIds = array_values(array_unique($unitIds));
         $schoolId = $schoolIds[0] ?? null;
 
-        if ($schoolId && !$foundationId) {
-            $school = School::find($schoolId);
-            if ($school) {
-                $foundationId = $school->foundation_id;
+        if ($user->isSuperAdmin() && !$foundationId && $request->filled('foundation_id')) {
+            $foundationId = (int) $request->input('foundation_id');
+        }
+
+        if (!empty($schoolIds)) {
+            $distinctFoundations = School::whereIn('id', $schoolIds)
+                ->pluck('foundation_id')
+                ->filter()
+                ->unique()
+                ->values();
+
+            if ($distinctFoundations->count() > 1) {
+                return ['error' => 'Seluruh unit kerja sekolah harus berada dalam satu yayasan yang sama.'];
+            }
+
+            if ($foundationId && $distinctFoundations->isNotEmpty() && (int) $distinctFoundations->first() !== (int) $foundationId) {
+                return ['error' => 'Unit kerja sekolah yang dipilih tidak sesuai dengan yayasan naungan.'];
+            }
+
+            if (!$foundationId && $distinctFoundations->isNotEmpty()) {
+                $foundationId = (int) $distinctFoundations->first();
             }
         }
 
@@ -355,8 +372,12 @@ class TeacherController extends Controller
         $active = (clone $statsQuery)->whereHas('user', function ($q) {
             $q->where('is_active', true);
         })->count();
-        $guru = (clone $statsQuery)->where('position', 'J004')->count();
-        $staff = (clone $statsQuery)->where('position', '!=', 'J004')->count();
+        $guru = (clone $statsQuery)->whereHas('user.role', function ($q) {
+            $q->whereIn('name', ['guru', 'wali_kelas', 'kepala_sekolah']);
+        })->count();
+        $staff = (clone $statsQuery)->whereHas('user.role', function ($q) {
+            $q->whereIn('name', ['tata_usaha', 'admin_sekolah', 'admin_yayasan']);
+        })->count();
 
         return response()->json([
             'status' => 'success',
@@ -430,6 +451,24 @@ class TeacherController extends Controller
                 'status'  => 'error',
                 'message' => 'Validation error.',
                 'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        $isPrincipal = in_array(
+            strtoupper((string) $request->input('jabatan')),
+            ['KEPALA SEKOLAH', 'J003'],
+            true
+        );
+
+        if ($isPrincipal && count($tenant['school_ids'] ?? []) > 1) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Validation error.',
+                'errors'  => [
+                    'jabatan' => [
+                        'Kepala Sekolah hanya dapat menjabat di 1 unit kerja sekolah.'
+                    ],
+                ],
             ], 422);
         }
 
@@ -513,13 +552,7 @@ class TeacherController extends Controller
                         ->where('is_active', true)
                         ->value('id') ?: AcademicYear::where('school_id', $subjSchoolId)->latest('id')->value('id');
 
-                    if (!$academicYearId) {
-                        throw new \Exception(
-                            'Tahun ajaran aktif belum tersedia untuk sekolah ini.'
-                        );
-                    }
-
-                    $classroomId = Classroom::where('school_id', $subjSchoolId)->value('id') ?: 1;
+                    $classroomId = Classroom::where('school_id', $subjSchoolId)->value('id');
 
                     TeacherSubjectAssignment::create([
                         'school_id'        => $subjSchoolId,
@@ -626,6 +659,7 @@ class TeacherController extends Controller
                 'alamat'             => $teacher->address,
                 'jabatan'            => $this->mapJabatanToFe($teacher->position),
                 'status_kepegawaian' => $this->mapStatusKepegawaianToFe($teacher->employment_status),
+                'foundation_id'      => $u->foundation_id ?: ($u->school ? $u->school->foundation_id : null),
                 'unit_kerja'         => $unitData['unit_kerja'],
                 'unit_id'            => $unitData['unit_id'],
                 'unit_ids'           => $unitData['unit_ids'],
@@ -722,6 +756,12 @@ class TeacherController extends Controller
             $teacher->position
         );
 
+        $isPrincipal = in_array(
+            strtoupper((string) $finalPosition),
+            ['KEPALA SEKOLAH', 'J003'],
+            true
+        );
+
         $isTeacher = in_array(
             strtoupper((string) $finalPosition),
             ['GURU', 'J004'],
@@ -778,6 +818,17 @@ class TeacherController extends Controller
                         'status'  => 'error',
                         'message' => $tenant['error'],
                     ], 403);
+                }
+                if ($isPrincipal && count($tenant['school_ids'] ?? []) > 1) {
+                    return response()->json([
+                        'status'  => 'error',
+                        'message' => 'Validation error.',
+                        'errors'  => [
+                            'jabatan' => [
+                                'Kepala Sekolah hanya dapat menjabat di 1 unit kerja sekolah.'
+                            ],
+                        ],
+                    ], 422);
                 }
                 if ($request->has('unit_kerja') || !$u->school_id) {
                     $u->school_id = $tenant['school_id'];
@@ -841,13 +892,7 @@ class TeacherController extends Controller
                         ->where('is_active', true)
                         ->value('id') ?: AcademicYear::where('school_id', $subjSchoolId)->latest('id')->value('id');
 
-                    if (!$academicYearId) {
-                        throw new \Exception(
-                            'Tahun ajaran aktif belum tersedia untuk sekolah ini.'
-                        );
-                    }
-
-                    $classroomId = Classroom::where('school_id', $subjSchoolId)->value('id') ?: 1;
+                    $classroomId = Classroom::where('school_id', $subjSchoolId)->value('id');
 
                     TeacherSubjectAssignment::create([
                         'school_id'        => $subjSchoolId,

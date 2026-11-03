@@ -110,52 +110,51 @@ const formatDate = val => {
 
 // Pilihan Standar Selaras Manajemen Data
 const kelaminOptions = [
-  { label: 'Laki-laki', value: 'JK01' },
-  { label: 'Perempuan', value: 'JK02' }
+  { label: 'Laki-laki', value: 'Laki-laki' },
+  { label: 'Perempuan', value: 'Perempuan' }
 ]
 
 const agamaOptions = [
-  { label: 'Islam', value: 'A01' },
-  { label: 'Kristen', value: 'A02' },
-  { label: 'Katolik', value: 'A03' },
-  { label: 'Buddha', value: 'A04' },
-  { label: 'Hindu', value: 'A05' },
-  { label: 'Konghucu', value: 'A06' }
+  { label: 'Islam', value: 'Islam' },
+  { label: 'Kristen', value: 'Kristen' },
+  { label: 'Katolik', value: 'Katolik' },
+  { label: 'Buddha', value: 'Buddha' },
+  { label: 'Hindu', value: 'Hindu' },
+  { label: 'Konghucu', value: 'Konghucu' }
 ]
 
 const statusPernikahanOptions = [
-  { label: 'Belum Menikah', value: 'SP01' },
-  { label: 'Menikah', value: 'SP02' },
-  { label: 'Janda', value: 'SP03' },
-  { label: 'Duda', value: 'SP04' }
+  { label: 'Belum Menikah', value: 'Belum Menikah' },
+  { label: 'Menikah', value: 'Menikah' },
+  { label: 'Janda', value: 'Janda' },
+  { label: 'Duda', value: 'Duda' }
 ]
 
 const pendidikanOptions = [
-  { label: 'Sekolah Dasar (SD)', value: 'P01' },
-  { label: 'Sekolah Menengah Pertama (SMP)', value: 'P02' },
-  { label: 'Sekolah Menengah Atas/Kejuruan (SMA/SMK)', value: 'P03' },
-  { label: 'Diploma I (D1)', value: 'P04' },
-  { label: 'Diploma III (D3)', value: 'P05' },
-  { label: 'Diploma IV (D4)', value: 'P06' },
-  { label: 'Sarjana (S1)', value: 'P07' },
-  { label: 'Magister (S2)', value: 'P08' },
-  { label: 'Doktor (S3)', value: 'P09' }
+  { label: 'Sekolah Dasar (SD)', value: 'Sekolah Dasar (SD)' },
+  { label: 'Sekolah Menengah Pertama (SMP)', value: 'Sekolah Menengah Pertama (SMP)' },
+  { label: 'Sekolah Menengah Atas/Kejuruan (SMA/SMK)', value: 'Sekolah Menengah Atas/Kejuruan (SMA/SMK)' },
+  { label: 'Diploma I (D1)', value: 'Diploma I (D1)' },
+  { label: 'Diploma III (D3)', value: 'Diploma III (D3)' },
+  { label: 'Diploma IV (D4)', value: 'Diploma IV (D4)' },
+  { label: 'Sarjana (S1)', value: 'Sarjana (S1)' },
+  { label: 'Magister (S2)', value: 'Magister (S2)' },
+  { label: 'Doktoral (S3)', value: 'Doktoral (S3)' }
 ]
 
 const pekerjaanOptions = [
-  { label: 'PNS', value: 'pns' },
-  { label: 'BUMN', value: 'bumn' },
-  { label: 'Wiraswasta', value: 'wiraswasta' },
-  { label: 'Pegawai Swasta', value: 'pegawai swasta' },
-  { label: 'Ibu Rumah Tangga', value: 'ibu rumah tangga' },
-  { label: 'Lainnya', value: 'lainnya' }
+  { label: 'PNS', value: 'PNS' },
+  { label: 'BUMN', value: 'BUMN' },
+  { label: 'Wiraswasta', value: 'Wiraswasta' },
+  { label: 'Pegawai Swasta', value: 'Pegawai Swasta' },
+  { label: 'Ibu Rumah Tangga', value: 'Ibu Rumah Tangga' },
+  { label: 'Lainnya', value: 'Lainnya' }
 ]
 
 const hubunganOptions = [
-  { label: 'Ayah', value: 'ayah' },
-  { label: 'Ibu', value: 'ibu' },
-  { label: 'Wali', value: 'wali' },
-  { label: 'Lainnya', value: 'lainnya' }
+  { label: 'Ayah', value: 'Ayah' },
+  { label: 'Ibu', value: 'Ibu' },
+  { label: 'Wali', value: 'Wali' }
 ]
 
 // State Form Selaras Karakteristik Asli Role
@@ -274,13 +273,21 @@ const schema = computed(() => {
 
 const { errors, validate, clearErrors, setServerErrors } = useZodForm(schema, form)
 
-// Helper mapping gender DB <-> Form Select Code
+// Helper mapping gender & relationship DB <-> Form Select Label
 const toGenderCode = val => {
   if (!val) return ''
   const s = String(val).toLowerCase()
-  if (s === 'male' || s === 'laki-laki' || s === 'jk01') return 'JK01'
-  if (s === 'female' || s === 'perempuan' || s === 'jk02') return 'JK02'
+  if (s === 'male' || s === 'laki-laki' || s === 'jk01') return 'Laki-laki'
+  if (s === 'female' || s === 'perempuan' || s === 'jk02') return 'Perempuan'
   return ''
+}
+
+const toRelationLabel = val => {
+  if (!val) return 'Ayah'
+  const s = String(val).toLowerCase()
+  if (s === 'father' || s === 'ayah') return 'Ayah'
+  if (s === 'mother' || s === 'ibu') return 'Ibu'
+  return 'Wali'
 }
 
 // Load data asli pengguna dari backend/store
@@ -348,15 +355,15 @@ const loadUserData = () => {
     jenis_kelamin: toGenderCode(tp.gender || sp.gender),
     tempat_lahir: tp.birth_place || sp.birth_place || '',
     tanggal_lahir: (tp.birth_date || sp.birth_date || '').split('T')[0],
-    agama: tp.religion || '',
+    agama: tp.religion || sp.religion || '',
     status_pernikahan: tp.marital_status || '',
     pendidikan_terakhir: tp.last_education || '',
     alamat: tp.address || sp.address || pp.address || '',
     // Khusus Orang Tua
     nama_wali: u.name || '',
-    hubungan_siswa: pp.relationship || 'ayah',
-    kelamin_wali: toGenderCode(pp.gender || 'JK01'),
-    pekerjaan_wali: pp.occupation || 'wiraswasta',
+    hubungan_siswa: toRelationLabel(pp.relationship),
+    kelamin_wali: toGenderCode(pp.gender || 'Laki-laki'),
+    pekerjaan_wali: pp.occupation || 'Wiraswasta',
     // Informasi Read-Only
     nip_nuptk: tp.nip_nuptk || '',
     jabatan: u.roleLabel || u.role || '-',

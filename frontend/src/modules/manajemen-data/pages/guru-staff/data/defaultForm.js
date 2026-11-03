@@ -16,10 +16,14 @@ export const defaultForm = {
   alamat: '',
   jabatan: '',
   status_kepegawaian: '',
+  foundation_id: '',
   unit_kerja: [],
   status_aktif: '',
   emailLogin: '',
   noHpLogin: '',
+  password_lama: '',
+  password_baru: '',
+  password_baru_confirmation: '',
   join_date: '',
   subject_ids: []
 }

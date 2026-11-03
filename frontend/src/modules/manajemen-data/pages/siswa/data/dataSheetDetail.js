@@ -68,15 +68,38 @@ export const siswaSheetSections = [
     ]
   },
   {
-    id: 'wali',
-    title: 'Informasi Orang Tua / Wali',
+    id: 'ayah',
+    title: 'Informasi Ayah',
     fields: [
-      { label: 'Nama Wali', key: 'nama_wali' },
+      { label: 'Nama Lengkap Ayah', key: 'nama_ayah' },
+      { label: 'Pekerjaan Ayah', key: 'pekerjaan_ayah' },
+      { label: 'Email Ayah', key: 'email_ayah' },
+      { label: 'No. HP Ayah', key: 'no_hp_ayah' },
+      { label: 'Alamat Lengkap Ayah', key: 'alamat_ayah', textarea: true }
+    ]
+  },
+  {
+    id: 'ibu',
+    title: 'Informasi Ibu',
+    fields: [
+      { label: 'Nama Lengkap Ibu', key: 'nama_ibu' },
+      { label: 'Pekerjaan Ibu', key: 'pekerjaan_ibu' },
+      { label: 'Email Ibu', key: 'email_ibu' },
+      { label: 'No. HP Ibu', key: 'no_hp_ibu' },
+      { label: 'Alamat Lengkap Ibu', key: 'alamat_ibu', textarea: true }
+    ]
+  },
+  {
+    id: 'wali',
+    title: 'Informasi Wali',
+    fields: [
+      { label: 'Nama Lengkap Wali', key: 'nama_wali' },
       { label: 'Hubungan dengan Siswa', key: 'hubungan_siswa' },
       { label: 'Jenis Kelamin Wali', key: 'kelamin_wali' },
       { label: 'Pekerjaan Wali', key: 'pekerjaan_wali' },
       { label: 'Email Wali', key: 'email_wali' },
-      { label: 'No. HP Wali', key: 'no_hp_wali' }
+      { label: 'No. HP Wali', key: 'no_hp_wali' },
+      { label: 'Alamat Lengkap Wali', key: 'alamat_wali', textarea: true }
     ]
   },
   {

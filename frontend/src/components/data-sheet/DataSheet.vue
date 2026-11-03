@@ -184,13 +184,14 @@ const resolvedBadgeVariant = computed(() => {
 })
 
 const resolveFieldValue = field => {
-  if (field.value !== undefined && field.value !== null) {
+  if (field.value !== undefined && field.value !== null && field.value !== '') {
     return field.value
   }
   if (props.item && field.key) {
-    return props.item[field.key] ?? ''
+    const val = props.item[field.key]
+    if (val !== undefined && val !== null && val !== '') return val
   }
-  return ''
+  return field.file || field.type === 'file' ? '' : '-'
 }
 </script>
 

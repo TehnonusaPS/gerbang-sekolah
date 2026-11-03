@@ -19,9 +19,9 @@ class AuthController extends Controller
      */
     public function login(Request $request): JsonResponse
     {
-        // 1. Validate request parameters
+        // 1. Validate request parameters (email or NISN)
         $validator = Validator::make($request->all(), [
-            'email'    => 'required|email|string',
+            'email'    => 'required|string',
             'password' => 'required|string',
         ]);
 
@@ -32,14 +32,19 @@ class AuthController extends Controller
             ], 422);
         }
 
-        // 2. Normalize and retrieve user with role relationship
-        $email = strtolower(trim($request->email));
-        $user = User::with(['role', 'foundation', 'school.foundation', 'school.curriculum'])->where('email', $email)->first();
+        // 2. Retrieve user by email or student NISN
+        $identifier = trim($request->email);
+        $user = User::with(['role', 'foundation', 'school.foundation', 'school.curriculum'])
+            ->whereRaw('LOWER(email) = ?', [strtolower($identifier)])
+            ->orWhereHas('studentProfile', function ($q) use ($identifier) {
+                $q->where('nisn', $identifier);
+            })
+            ->first();
 
         // 3. Verify credentials
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
-                'message' => 'Email atau password salah.'
+                'message' => 'Email / NISN atau password salah.'
             ], 401);
         }
 
@@ -235,6 +240,7 @@ class AuthController extends Controller
                     'birth_place' => $request->input('tempat_lahir') ?: $request->input('birth_place'),
                     'birth_date'  => $request->input('tanggal_lahir') ?: $request->input('birth_date'),
                     'gender'      => $gender,
+                    'religion'    => $request->input('agama') ?: $request->input('religion'),
                     'address'     => $request->input('alamat') ?: $request->input('address'),
                 ], fn($val) => $val !== null)
             );

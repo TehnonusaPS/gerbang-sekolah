@@ -2,14 +2,20 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\NormalizesProfileValues;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class ParentProfile extends Model
 {
+    use NormalizesProfileValues;
+
     protected $fillable = [
         'user_id',
+        'name',
+        'email',
+        'phone',
         'nik',
         'gender',
         'birth_place',

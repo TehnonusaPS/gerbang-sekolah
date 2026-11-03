@@ -2,26 +2,17 @@ import { z } from 'zod'
 import { v } from '@/utils/validators'
 
 /**
- * Pemetaan nama field form frontend ke key errors yang ditampilkan di UI
+ * Pemetaan nama field error 422 dari backend ke key form frontend yang ditampilkan di UI
  */
 export const fieldErrorMap = {
-  nama: 'name',
-  email: 'email',
-  no_hp: 'phone',
-  website: 'website',
-  emailLogin: 'emailLogin',
-  noHpLogin: 'noHpLogin',
-  tanggal_berdiri: 'established_date',
-  status: 'status',
-  no_akta: 'deed_number',
-  tanggal_akta: 'deed_date',
-  no_sk: 'decree_number',
-  tanggal_sk: 'decree_date',
-  alamat: 'address',
-  logo: 'logo',
-  password_lama: 'password_lama',
-  password_baru: 'password_baru',
-  password_baru_confirmation: 'password_baru_confirmation'
+  name: 'nama',
+  phone: 'no_hp',
+  established_date: 'tanggal_berdiri',
+  deed_number: 'no_akta',
+  deed_date: 'tanggal_akta',
+  decree_number: 'no_sk',
+  decree_date: 'tanggal_sk',
+  address: 'alamat'
 }
 
 /**

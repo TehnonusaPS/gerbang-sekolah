@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\NormalizesProfileValues;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class StudentProfile extends Model
 {
+    use NormalizesProfileValues;
+
     protected $fillable = [
         'user_id',
         'classroom_id',
@@ -17,12 +21,20 @@ class StudentProfile extends Model
         'birth_place',
         'birth_date',
         'gender',
+        'religion',
         'address',
         'enrollment_date',
         'status',
         'is_face_registered',
         'embedding',
     ];
+
+    protected function status(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $val) => self::normalizeStudentStatusToDb($val),
+        );
+    }
 
     protected $appends = ['is_rfid_registered'];
 
