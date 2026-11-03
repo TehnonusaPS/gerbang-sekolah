@@ -43,6 +43,16 @@ export const navMain = [
         roles: ['superadmin', 'admin_yayasan']
       },
       { 
+        title: 'Tahun Ajaran', 
+        url: '/manajemen-data/tahun-ajaran',
+        roles: ['admin_sekolah', 'kepala_sekolah']
+      },
+      { 
+        title: 'Kelas', 
+        url: '/manajemen-data/kelas', 
+        roles: ['admin_sekolah']
+      },
+      { 
         title: 'Guru dan Staff', 
         url: '/manajemen-data/guru-staff',
         roles: ['superadmin', 'admin_yayasan', 'admin_sekolah', 'kepala_sekolah']
@@ -53,6 +63,16 @@ export const navMain = [
         roles: ['superadmin', 'admin_sekolah', 'tata_usaha', 'kepala_sekolah', 'wali_kelas']
       },
       { 
+        title: 'Mata Pelajaran', 
+        url: '/manajemen-data/mata-pelajaran', 
+        excludeRoles: ['tata_usaha', 'superadmin', 'admin_yayasan', 'wali_kelas'] 
+      },
+      { 
+        title: 'Jadwal Pelajaran', 
+        url: '/manajemen-data/jadwal',
+        roles: ['kepala_sekolah', 'admin_sekolah']
+      },
+      { 
         title: 'Monitoring Kelas', 
         url: '/manajemen-data/monitoring-kelas',
         roles: ['kepala_sekolah']
@@ -61,21 +81,6 @@ export const navMain = [
         title: 'Ekstrakulikuler', 
         url: '/manajemen-data/ekskul',
         roles: ['kepala_sekolah', 'admin_sekolah']
-      },
-      { 
-        title: 'Jadwal Pelajaran', 
-        url: '/manajemen-data/jadwal',
-        roles: ['kepala_sekolah', 'admin_sekolah']
-      },
-      { title: 'Kelas', 
-        url: '/manajemen-data/kelas', 
-        roles: ['admin_sekolah']
-      },
-      { title: 'Mata Pelajaran', url: '/manajemen-data/mata-pelajaran', excludeRoles: ['tata_usaha', 'superadmin', 'admin_yayasan', 'wali_kelas'] },
-      { 
-        title: 'Tahun Ajaran', 
-        url: '/manajemen-data/tahun-ajaran',
-        roles: ['admin_sekolah', 'kepala_sekolah']
       }
     ]
   },
