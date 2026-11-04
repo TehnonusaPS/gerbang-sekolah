@@ -1,6 +1,7 @@
 <script setup>
-import { Calendar } from 'lucide-vue-next'
+import { Calendar, Layers } from 'lucide-vue-next'
 import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 defineProps({
@@ -117,6 +118,25 @@ defineProps({
           <SelectItem value="none" class="text-xs font-semibold">Nonaktifkan Keduanya</SelectItem>
         </SelectContent>
       </Select>
+    </div>
+
+    <!-- Salin Struktur Kelas (Hanya saat Tambah Baru) -->
+    <div v-if="!isEdit" class="p-3.5 rounded-2xl border border-border/80 bg-muted/20 flex items-start gap-3">
+      <Checkbox
+        id="duplicate-classes"
+        :checked="form.duplicateClasses"
+        @update:checked="form.duplicateClasses = $event"
+        class="mt-0.5"
+      />
+      <label for="duplicate-classes" class="text-xs cursor-pointer select-none space-y-0.5">
+        <span class="font-bold text-foreground flex items-center gap-1.5">
+          <Layers class="size-3 text-primary" />
+          Salin Struktur Kelas dari Tahun Sebelumnya
+        </span>
+        <span class="text-[11px] text-muted-foreground block leading-relaxed">
+          Otomatis menyalin nama kelas, tingkat, ruangan, dan kapasitas dari tahun ajaran sebelumnya ke tahun ajaran baru ini jika tersedia.
+        </span>
+      </label>
     </div>
   </div>
 </template>

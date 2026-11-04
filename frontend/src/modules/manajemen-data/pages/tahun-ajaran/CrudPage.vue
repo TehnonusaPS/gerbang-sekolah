@@ -68,11 +68,20 @@ const {
   clearErrors
 } = useZodForm(academicYearSchema, formItem)
 
-const saveSummary = computed(() => [
-  { label: 'Tahun Ajaran', value: formItem.value.tahun },
-  { label: 'Semester Ganjil', value: `${formItem.value.oddTanggalMulai || '-'} s/d ${formItem.value.oddTanggalSelesai || '-'}` },
-  { label: 'Semester Genap', value: `${formItem.value.evenTanggalMulai || '-'} s/d ${formItem.value.evenTanggalSelesai || '-'}` }
-])
+const saveSummary = computed(() => {
+  const summary = [
+    { label: 'Tahun Ajaran', value: formItem.value.tahun },
+    { label: 'Semester Ganjil', value: `${formItem.value.oddTanggalMulai || '-'} s/d ${formItem.value.oddTanggalSelesai || '-'}` },
+    { label: 'Semester Genap', value: `${formItem.value.evenTanggalMulai || '-'} s/d ${formItem.value.evenTanggalSelesai || '-'}` }
+  ]
+  if (!isEditMode.value) {
+    summary.push({
+      label: 'Salin Kelas Lama',
+      value: formItem.value.duplicateClasses ? 'Ya (Otomatis duplikasi struktur kelas)' : 'Tidak'
+    })
+  }
+  return summary
+})
 
 const handleCreate = () => {
   isEditMode.value = false
@@ -86,7 +95,8 @@ const handleCreate = () => {
     evenTanggalMulai: '',
     evenTanggalSelesai: '',
     activeSemester: 'odd',
-    status: 'nonaktif'
+    status: 'nonaktif',
+    duplicateClasses: true
   }
   isFormSheetOpen.value = true
 }
@@ -146,10 +156,12 @@ const executeSave = async () => {
         odd_end_date: formItem.value.oddTanggalSelesai,
         even_start_date: formItem.value.evenTanggalMulai,
         even_end_date: formItem.value.evenTanggalSelesai,
-        active_semester: formItem.value.activeSemester
+        active_semester: formItem.value.activeSemester,
+        duplicate_classes: Boolean(formItem.value.duplicateClasses)
       }
-      await createAcademicYear(payload)
-      toast.success('Berhasil Ditambahkan', { description: `Tahun ajaran "${trimmedYear}" (Ganjil & Genap) telah ditambahkan.` })
+      const res = await createAcademicYear(payload)
+      const resMessage = res.data?.message || `Tahun ajaran "${trimmedYear}" (Ganjil & Genap) telah ditambahkan.`
+      toast.success('Berhasil Ditambahkan', { description: resMessage })
     }
     isFormSheetOpen.value = false
     await fetchData()

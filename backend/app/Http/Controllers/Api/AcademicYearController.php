@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Traits\HasSchoolScope;
 use App\Models\AcademicYear;
+use App\Models\Classroom;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -27,6 +28,45 @@ class AcademicYearController extends Controller
             return $academicYear->school && $academicYear->school->foundation_id == $user->foundation_id;
         }
         return $academicYear->school_id == $user->school_id;
+    }
+
+    /**
+     * Duplicate classrooms from the latest available academic year in the school.
+     */
+    private function duplicatePreviousClassrooms(int $schoolId, int $targetAcademicYearId): int
+    {
+        $sourceYear = AcademicYear::where('school_id', $schoolId)
+            ->where('id', '!=', $targetAcademicYearId)
+            ->whereHas('classrooms')
+            ->orderByDesc('is_active')
+            ->orderByDesc('start_date')
+            ->first();
+
+        if (!$sourceYear) {
+            return 0;
+        }
+
+        $sourceClassrooms = Classroom::where('school_id', $schoolId)
+            ->where('academic_year_id', $sourceYear->id)
+            ->get();
+
+        $count = 0;
+        foreach ($sourceClassrooms as $src) {
+            Classroom::create([
+                'school_id'           => $schoolId,
+                'academic_year_id'    => $targetAcademicYearId,
+                'name'                => $src->name,
+                'grade'               => $src->grade,
+                'major'               => $src->major,
+                'room'                => $src->room,
+                'status'              => 'active',
+                'homeroom_teacher_id' => $src->homeroom_teacher_id,
+                'capacity'            => $src->capacity,
+            ]);
+            $count++;
+        }
+
+        return $count;
     }
 
     /**
@@ -135,12 +175,23 @@ class AcademicYearController extends Controller
                     'is_active'  => ($activeSemester === 'even'),
                 ]);
 
+                $duplicatedCount = 0;
+                if ($request->boolean('duplicate_classes', true)) {
+                    $duplicatedCount = $this->duplicatePreviousClassrooms($schoolId, $oddYear->id);
+                }
+
                 DB::commit();
+
+                $message = 'Tahun ajaran semester ganjil & genap berhasil dibuat.';
+                if ($duplicatedCount > 0) {
+                    $message .= " Sebanyak {$duplicatedCount} kelas berhasil disalin dari tahun ajaran sebelumnya.";
+                }
 
                 return response()->json([
                     'status'  => 'success',
-                    'message' => 'Tahun ajaran semester ganjil & genap berhasil dibuat.',
+                    'message' => $message,
                     'data'    => [$oddYear, $evenYear],
+                    'duplicated_classes_count' => $duplicatedCount,
                 ], 201);
 
             } catch (\Exception $e) {
@@ -185,12 +236,23 @@ class AcademicYearController extends Controller
                 'is_active'  => $isActive,
             ]);
 
+            $duplicatedCount = 0;
+            if ($request->boolean('duplicate_classes', true)) {
+                $duplicatedCount = $this->duplicatePreviousClassrooms($schoolId, $academicYear->id);
+            }
+
             DB::commit();
+
+            $message = 'Academic year created successfully.';
+            if ($duplicatedCount > 0) {
+                $message .= " Sebanyak {$duplicatedCount} kelas berhasil disalin dari tahun ajaran sebelumnya.";
+            }
 
             return response()->json([
                 'status'  => 'success',
-                'message' => 'Academic year created successfully.',
+                'message' => $message,
                 'data'    => $academicYear,
+                'duplicated_classes_count' => $duplicatedCount,
             ], 201);
 
         } catch (\Exception $e) {

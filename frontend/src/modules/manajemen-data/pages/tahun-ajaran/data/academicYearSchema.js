@@ -11,7 +11,8 @@ export const academicYearSchema = z
     oddTanggalSelesai: v.requiredString('Tanggal selesai ganjil'),
     evenTanggalMulai: v.requiredString('Tanggal mulai genap'),
     evenTanggalSelesai: v.requiredString('Tanggal selesai genap'),
-    activeSemester: z.string().optional()
+    activeSemester: z.string().optional(),
+    duplicateClasses: z.boolean().optional()
   })
   .superRefine((data, ctx) => {
     if (data.oddTanggalMulai && data.oddTanggalSelesai) {
