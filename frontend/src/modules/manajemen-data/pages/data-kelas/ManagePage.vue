@@ -7,7 +7,7 @@ import { usePagination } from '@/composables/usePagination'
 import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { getClassroom, assignClassroomStudents, getTeacher } from '@/services/managementService'
+import { getClassroom, assignClassroomStudents, getTeacher, updateClassroom, getClassroomTeacherOptions } from '@/services/managementService'
 import { fetchAllSiswa } from '@/services/siswaService'
 import { getPhotoUrl } from '@/utils/getPhotoUrl'
 import Card from '@/components/ui/card/Card.vue'
@@ -87,7 +87,9 @@ const actions = computed(() => [
   }
 ])
 
-const waliKelasSections = [
+const teacherOptionsList = ref([])
+
+const waliKelasSections = computed(() => [
   {
     title: 'Informasi Wali Kelas',
     fields: [
@@ -95,18 +97,30 @@ const waliKelasSections = [
         name: 'waliKelasId',
         label: 'Wali Kelas',
         type: 'select',
-        options: guruOptions,
+        options: teacherOptionsList.value,
         required: true
       }
     ]
   }
-]
+])
 
-const handleSubmitWaliKelas = () => {
+const handleSubmitWaliKelas = async () => {
+  if (!classId.value || !selectedItem.value?.waliKelasId) return
   isSaving.value = true
-  isSaving.value = false
-  isOpenWaliKelas.value = false
-  toast.success('Wali Kelas Berhasil Diperbarui')
+  try {
+    await updateClassroom(classId.value, {
+      homeroom_teacher_id: selectedItem.value.waliKelasId
+    })
+    toast.success('Wali Kelas Berhasil Diperbarui')
+    isOpenWaliKelas.value = false
+    await loadData()
+  } catch (err) {
+    toast.error('Gagal memperbarui wali kelas', {
+      description: err.response?.data?.message || err.message
+    })
+  } finally {
+    isSaving.value = false
+  }
 }
 
 const isConfirmOpen = ref(false)
@@ -186,6 +200,15 @@ const loadData = async () => {
     const classRes = await getClassroom(classId.value)
     classroom.value = classRes.data
     selectedClass.value = classRes.data?.name || ''
+
+    // Muat daftar guru tersedia untuk tahun ajaran kelas ini
+    try {
+      const teacherOptsRes = await getClassroomTeacherOptions(classRes.data?.academic_year_id)
+      teacherOptionsList.value = teacherOptsRes.data || []
+    } catch (err) {
+      console.warn('Gagal memuat pilihan guru:', err)
+      teacherOptionsList.value = []
+    }
 
     // Muat detail wali kelas jika ada
     if (classRes.data?.homeroom_teacher_id) {

@@ -181,6 +181,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('/schools', SchoolController::class);
         Route::apiResource('/users', UserController::class);
         Route::apiResource('/students', StudentController::class);
+        Route::get('/classrooms/teacher-options', [ClassroomController::class, 'getTeacherOptions']);
         Route::post('/classrooms/{id}/assign-students', [ClassroomController::class, 'assignStudents']);
         Route::apiResource('/classrooms', ClassroomController::class);
         Route::apiResource('/teachers', TeacherController::class);

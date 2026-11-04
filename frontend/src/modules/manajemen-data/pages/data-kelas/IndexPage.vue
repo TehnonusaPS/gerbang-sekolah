@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { toast } from 'vue-sonner'
 
 import PageHeader from '@/components/page-header/PageHeader.vue'
@@ -21,7 +21,7 @@ import KelasStatCards from './components/KelasStatCards.vue'
 import KelasTable from './components/KelasTable.vue'
 import KelasForm from './components/KelasForm.vue'
 import router from '@/router/index.js'
-import { getClassrooms, createClassroom, updateClassroom, deleteClassroom, getTeachers } from '@/services/managementService'
+import { getClassrooms, createClassroom, updateClassroom, deleteClassroom, getClassroomTeacherOptions } from '@/services/managementService'
 import { fetchAllAcademicYears } from '@/services/academicYearService'
 import { useZodForm } from '@/composables/useZodForm'
 import { kelasSchema } from './data/kelasSchema'
@@ -50,15 +50,10 @@ const fetchClassrooms = async () => {
 
 const teacherOptions = ref([])
 
-const fetchTeachers = async () => {
+const fetchTeachers = async (academicYearId) => {
   try {
-    const res = await getTeachers()
-    const teachers = res.data?.data || res.data || []
-
-    teacherOptions.value = teachers.map(teacher => ({
-      label: teacher.nama,
-      value: String(teacher.id)
-    }))
+    const res = await getClassroomTeacherOptions(academicYearId)
+    teacherOptions.value = res.data || []
   } catch (err) {
     console.error('Gagal memuat guru:', err)
     teacherOptions.value = []
@@ -127,6 +122,15 @@ const {
   validate: validateForm,
   clearErrors
 } = useZodForm(kelasSchema, formItem)
+
+watch(
+  () => formItem.value.academic_year_id,
+  (newYearId) => {
+    if (newYearId) {
+      fetchTeachers(newYearId)
+    }
+  }
+)
 
 const handleCreate = () => {
   isEditMode.value = false

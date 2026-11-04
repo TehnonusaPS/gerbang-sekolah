@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Classroom;
 use App\Models\AcademicYear;
 use App\Models\StudentProfile;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -32,6 +33,91 @@ class ClassroomController extends Controller
             return null; // yayasan wide query
         }
         return $user->school_id;
+    }
+
+    /**
+     * Get available teacher options for homeroom teacher selection.
+     * Filtered by school and role (guru/wali_kelas), sorted by availability (available first).
+     */
+    public function getTeacherOptions(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $schoolId = $this->getSchoolScope($request, $user);
+
+        if ($schoolId === -1) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Sekolah tidak termasuk dalam naungan yayasan Anda.',
+            ], 403);
+        }
+
+        if (!$schoolId) {
+            $schoolId = $user->school_id;
+        }
+
+        if (!$schoolId) {
+            return response()->json([
+                'status' => 'success',
+                'data'   => [],
+            ]);
+        }
+
+        $academicYearId = $request->input('academic_year_id');
+        if (!$academicYearId) {
+            $activeYear = AcademicYear::where('school_id', $schoolId)->where('is_active', true)->first();
+            $academicYearId = $activeYear?->id;
+        }
+
+        // Ambil pemetaan wali kelas di tahun ajaran yang bersangkutan
+        $assignedClasses = [];
+        if ($academicYearId) {
+            $targetYear = AcademicYear::find($academicYearId);
+            $yearIds = $targetYear
+                ? AcademicYear::where('school_id', $schoolId)->where('name', $targetYear->name)->pluck('id')
+                : [$academicYearId];
+
+            $assignedClasses = Classroom::where('school_id', $schoolId)
+                ->whereIn('academic_year_id', $yearIds)
+                ->whereNotNull('homeroom_teacher_id')
+                ->pluck('name', 'homeroom_teacher_id')
+                ->toArray();
+        }
+
+        // Hanya ambil user guru dari sekolah tersebut
+        $teachers = User::where('school_id', $schoolId)
+            ->whereHas('role', function ($q) {
+                $q->whereIn('name', ['guru', 'wali_kelas']);
+            })
+            ->with('teacherProfile')
+            ->get();
+
+        $options = $teachers->map(function ($teacher) use ($assignedClasses) {
+            $assignedClass = $assignedClasses[$teacher->id] ?? null;
+            $frontTitle = $teacher->teacherProfile?->front_title ? $teacher->teacherProfile->front_title . ' ' : '';
+            $backTitle = $teacher->teacherProfile?->back_title ? ', ' . $teacher->teacherProfile->back_title : '';
+            $fullName = $frontTitle . $teacher->name . $backTitle;
+
+            $statusText = $assignedClass ? "(Wali Kelas {$assignedClass})" : "(Tersedia)";
+
+            return [
+                'id'             => (string) $teacher->id,
+                'value'          => (string) $teacher->id,
+                'name'           => $fullName,
+                'assigned_class' => $assignedClass,
+                'is_available'   => is_null($assignedClass),
+                'label'          => "{$fullName} — {$statusText}",
+            ];
+        })
+        ->sortBy([
+            ['is_available', 'desc'], // Yang belum ada kelas (Tersedia) diletakkan di paling atas!
+            ['name', 'asc'],
+        ])
+        ->values();
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => $options,
+        ]);
     }
 
     /**
