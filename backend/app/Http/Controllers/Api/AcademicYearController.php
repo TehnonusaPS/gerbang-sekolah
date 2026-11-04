@@ -285,7 +285,7 @@ class AcademicYearController extends Controller
             return response()->json([
                 'status'  => 'success',
                 'message' => 'Academic year updated successfully.',
-                'data'    => $academicYear,
+                'data'    => $academicYear->fresh(),
             ]);
 
         } catch (\Exception $e) {
@@ -313,6 +313,27 @@ class AcademicYearController extends Controller
 
         if (!$this->authorizeAcademicYear($request, $academicYear)) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+        }
+
+        if ($academicYear->is_active) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Tahun ajaran yang sedang berstatus aktif tidak dapat dihapus.',
+            ], 422);
+        }
+
+        if ($academicYear->classrooms()->exists()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Tidak dapat menghapus tahun ajaran yang masih memiliki data kelas terkait.',
+            ], 422);
+        }
+
+        if ($academicYear->schedules()->exists()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Tidak dapat menghapus tahun ajaran yang masih memiliki data jadwal pelajaran terkait.',
+            ], 422);
         }
 
         $academicYear->delete();
