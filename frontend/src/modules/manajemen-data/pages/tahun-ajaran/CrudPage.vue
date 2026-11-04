@@ -94,7 +94,7 @@ const handleCreate = () => {
     oddTanggalSelesai: '',
     evenTanggalMulai: '',
     evenTanggalSelesai: '',
-    activeSemester: 'odd',
+    activeSemester: 'none',
     status: 'nonaktif',
     duplicateClasses: true
   }

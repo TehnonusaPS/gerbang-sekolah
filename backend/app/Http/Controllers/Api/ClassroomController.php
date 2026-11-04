@@ -335,12 +335,26 @@ class ClassroomController extends Controller
             }
         }
 
-        $classroom->delete();
+        if ($classroom->students()->count() > 0) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Kelas tidak dapat dihapus karena masih memiliki ' . $classroom->students()->count() . ' siswa di dalamnya. Pindahkan siswa terlebih dahulu.',
+            ], 422);
+        }
 
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Classroom deleted successfully.',
-        ]);
+        try {
+            $classroom->delete();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Data kelas berhasil dihapus.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Gagal menghapus kelas: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

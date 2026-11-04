@@ -23,6 +23,10 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: undefined
+  },
+  rowActions: {
+    type: Array,
+    default: () => []
   }
 })
 
@@ -223,6 +227,7 @@ const tingkatOptions = computed(() => {
     :items="paginatedItems"
     :filters="filters"
     :actions="actions"
+    :row-actions="rowActions"
     :loading="loading"
     v-model:filterValues="filterValues"
     :page="page"

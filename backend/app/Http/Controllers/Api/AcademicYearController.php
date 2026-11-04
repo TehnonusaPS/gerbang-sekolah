@@ -59,8 +59,8 @@ class AcademicYearController extends Controller
                 'grade'               => $src->grade,
                 'major'               => $src->major,
                 'room'                => $src->room,
-                'status'              => 'active',
-                'homeroom_teacher_id' => $src->homeroom_teacher_id,
+                'status'              => 'no_teacher',
+                'homeroom_teacher_id' => null,
                 'capacity'            => $src->capacity,
             ]);
             $count++;
@@ -149,7 +149,7 @@ class AcademicYearController extends Controller
                 ], 422);
             }
 
-            $activeSemester = $request->input('active_semester', 'odd');
+            $activeSemester = $request->input('active_semester', 'none');
 
             DB::beginTransaction();
             try {

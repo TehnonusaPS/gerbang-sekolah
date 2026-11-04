@@ -107,17 +107,20 @@ defineProps({
 
     <!-- Active Semester Selector (Hanya saat Tambah Baru) -->
     <div v-if="!isEdit" class="space-y-1.5 w-full">
-      <label class="text-xs font-bold text-foreground">Semester Aktif Pertama <span class="text-rose-500">*</span></label>
+      <label class="text-xs font-bold text-foreground">Status Awal Tahun Ajaran</label>
       <Select v-model="form.activeSemester">
         <SelectTrigger class="w-full h-10 rounded-xl bg-background border-border/80 text-xs font-semibold px-3.5">
-          <SelectValue placeholder="Pilih Semester Aktif..." />
+          <SelectValue placeholder="Pilih Status..." />
         </SelectTrigger>
         <SelectContent class="rounded-xl">
-          <SelectItem value="odd" class="text-xs font-semibold">Semester Ganjil (Aktif)</SelectItem>
-          <SelectItem value="even" class="text-xs font-semibold">Semester Genap (Aktif)</SelectItem>
-          <SelectItem value="none" class="text-xs font-semibold">Nonaktifkan Keduanya</SelectItem>
+          <SelectItem value="none" class="text-xs font-semibold">Simpan sebagai Draft (Nonaktif dahulu)</SelectItem>
+          <SelectItem value="odd" class="text-xs font-semibold">Langsung Aktifkan Semester Ganjil</SelectItem>
+          <SelectItem value="even" class="text-xs font-semibold">Langsung Aktifkan Semester Genap</SelectItem>
         </SelectContent>
       </Select>
+      <p class="text-[11px] text-muted-foreground">
+        Disarankan simpan sebagai Draft dahulu. Anda dapat mengaktifkannya kapan saja dari tabel setelah data siap.
+      </p>
     </div>
 
     <!-- Salin Struktur Kelas (Hanya saat Tambah Baru) -->

@@ -6,6 +6,16 @@ import PageHeader from '@/components/page-header/PageHeader.vue'
 import DataSheet from '@/components/data-sheet/DataSheet.vue'
 import FormFooter from '@/components/forms/FormFooter.vue'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction
+} from '@/components/ui/alert-dialog'
 
 import KelasStatCards from './components/KelasStatCards.vue'
 import KelasTable from './components/KelasTable.vue'
@@ -234,14 +244,33 @@ const detailSections = computed(() => {
   ]
 })
 
-// --- Delete ---
-async function handleDelete(id) {
+// --- Delete State & Methods ---
+const isDeleteDialogOpen = ref(false)
+const itemToDelete = ref(null)
+const isDeleting = ref(false)
+
+const requestDelete = (item) => {
+  itemToDelete.value = item
+  isDeleteDialogOpen.value = true
+}
+
+const confirmDelete = async () => {
+  if (!itemToDelete.value) return
+  isDeleting.value = true
   try {
-    await deleteClassroom(id)
-    toast.success('Data kelas berhasil dihapus!')
-    fetchClassrooms()
+    await deleteClassroom(itemToDelete.value.id)
+    toast.success('Berhasil Dihapus', {
+      description: `Data kelas "${itemToDelete.value.name}" berhasil dihapus.`
+    })
+    isDeleteDialogOpen.value = false
+    itemToDelete.value = null
+    await fetchClassrooms()
   } catch (err) {
-    toast.error('Gagal menghapus kelas')
+    toast.error('Gagal menghapus kelas', {
+      description: err.response?.data?.message || err.message
+    })
+  } finally {
+    isDeleting.value = false
   }
 }
 
@@ -263,7 +292,9 @@ const rowActions = [
   },
   {
     label: 'Hapus',
-    icon: Trash2
+    icon: Trash2,
+    variant: 'destructive',
+    click: item => requestDelete(item)
   }
 ]
 </script>
@@ -329,6 +360,30 @@ const rowActions = [
         />
       </SheetContent>
     </Sheet>
+
+    <!-- Delete Confirmation Dialog -->
+    <AlertDialog :open="isDeleteDialogOpen" @update:open="isDeleteDialogOpen = $event">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Hapus Data Kelas?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Apakah Anda yakin ingin menghapus kelas <span class="font-bold text-foreground">"{{ itemToDelete?.name }}"</span>? Tindakan ini tidak dapat dibatalkan.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel :disabled="isDeleting" @click="isDeleteDialogOpen = false">
+            Batal
+          </AlertDialogCancel>
+          <AlertDialogAction
+            :disabled="isDeleting"
+            class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            @click="confirmDelete"
+          >
+            {{ isDeleting ? 'Menghapus...' : 'Ya, Hapus Kelas' }}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
 
   </div>
 </template>
