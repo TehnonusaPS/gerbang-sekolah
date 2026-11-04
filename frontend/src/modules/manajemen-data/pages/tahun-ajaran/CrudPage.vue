@@ -4,12 +4,17 @@ import { toast } from 'vue-sonner'
 import DataTableCard from '@/components/data-table/DataTableCard.vue'
 import PageHeader from '@/components/page-header/PageHeader.vue'
 import StatCard from '@/components/stat-card/StatCard.vue'
+import FormFooter from '@/components/forms/FormFooter.vue'
 import { Badge } from '@/components/ui/badge'
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Calendar, Eye, Pencil, Plus, Trash2, ToggleLeft, ToggleRight, CheckCircle, XCircle } from 'lucide-vue-next'
 import { glassSlide, glassFade } from '@/config/motion'
+import { useZodForm } from '@/composables/useZodForm'
+import { academicYearSchema } from './data/academicYearSchema'
+import { createAcademicYear, updateAcademicYear } from '@/services/academicYearService'
 import { useAcademicYear } from './composables/useAcademicYear'
 
-import AcademicYearFormSheet from './components/AcademicYearFormSheet.vue'
+import AcademicYearForm from './components/AcademicYearForm.vue'
 import AcademicYearDetailSheet from './components/AcademicYearDetailSheet.vue'
 import AcademicYearDeleteDialog from './components/AcademicYearDeleteDialog.vue'
 
@@ -40,23 +45,127 @@ onMounted(() => {
   fetchData()
 })
 
-// --- Modal States ---
+// --- Form Sheet State & Zod ---
 const isFormSheetOpen = ref(false)
 const isEditMode = ref(false)
-const selectedEditItem = ref(null)
+const isSaving = ref(false)
 
+const formItem = ref({
+  oddId: null,
+  evenId: null,
+  tahun: '',
+  oddTanggalMulai: '',
+  oddTanggalSelesai: '',
+  evenTanggalMulai: '',
+  evenTanggalSelesai: '',
+  activeSemester: 'odd',
+  status: 'nonaktif'
+})
+
+const {
+  errors: formErrors,
+  validate: validateForm,
+  clearErrors
+} = useZodForm(academicYearSchema, formItem)
+
+const saveSummary = computed(() => [
+  { label: 'Tahun Ajaran', value: formItem.value.tahun },
+  { label: 'Semester Ganjil', value: `${formItem.value.oddTanggalMulai || '-'} s/d ${formItem.value.oddTanggalSelesai || '-'}` },
+  { label: 'Semester Genap', value: `${formItem.value.evenTanggalMulai || '-'} s/d ${formItem.value.evenTanggalSelesai || '-'}` }
+])
+
+const handleCreate = () => {
+  isEditMode.value = false
+  clearErrors()
+  formItem.value = {
+    oddId: null,
+    evenId: null,
+    tahun: '',
+    oddTanggalMulai: '',
+    oddTanggalSelesai: '',
+    evenTanggalMulai: '',
+    evenTanggalSelesai: '',
+    activeSemester: 'odd',
+    status: 'nonaktif'
+  }
+  isFormSheetOpen.value = true
+}
+
+const handleEdit = (item) => {
+  isEditMode.value = true
+  clearErrors()
+  formItem.value = {
+    oddId: item.odd?.id || null,
+    evenId: item.even?.id || null,
+    tahun: item.tahun || '',
+    oddTanggalMulai: item.odd?.tanggalMulai || '',
+    oddTanggalSelesai: item.odd?.tanggalSelesai || '',
+    evenTanggalMulai: item.even?.tanggalMulai || '',
+    evenTanggalSelesai: item.even?.tanggalSelesai || '',
+    activeSemester: 'odd',
+    status: item.status || 'nonaktif'
+  }
+  isFormSheetOpen.value = true
+}
+
+const handleBeforeConfirm = async () => {
+  const isValid = await validateForm()
+  if (!isValid) {
+    toast.error('Gagal Menyimpan', { description: 'Harap periksa kembali isian formulir Anda.' })
+    return false
+  }
+  return true
+}
+
+const executeSave = async () => {
+  isSaving.value = true
+  try {
+    const trimmedYear = formItem.value.tahun.trim()
+    if (isEditMode.value) {
+      const promises = []
+      if (formItem.value.oddId) {
+        promises.push(updateAcademicYear(formItem.value.oddId, {
+          name: trimmedYear,
+          start_date: formItem.value.oddTanggalMulai,
+          end_date: formItem.value.oddTanggalSelesai
+        }))
+      }
+      if (formItem.value.evenId) {
+        promises.push(updateAcademicYear(formItem.value.evenId, {
+          name: trimmedYear,
+          start_date: formItem.value.evenTanggalMulai,
+          end_date: formItem.value.evenTanggalSelesai
+        }))
+      }
+      await Promise.all(promises)
+      toast.success('Berhasil Diperbarui', { description: `Tahun ajaran "${trimmedYear}" telah diperbarui.` })
+    } else {
+      const payload = {
+        name: trimmedYear,
+        odd_start_date: formItem.value.oddTanggalMulai,
+        odd_end_date: formItem.value.oddTanggalSelesai,
+        even_start_date: formItem.value.evenTanggalMulai,
+        even_end_date: formItem.value.evenTanggalSelesai,
+        active_semester: formItem.value.activeSemester
+      }
+      await createAcademicYear(payload)
+      toast.success('Berhasil Ditambahkan', { description: `Tahun ajaran "${trimmedYear}" (Ganjil & Genap) telah ditambahkan.` })
+    }
+    isFormSheetOpen.value = false
+    await fetchData()
+  } catch (err) {
+    toast.error('Gagal menyimpan tahun ajaran', { description: err.response?.data?.message || err.message })
+  } finally {
+    isSaving.value = false
+  }
+}
+
+// --- Detail Sheet & Delete Modal States ---
 const isDetailSheetOpen = ref(false)
 const selectedDetailItem = ref(null)
 
 const isDeleteDialogOpen = ref(false)
 const selectedDeleteItem = ref(null)
-
-// --- Handlers ---
-function handleEdit(item) {
-  isEditMode.value = true
-  selectedEditItem.value = item
-  isFormSheetOpen.value = true
-}
 
 function handleViewDetail(id) {
   const found = paginatedItems.value.find(t => t.id === id)
@@ -77,12 +186,6 @@ function openDeleteConfirm(item) {
 
 async function onConfirmDelete(item) {
   await executeDelete(item)
-}
-
-function handleCreate() {
-  isEditMode.value = false
-  selectedEditItem.value = null
-  isFormSheetOpen.value = true
 }
 
 const headerActions = computed(() => [
@@ -243,13 +346,44 @@ const headerActions = computed(() => [
       </DataTableCard>
     </div>
 
-    <!-- Modals & Sheets -->
-    <AcademicYearFormSheet
-      v-model:open="isFormSheetOpen"
-      :is-edit-mode="isEditMode"
-      :edit-item="selectedEditItem"
-      @saved="fetchData"
-    />
+    <!-- Form Sheet (Create / Edit) -->
+    <Sheet v-model:open="isFormSheetOpen">
+      <SheetContent class="sm:max-w-[500px] flex flex-col h-full gap-2 text-left p-6">
+        <SheetHeader class="border-b border-border/60 pb-3 text-left">
+          <div class="flex items-center gap-2.5">
+            <div class="p-2 rounded-xl bg-primary/10 text-primary shrink-0">
+              <Calendar class="size-4" />
+            </div>
+            <div>
+              <SheetTitle class="text-base font-bold text-foreground">
+                {{ isEditMode ? 'Edit Tahun Ajaran' : 'Tambah Tahun Ajaran' }}
+              </SheetTitle>
+              <SheetDescription class="text-xs text-muted-foreground mt-0.5">
+                {{ isEditMode ? 'Perbarui detail data tahun ajaran sekolah.' : 'Tambahkan periode tahun ajaran baru (Ganjil & Genap) ke sistem.' }}
+              </SheetDescription>
+            </div>
+          </div>
+        </SheetHeader>
+
+        <div class="flex-1 overflow-y-auto py-5 pr-1 space-y-4 no-scrollbar">
+          <AcademicYearForm
+            :form="formItem"
+            :errors="formErrors"
+            :is-edit="isEditMode"
+          />
+        </div>
+
+        <FormFooter
+          :loading="isSaving"
+          :is-edit="isEditMode"
+          entity-name="Tahun Ajaran"
+          :summary-items="saveSummary"
+          :before-confirm="handleBeforeConfirm"
+          @submit="executeSave"
+          @save="executeSave"
+        />
+      </SheetContent>
+    </Sheet>
 
     <AcademicYearDetailSheet
       v-model:open="isDetailSheetOpen"
