@@ -3,11 +3,12 @@ import { ref } from 'vue'
 import { toast } from 'vue-sonner'
 
 export const columns = [
-  { key: 'nama', label: 'Nama Yayasan', avatar: true, avatarKey: 'logo' },
+  { key: 'nama', label: 'Nama Yayasan', avatar: true, avatarKey: 'logo', sortable: true },
   { key: 'kode', label: 'Kode Yayasan' },
   { key: 'jmlSekolah', label: 'Jumlah Sekolah', type: 'number' },
   { key: 'alamat', label: 'Alamat Yayasan', type: 'muted', truncate: true },
   { key: 'jmlPengguna', label: 'Jumlah Pengguna', type: 'number' },
+  { key: 'tanggal_dibuat', label: 'Tanggal Dibuat', type: 'date' },
   {
     key: 'status',
     label: 'Status',

@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { FolderOpen, Loader2 } from 'lucide-vue-next'
+import { ArrowDown, ArrowUp, ArrowUpDown, FolderOpen, Loader2 } from 'lucide-vue-next'
 import {
   Table,
   TableBody,
@@ -66,6 +66,18 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: undefined
+  },
+  sortBy: {
+    type: String,
+    default: undefined
+  },
+  sortOrder: {
+    type: String,
+    default: undefined
+  },
+  manualSort: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -164,9 +176,47 @@ const emptyRowsCount = computed(() => {
   return Math.max(0, props.perPage - props.items.length)
 })
 
-// ── Checkbox / Combobox ───────────────────────────────────
+// ── Checkbox / Combobox & Sorting ────────────────────────────────────────────
 
-const emit = defineEmits(['update:selectedRows'])
+const emit = defineEmits(['update:selectedRows', 'update:sortBy', 'update:sortOrder', 'sort'])
+
+const internalSortBy = ref('')
+const internalSortOrder = ref('')
+
+const activeSortBy = computed(() =>
+  props.sortBy !== undefined ? props.sortBy : internalSortBy.value
+)
+const activeSortOrder = computed(() =>
+  props.sortOrder !== undefined ? props.sortOrder : internalSortOrder.value
+)
+
+const handleSort = column => {
+  if (!column?.sortable) return
+  const nextBy = column.key
+  const nextOrder = activeSortBy.value === column.key && activeSortOrder.value === 'asc' ? 'desc' : 'asc'
+
+  internalSortBy.value = nextBy
+  internalSortOrder.value = nextOrder
+  emit('update:sortBy', nextBy)
+  emit('update:sortOrder', nextOrder)
+  emit('sort', { sortBy: nextBy, sortOrder: nextOrder })
+}
+
+const displayedItems = computed(() => {
+  if (props.manualSort || !activeSortBy.value || !activeSortOrder.value) {
+    return props.items
+  }
+  const key = activeSortBy.value
+  const dir = activeSortOrder.value === 'desc' ? -1 : 1
+  return [...props.items].sort((a, b) => {
+    const valA = a?.[key] ?? ''
+    const valB = b?.[key] ?? ''
+    if (typeof valA === 'number' && typeof valB === 'number') {
+      return (valA - valB) * dir
+    }
+    return String(valA).localeCompare(String(valB), 'id', { sensitivity: 'base', numeric: true }) * dir
+  })
+})
 
 const isSelected = item => {
   return props.selectedRows.some(row => row.id === item.id)
@@ -237,9 +287,31 @@ const toggleAll = checked => {
           <TableHead
             v-for="column in columns"
             :key="column.key"
-            :class="resolveHeaderClass(column)"
+            :class="[resolveHeaderClass(column), column.sortable ? 'cursor-pointer select-none hover:text-foreground transition-colors' : '']"
+            @click="handleSort(column)"
           >
-            {{ column.label }}
+            <div
+              v-if="column.sortable"
+              class="inline-flex items-center gap-1.5"
+              :class="column.key === 'actions' || column.badge || column.type === 'number' ? 'justify-center' : ''"
+            >
+              <span>{{ column.label }}</span>
+              <ArrowUp
+                v-if="activeSortBy === column.key && activeSortOrder === 'asc'"
+                class="size-3.5 text-primary shrink-0"
+              />
+              <ArrowDown
+                v-else-if="activeSortBy === column.key && activeSortOrder === 'desc'"
+                class="size-3.5 text-primary shrink-0"
+              />
+              <ArrowUpDown
+                v-else
+                class="size-3.5 text-muted-foreground/60 shrink-0"
+              />
+            </div>
+            <template v-else>
+              {{ column.label }}
+            </template>
           </TableHead>
         </TableRow>
       </TableHeader>
@@ -284,7 +356,7 @@ const toggleAll = checked => {
         <!-- Data Rows -->
         <TableRow
           v-else
-          v-for="(item, rowIndex) in items"
+          v-for="(item, rowIndex) in displayedItems"
           :key="item.id || rowIndex"
           class="h-[53px]"
           v-motion

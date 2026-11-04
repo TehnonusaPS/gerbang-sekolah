@@ -39,8 +39,13 @@ class FoundationController extends Controller
             if ($request->filled('status') && $request->input('status') !== 'all') {
                 $query->where('status', $request->input('status'));
             }
- 
-            $foundations = $query->latest()->paginate($request->input('per_page', 15));
+
+            // Sorting: Aktif -> Trial -> Nonaktif, lalu urut abjad Nama Yayasan (default A-Z, atau Z-A)
+            $sortOrder = strtolower((string) $request->input('sort_order', 'asc')) === 'desc' ? 'desc' : 'asc';
+            $query->orderByRaw("CASE WHEN status = 'active' THEN 1 WHEN status = 'trial' THEN 2 ELSE 3 END ASC")
+                  ->orderBy('name', $sortOrder);
+
+            $foundations = $query->paginate($request->input('per_page', 15));
 
             $foundationIds = $foundations->getCollection()->pluck('id')->all();
             if (!empty($foundationIds)) {

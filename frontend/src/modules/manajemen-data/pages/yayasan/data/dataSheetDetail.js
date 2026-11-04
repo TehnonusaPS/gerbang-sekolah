@@ -5,6 +5,7 @@ export const yayasanSheetSections = [
     fields: [
       { label: 'Kode Yayasan', key: 'kode' },
       { label: 'Nama Yayasan', key: 'nama' },
+      { label: 'Tanggal Dibuat', key: 'tanggal_dibuat' },
       { label: 'Tanggal Berdiri', key: 'tanggal_berdiri' },
       { label: 'Status', key: 'status' },
       { label: 'Alamat Lengkap', key: 'alamat', textarea: true }

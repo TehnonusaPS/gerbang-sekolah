@@ -66,6 +66,9 @@ const filterValues = ref({
   status: 'all'
 })
 
+const sortBy = ref('nama')
+const sortOrder = ref('asc')
+
 // Debounced search query
 const searchQuery = ref('')
 let debounceTimeout = null
@@ -76,6 +79,21 @@ watch(() => filterValues.value.search, (newVal) => {
   }, 300)
 })
 
+const formatCreatedAt = (dateStr) => {
+  if (!dateStr) return '-'
+  try {
+    const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return dateStr
+    return d.toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    })
+  } catch {
+    return dateStr
+  }
+}
+
 const fetchFoundations = async () => {
   isLoading.value = true
   try {
@@ -83,6 +101,10 @@ const fetchFoundations = async () => {
       page: currentPage.value,
       per_page: perPage.value,
       search: searchQuery.value,
+    }
+    if (sortBy.value && sortOrder.value) {
+      params.sort_by = sortBy.value
+      params.sort_order = sortOrder.value
     }
     if (filterValues.value.status !== 'all') {
       const statusMap = {
@@ -103,6 +125,7 @@ const fetchFoundations = async () => {
       nama: item.name,
       kode: item.code || '-',
       tanggal_berdiri: item.established_date ? item.established_date.split('T')[0] : '-',
+      tanggal_dibuat: formatCreatedAt(item.created_at),
       alamat: item.address || '-',
       email: item.email || '-',
       no_hp: item.phone || '-',
@@ -141,8 +164,8 @@ onMounted(() => {
   fetchFoundations()
 })
 
-// Watch search and status filter to reset page to 1
-watch([searchQuery, () => filterValues.value.status], () => {
+// Watch search, status filter, and sorting to reset page to 1
+watch([searchQuery, () => filterValues.value.status, sortBy, sortOrder], () => {
   if (currentPage.value !== 1) {
     currentPage.value = 1
   } else {
@@ -209,6 +232,9 @@ const handleViewDetail = id => {
       :actions="actions"
       v-model:filterValues="filterValues"
       v-model:perPage="perPage"
+      v-model:sortBy="sortBy"
+      v-model:sortOrder="sortOrder"
+      manual-sort
       illustration="globe"
       :from="from"
       :to="to"

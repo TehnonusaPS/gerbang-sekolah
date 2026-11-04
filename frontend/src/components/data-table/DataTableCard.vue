@@ -71,6 +71,18 @@ const props = defineProps({
   loading: {
     type: Boolean,
     default: undefined
+  },
+  sortBy: {
+    type: String,
+    default: undefined
+  },
+  sortOrder: {
+    type: String,
+    default: undefined
+  },
+  manualSort: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -78,7 +90,10 @@ const emit = defineEmits([
   'update:page',
   'update:filterValues',
   'update:perPage',
-  'update:selectedRows'
+  'update:selectedRows',
+  'update:sortBy',
+  'update:sortOrder',
+  'sort'
 ])
 
 const localFilterValues = computed({
@@ -211,6 +226,12 @@ const illustrationUrl = computed(() => {
       @update:selectedRows="emit('update:selectedRows', $event)"
       :rowDisabled="rowDisabled"
       :fixed-height="fixedHeight"
+      :sort-by="sortBy"
+      :sort-order="sortOrder"
+      :manual-sort="manualSort"
+      @update:sort-by="emit('update:sortBy', $event)"
+      @update:sort-order="emit('update:sortOrder', $event)"
+      @sort="emit('sort', $event)"
     >
       <!-- Forward all dynamic cell slots -->
       <template
