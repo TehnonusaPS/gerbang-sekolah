@@ -1,11 +1,11 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { toast } from 'vue-sonner'
 import DataTableCard from '@/components/data-table/DataTableCard.vue'
 import PageHeader from '@/components/page-header/PageHeader.vue'
 import StatCard from '@/components/stat-card/StatCard.vue'
 import { Badge } from '@/components/ui/badge'
-import { Calendar, Eye, Pencil, Trash2, ToggleLeft, ToggleRight, CheckCircle, XCircle } from 'lucide-vue-next'
+import { Calendar, Eye, Pencil, Plus, Trash2, ToggleLeft, ToggleRight, CheckCircle, XCircle } from 'lucide-vue-next'
 import { glassSlide, glassFade } from '@/config/motion'
 import { useAcademicYear } from './composables/useAcademicYear'
 
@@ -79,7 +79,19 @@ async function onConfirmDelete(item) {
   await executeDelete(item)
 }
 
-const headerActions = []
+function handleCreate() {
+  isEditMode.value = false
+  selectedEditItem.value = null
+  isFormSheetOpen.value = true
+}
+
+const headerActions = computed(() => [
+  {
+    label: 'Tambah Tahun Ajaran',
+    icon: Plus,
+    click: handleCreate
+  }
+])
 </script>
 
 <template>
@@ -188,6 +200,16 @@ const headerActions = []
             >
               <Eye class="size-4 transition-transform group-hover/btn:scale-110" />
               <span class="text-[9px] font-semibold leading-none">Detail</span>
+            </button>
+
+            <!-- Edit -->
+            <button
+              class="flex flex-col items-center justify-center gap-0.5 group/btn focus:outline-none text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              title="Edit Data Tahun Ajaran"
+              @click="handleEdit(item)"
+            >
+              <Pencil class="size-4 transition-transform group-hover/btn:scale-110" />
+              <span class="text-[9px] font-semibold leading-none">Edit</span>
             </button>
 
             <!-- Toggle Status (Aktivasi) -->
