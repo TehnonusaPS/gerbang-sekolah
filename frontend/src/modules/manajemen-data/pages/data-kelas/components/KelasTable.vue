@@ -33,6 +33,20 @@ const filterValues = ref({})
 const page = ref(1)
 const perPage = ref(5)
 
+// Set default filter to active academic year once available
+watch(
+  () => props.academicYearOptions,
+  options => {
+    if (options && options.length > 0 && !filterValues.value.academic_year_id) {
+      const activeOpt = options.find(o => o.isActive) || options[0]
+      if (activeOpt) {
+        filterValues.value.academic_year_id = activeOpt.value
+      }
+    }
+  },
+  { immediate: true }
+)
+
 // Reset page to 1 whenever filters change
 watch(
   filterValues,
@@ -49,7 +63,7 @@ const filters = computed(() => {
     list.push({
       key: 'academic_year_id',
       type: 'select',
-      placeholder: 'Semua Tahun Ajaran',
+      placeholder: 'Tahun Ajaran',
       options: props.academicYearOptions
     })
   }
@@ -122,10 +136,17 @@ const filteredItems = computed(() => {
 
     const matchesGrade = fGrade === 'all' || String(item.grade) === String(fGrade)
     const matchesStatus = fStatus === 'all' || item.status === fStatus
+
+    const selectedYearOption = props.academicYearOptions.find(
+      o => String(o.value) === String(fAcademicYear)
+    )
+    const selectedYearName = selectedYearOption?.name || ''
+
     const matchesAcademicYear =
       fAcademicYear === 'all' ||
+      !fAcademicYear ||
       String(item.academic_year_id) === String(fAcademicYear) ||
-      String(item.academic_year_name) === String(fAcademicYear)
+      (selectedYearName && String(item.academic_year_name) === String(selectedYearName))
 
     return matchesSearch && matchesGrade && matchesStatus && matchesAcademicYear
   })

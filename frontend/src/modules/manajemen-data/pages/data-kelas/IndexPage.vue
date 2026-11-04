@@ -73,6 +73,7 @@ const academicYearOptions = computed(() => {
   rawAcademicYears.value.forEach(item => {
     if (!map.has(item.name) || item.is_active) {
       map.set(item.name, {
+        name: item.name,
         label: `${item.name}${item.is_active ? ' (Aktif)' : ''}`,
         value: String(item.id),
         isActive: Boolean(item.is_active)
