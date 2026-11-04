@@ -114,8 +114,8 @@ const actions = computed(() => {
 
 const columns = computed(() => {
   return [
-    { key: 'name', label: 'NAMA KELAS', class: 'font-bold text-foreground' },
     { key: 'academic_year_name', label: 'TAHUN AJARAN' },
+    { key: 'name', label: 'NAMA KELAS', class: 'font-bold text-foreground' },
     { key: 'grade', label: 'TINGKAT' },
     { key: 'homeroom_teacher', label: 'WALI KELAS' },
     { key: 'room', label: 'RUANGAN' },
@@ -126,34 +126,40 @@ const columns = computed(() => {
 })
 
 const filteredItems = computed(() => {
-  return props.items.filter(item => {
-    const fSearch = filterValues.value.search?.toLowerCase() || ''
-    const fGrade = filterValues.value.grade || 'all'
-    const fStatus = filterValues.value.status || 'all'
-    const fAcademicYear = filterValues.value.academic_year_id || 'all'
+  return props.items
+    .filter(item => {
+      const fSearch = filterValues.value.search?.toLowerCase() || ''
+      const fGrade = filterValues.value.grade || 'all'
+      const fStatus = filterValues.value.status || 'all'
+      const fAcademicYear = filterValues.value.academic_year_id || 'all'
 
-    const matchesSearch =
-      !fSearch ||
-      item.name?.toLowerCase().includes(fSearch) ||
-      item.homeroom_teacher?.toLowerCase().includes(fSearch) ||
-      item.room?.toLowerCase().includes(fSearch)
+      const matchesSearch =
+        !fSearch ||
+        item.name?.toLowerCase().includes(fSearch) ||
+        item.homeroom_teacher?.toLowerCase().includes(fSearch) ||
+        item.room?.toLowerCase().includes(fSearch)
 
-    const matchesGrade = fGrade === 'all' || String(item.grade) === String(fGrade)
-    const matchesStatus = fStatus === 'all' || item.status === fStatus
+      const matchesGrade = fGrade === 'all' || String(item.grade) === String(fGrade)
+      const matchesStatus = fStatus === 'all' || item.status === fStatus
 
-    const selectedYearOption = props.academicYearOptions.find(
-      o => String(o.value) === String(fAcademicYear)
-    )
-    const selectedYearName = selectedYearOption?.name || ''
+      const selectedYearOption = props.academicYearOptions.find(
+        o => String(o.value) === String(fAcademicYear)
+      )
+      const selectedYearName = selectedYearOption?.name || ''
 
-    const matchesAcademicYear =
-      fAcademicYear === 'all' ||
-      !fAcademicYear ||
-      String(item.academic_year_id) === String(fAcademicYear) ||
-      (selectedYearName && String(item.academic_year_name) === String(selectedYearName))
+      const matchesAcademicYear =
+        fAcademicYear === 'all' ||
+        !fAcademicYear ||
+        String(item.academic_year_id) === String(fAcademicYear) ||
+        (selectedYearName && String(item.academic_year_name) === String(selectedYearName))
 
-    return matchesSearch && matchesGrade && matchesStatus && matchesAcademicYear
-  })
+      return matchesSearch && matchesGrade && matchesStatus && matchesAcademicYear
+    })
+    .sort((a, b) => {
+      const yearCompare = (b.academic_year_name || '').localeCompare(a.academic_year_name || '')
+      if (yearCompare !== 0) return yearCompare
+      return (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' })
+    })
 })
 
 const paginatedItems = computed(() => {

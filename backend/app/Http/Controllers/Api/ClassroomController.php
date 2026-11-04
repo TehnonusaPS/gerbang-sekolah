@@ -72,7 +72,10 @@ class ClassroomController extends Controller
             $query->where('name', 'like', "%{$search}%");
         }
 
-        $classrooms = $query->latest()->get();
+        $classrooms = $query->get()->sortBy([
+            ['academicYear.name', 'desc'],
+            ['name', 'asc'],
+        ])->values();
 
         $formatted = $classrooms->map(function ($item) {
             return [
