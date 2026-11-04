@@ -32,7 +32,7 @@ export const createSekolahSchema = ({
 } = {}) =>
   z
     .object({
-      nama: v.requiredString('Nama sekolah', { min: 2, max: 255 }),
+      nama: v.institutionName('Nama sekolah', { min: 2, max: 255 }),
       npsn: v.requiredString('NPSN', { min: 1, max: 50 }),
       yayasan: isSuperAdmin ? v.requiredSelect('Yayasan induk') : z.any().optional(),
       jenjang: v.requiredSelect('Jenjang pendidikan'),

@@ -85,7 +85,7 @@ function onBeforeConfirm() {
   if (isLoading.value) return false
   if (!validate()) {
     toast.error('Gagal Menyimpan', {
-      description: formErrors.value.logo || 'Harap lengkapi semua isian wajib dan periksa format data terlebih dahulu.'
+      description: 'Harap periksa kembali kolom yang ditandai merah pada formulir.'
     })
     return false
   }
@@ -98,7 +98,7 @@ const handleSubmit = async () => {
 
   if (!validate()) {
     toast.error('Gagal Menyimpan', {
-      description: formErrors.value.logo || 'Harap periksa kembali isian formulir sebelum menyimpan.'
+      description: 'Harap periksa kembali kolom yang ditandai merah pada formulir.'
     })
     return
   }

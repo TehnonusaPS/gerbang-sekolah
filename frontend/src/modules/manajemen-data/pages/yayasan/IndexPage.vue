@@ -79,14 +79,14 @@ watch(() => filterValues.value.search, (newVal) => {
   }, 300)
 })
 
-const formatCreatedAt = (dateStr) => {
+const formatDateDisplay = (dateStr) => {
   if (!dateStr) return '-'
   try {
     const d = new Date(dateStr)
     if (isNaN(d.getTime())) return dateStr
     return d.toLocaleDateString('id-ID', {
       day: 'numeric',
-      month: 'short',
+      month: 'long',
       year: 'numeric'
     })
   } catch {
@@ -124,16 +124,16 @@ const fetchFoundations = async () => {
       id: item.id,
       nama: item.name,
       kode: item.code || '-',
-      tanggal_berdiri: item.established_date ? item.established_date.split('T')[0] : '-',
-      tanggal_dibuat: formatCreatedAt(item.created_at),
+      tanggal_berdiri: formatDateDisplay(item.established_date),
+      tanggal_dibuat: formatDateDisplay(item.created_at),
       alamat: item.address || '-',
       email: item.email || '-',
       no_hp: item.phone || '-',
       website: item.website || '-',
       no_akta: item.deed_number || '-',
-      tanggal_akta: item.deed_date ? item.deed_date.split('T')[0] : '-',
+      tanggal_akta: formatDateDisplay(item.deed_date),
       no_sk: item.decree_number || '-',
-      tanggal_sk: item.decree_date ? item.decree_date.split('T')[0] : '-',
+      tanggal_sk: formatDateDisplay(item.decree_date),
       logo: getPhotoUrl(item.logo, '/defaults/sd/logo.png'),
       foto: getPhotoUrl(item.logo, '/defaults/sd/logo.png'),
       status: item.status === 'active' ? 'Aktif' : (item.status === 'inactive' ? 'Nonaktif' : 'Trial'),
@@ -180,13 +180,16 @@ watch([currentPage, perPage], () => {
 
 const deleteItem = async (id, item) => {
   try {
-    await deleteFoundation(id)
+    const res = await deleteFoundation(id)
     toast.success('Berhasil dihapus', {
-      description: `${item.nama} telah dihapus dari sistem.`
+      description: res.message || `${item.nama} telah dihapus dari sistem.`
     })
     fetchFoundations()
   } catch (err) {
-    toast.error('Gagal menghapus yayasan')
+    const errorMsg = err.response?.data?.message || 'Gagal menghapus yayasan.'
+    toast.error('Gagal Menghapus Yayasan', {
+      description: errorMsg
+    })
   }
 }
 

@@ -186,7 +186,7 @@ const handleImageChange = (file) => {
           <FormInput
             v-model="form.no_akta"
             label="No. Akta Notaris / Pendirian"
-            placeholder="Contoh: 12 Tanggal 15 Januari 2020"
+            placeholder="Contoh: No. 12 atau 05/Not/2021"
             :disabled="isReadOnlyInstitutional"
             :error="errors.no_akta"
             required

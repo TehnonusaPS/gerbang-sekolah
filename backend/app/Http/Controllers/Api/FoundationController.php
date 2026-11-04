@@ -203,7 +203,7 @@ class FoundationController extends Controller
         }
 
         $rules = [
-            'name'             => 'required|string|max:255',
+            'name'             => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z0-9À-ÿ\s.,&\'\/\-\(\)"]+$/u'],
             'code'             => 'nullable|string|max:255|unique:foundations,code',
             'established_date' => 'nullable|date',
             'status'           => 'nullable|in:active,inactive,trial',
@@ -230,6 +230,7 @@ class FoundationController extends Controller
         $customMessages = [
             'name.required'         => 'Nama yayasan wajib diisi.',
             'name.max'              => 'Nama yayasan tidak boleh lebih dari 255 karakter.',
+            'name.regex'            => 'Nama yayasan tidak boleh mengandung tag HTML atau karakter khusus tidak valid.',
             'emailLogin.unique'     => 'Email login administrator sudah digunakan.',
             'emailLogin.required'   => 'Email login administrator wajib diisi.',
             'emailLogin.email'      => 'Format email login administrator tidak valid.',
@@ -267,6 +268,9 @@ class FoundationController extends Controller
 
         $result = \DB::transaction(function () use ($request, $data) {
             $foundationData = $data;
+            if (isset($foundationData['name'])) {
+                $foundationData['name'] = strip_tags(trim((string) $foundationData['name']));
+            }
             unset($foundationData['emailLogin'], $foundationData['noHpLogin']);
 
             if (empty($foundationData['code'])) {
@@ -377,7 +381,7 @@ class FoundationController extends Controller
         }
 
         $rules = [
-            'name'             => 'required|string|max:255',
+            'name'             => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z0-9À-ÿ\s.,&\'\/\-\(\)"]+$/u'],
             'established_date' => 'nullable|date',
             'address'          => 'nullable|string',
             'email'            => 'nullable|email|max:255',
@@ -425,6 +429,7 @@ class FoundationController extends Controller
         $customMessages = [
             'name.required'         => 'Nama yayasan wajib diisi.',
             'name.max'              => 'Nama yayasan tidak boleh lebih dari 255 karakter.',
+            'name.regex'            => 'Nama yayasan tidak boleh mengandung tag HTML atau karakter khusus tidak valid.',
             'emailLogin.unique'     => 'Email login administrator sudah digunakan.',
             'emailLogin.required'   => 'Email login administrator wajib diisi.',
             'emailLogin.email'      => 'Format email login administrator tidak valid.',
@@ -471,6 +476,9 @@ class FoundationController extends Controller
 
         \DB::transaction(function () use ($foundation, $data, $request, $adminUser) {
             $foundationData = $data;
+            if (isset($foundationData['name'])) {
+                $foundationData['name'] = strip_tags(trim((string) $foundationData['name']));
+            }
             unset($foundationData['emailLogin'], $foundationData['noHpLogin']);
             $foundation->update($foundationData);
 
@@ -540,15 +548,28 @@ class FoundationController extends Controller
         if (!$foundation) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Foundation not found.',
+                'message' => 'Yayasan tidak ditemukan.',
             ], 404);
         }
 
-        $foundation->delete();
+        // Proteksi: Cek apakah masih ada unit sekolah di bawah yayasan ini
+        $schoolsCount = $foundation->schools()->count();
+        if ($schoolsCount > 0) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => "Yayasan tidak dapat dihapus karena masih memiliki {$schoolsCount} unit sekolah di bawahnya. Harap hapus atau pindahkan unit sekolah terkait terlebih dahulu.",
+            ], 422);
+        }
+
+        \DB::transaction(function () use ($foundation) {
+            // Nonaktifkan akun admin yayasan yang terkait
+            $foundation->users()->update(['is_active' => false]);
+            $foundation->delete();
+        });
 
         return response()->json([
             'status'  => 'success',
-            'message' => 'Foundation deleted successfully.',
+            'message' => "Yayasan {$foundation->name} berhasil dihapus dari sistem.",
         ]);
     }
 }

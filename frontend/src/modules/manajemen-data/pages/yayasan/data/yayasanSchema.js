@@ -22,7 +22,7 @@ export const fieldErrorMap = {
  */
 export const createYayasanSchema = ({ isEdit = false, hasExistingLogo = false } = {}) =>
   z.object({
-    nama: v.requiredString('Nama yayasan', { min: 2, max: 255 }),
+    nama: v.institutionName('Nama yayasan', { min: 2, max: 255 }),
     tanggal_berdiri: v.requiredDate('Tanggal berdiri'),
     status: v.requiredSelect('Status'),
     alamat: v.requiredString('Alamat lengkap', { min: 1, max: 500 }),

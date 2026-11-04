@@ -99,6 +99,21 @@ const filterValues = ref({
   status: 'all'
 })
 
+const formatDateDisplay = (dateStr) => {
+  if (!dateStr) return '-'
+  try {
+    const d = new Date(dateStr)
+    if (isNaN(d.getTime())) return dateStr
+    return d.toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    })
+  } catch {
+    return dateStr
+  }
+}
+
 const fetchSchools = async () => {
   isLoading.value = true
   try {
@@ -128,7 +143,7 @@ const fetchSchools = async () => {
       namaYayasan: item.foundation ? item.foundation.name : '-',
       jenjang: formatJenjang(item.level),
       kurikulum: item.curriculum?.name || '-',
-      tanggal_berdiri: item.established_date ? item.established_date.split('T')[0] : '-',
+      tanggal_berdiri: formatDateDisplay(item.established_date),
       alamat: item.address,
       alamatSekolah: item.address,
       email: item.email,
@@ -137,11 +152,11 @@ const fetchSchools = async () => {
       instagram: item.instagram,
       facebook: item.facebook,
       no_sk: item.decree_number,
-      tanggal_sk: item.decree_date ? item.decree_date.split('T')[0] : '-',
+      tanggal_sk: formatDateDisplay(item.decree_date),
       no_izin: item.permit_number,
-      tanggal_izin: item.permit_date ? item.permit_date.split('T')[0] : '-',
+      tanggal_izin: formatDateDisplay(item.permit_date),
       akreditasi: item.accreditation == 0 ? 'Belum Akreditasi' : item.accreditation,
-      tanggal_akreditasi: item.accreditation_date ? item.accreditation_date.split('T')[0] : '-',
+      tanggal_akreditasi: formatDateDisplay(item.accreditation_date),
       no_akreditasi: item.accreditation_number,
       status: item.status === 'active' ? 'Aktif' : (item.status === 'inactive' ? 'Nonaktif' : 'Trial'),
       foto: getPhotoUrl(item.logo) || '/defaults/sd/logo.png',

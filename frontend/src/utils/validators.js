@@ -20,6 +20,43 @@ export const v = {
     ),
 
   /**
+   * Nama institusi / yayasan / sekolah (hanya boleh huruf, angka, spasi, dan tanda baca umum seperti . , - & / ( ) ' " — tidak boleh tag HTML atau skrip).
+   */
+  institutionName: (label, { min = 2, max = 255 } = {}) =>
+    z.preprocess(
+      toTrimmedString,
+      z.string().superRefine((val, ctx) => {
+        if (!val) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `${label} wajib diisi`
+          })
+          return
+        }
+        if (/[<>{}[\]\\]/.test(val) || !/^[a-zA-Z0-9À-ÿ\s.,&'/()"-]+$/.test(val)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `${label} tidak boleh mengandung tag HTML atau karakter khusus tidak valid`
+          })
+          return
+        }
+        if (val.length < min) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `${label} minimal ${min} karakter`
+          })
+          return
+        }
+        if (val.length > max) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `${label} maksimal ${max} karakter`
+          })
+        }
+      })
+    ),
+
+  /**
    * String opsional (boleh kosong / null / undefined).
    */
   optionalString: ({ max = 255 } = {}) =>
