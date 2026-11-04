@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { v } from '@/utils/validators'
 
 export const kelasSchema = z.object({
+  academic_year_id: v.requiredSelect('Tahun ajaran'),
   name: v.requiredString('Nama kelas'),
   grade: v.requiredSelect('Tingkat kelas'),
   major: v.optionalString({ max: 100 }),

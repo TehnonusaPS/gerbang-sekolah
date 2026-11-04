@@ -40,7 +40,7 @@ class ClassroomController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $query = Classroom::with(['homeroomTeacher'])->withCount('students');
+        $query = Classroom::with(['homeroomTeacher', 'academicYear'])->withCount('students');
 
         if ($user->isSuperAdmin()) {
             if ($request->has('school_id')) {
@@ -64,6 +64,9 @@ class ClassroomController extends Controller
         if ($request->has('status') && $request->status !== 'all') {
             $query->where('status', $request->input('status'));
         }
+        if ($request->has('academic_year_id') && $request->academic_year_id !== 'all') {
+            $query->where('academic_year_id', $request->input('academic_year_id'));
+        }
         if ($request->has('search')) {
             $search = $request->input('search');
             $query->where('name', 'like', "%{$search}%");
@@ -73,18 +76,20 @@ class ClassroomController extends Controller
 
         $formatted = $classrooms->map(function ($item) {
             return [
-                'id'               => $item->id,
-                'name'             => $item->name,
-                'grade'            => $item->grade,
-                'major'            => $item->major,
-                'room'             => $item->room,
-                'capacity'         => $item->capacity,
-                'students_count'   => $item->students_count,
-                'status'           => $item->status,
-                'homeroom_teacher' => $item->homeroomTeacher ? $item->homeroomTeacher->name : null,
-                'homeroom_teacher_id' => $item->homeroom_teacher_id,
-                'school_id'        => $item->school_id,
-                'academic_year_id' => $item->academic_year_id,
+                'id'                     => $item->id,
+                'name'                   => $item->name,
+                'grade'                  => $item->grade,
+                'major'                  => $item->major,
+                'room'                   => $item->room,
+                'capacity'               => $item->capacity,
+                'students_count'         => $item->students_count,
+                'status'                 => $item->status,
+                'homeroom_teacher'       => $item->homeroomTeacher ? $item->homeroomTeacher->name : null,
+                'homeroom_teacher_id'    => $item->homeroom_teacher_id,
+                'school_id'              => $item->school_id,
+                'academic_year_id'       => $item->academic_year_id,
+                'academic_year_name'     => $item->academicYear ? $item->academicYear->name : null,
+                'academic_year_semester' => $item->academicYear ? $item->academicYear->semester : null,
             ];
         });
 
@@ -222,8 +227,10 @@ class ClassroomController extends Controller
                 'status'           => $classroom->status,
                 'homeroom_teacher' => $classroom->homeroomTeacher ? $classroom->homeroomTeacher->name : null,
                 'homeroom_teacher_id' => $classroom->homeroom_teacher_id,
-                'school_id'        => $classroom->school_id,
-                'academic_year_id' => $classroom->academic_year_id,
+                'school_id'              => $classroom->school_id,
+                'academic_year_id'       => $classroom->academic_year_id,
+                'academic_year_name'     => $classroom->academicYear ? $classroom->academicYear->name : null,
+                'academic_year_semester' => $classroom->academicYear ? $classroom->academicYear->semester : null,
             ],
         ]);
     }

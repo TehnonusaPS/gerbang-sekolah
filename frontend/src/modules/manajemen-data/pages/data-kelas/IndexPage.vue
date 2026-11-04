@@ -12,6 +12,7 @@ import KelasTable from './components/KelasTable.vue'
 import KelasForm from './components/KelasForm.vue'
 import router from '@/router/index.js'
 import { getClassrooms, createClassroom, updateClassroom, deleteClassroom, getTeachers } from '@/services/managementService'
+import { fetchAllAcademicYears } from '@/services/academicYearService'
 import { useZodForm } from '@/composables/useZodForm'
 import { kelasSchema } from './data/kelasSchema'
 
@@ -55,9 +56,42 @@ const fetchTeachers = async () => {
   }
 }
 
+// --- Academic Years ---
+const rawAcademicYears = ref([])
+
+const fetchAcademicYears = async () => {
+  try {
+    const res = await fetchAllAcademicYears()
+    rawAcademicYears.value = res.data || []
+  } catch (err) {
+    console.error('Gagal memuat tahun ajaran:', err)
+  }
+}
+
+const academicYearOptions = computed(() => {
+  const map = new Map()
+  rawAcademicYears.value.forEach(item => {
+    if (!map.has(item.name) || item.is_active) {
+      map.set(item.name, {
+        label: `${item.name}${item.is_active ? ' (Aktif)' : ''}`,
+        value: String(item.id),
+        isActive: Boolean(item.is_active)
+      })
+    }
+  })
+  return Array.from(map.values())
+})
+
+const defaultAcademicYearId = computed(() => {
+  const active = academicYearOptions.value.find(o => o.isActive)
+  if (active) return active.value
+  return academicYearOptions.value[0]?.value || ''
+})
+
 onMounted(() => {
   fetchClassrooms()
   fetchTeachers()
+  fetchAcademicYears()
 })
 
 // --- Form Sheet State & Methods ---
@@ -65,6 +99,7 @@ const isFormSheetOpen = ref(false)
 const isEditMode = ref(false)
 const formItem = ref({
   id: '',
+  academic_year_id: '',
   name: '',
   grade: '',
   major: '',
@@ -87,6 +122,7 @@ const handleCreate = () => {
   clearErrors()
   formItem.value = {
     id: '',
+    academic_year_id: defaultAcademicYearId.value,
     name: '',
     grade: '',
     major: '',
@@ -105,6 +141,7 @@ const handleEdit = (item) => {
   clearErrors()
   formItem.value = {
     ...item,
+    academic_year_id: item.academic_year_id ? String(item.academic_year_id) : (defaultAcademicYearId.value || ''),
     grade: item.grade != null ? String(item.grade) : '',
     homeroom_teacher_id: item.homeroom_teacher_id != null
       ? String(item.homeroom_teacher_id)
@@ -114,7 +151,13 @@ const handleEdit = (item) => {
 }
 
 const isSaving = ref(false)
+const selectedYearLabel = computed(() => {
+  const found = academicYearOptions.value.find(o => String(o.value) === String(formItem.value.academic_year_id))
+  return found ? found.label : '-'
+})
+
 const saveSummary = computed(() => [
+  { label: 'Tahun Ajaran', value: selectedYearLabel.value },
   { label: 'Nama Kelas', value: formItem.value.name },
   { label: 'Tingkat', value: formItem.value.grade ? `Kelas ${formItem.value.grade}` : '-' },
   { label: 'Kapasitas', value: formItem.value.capacity ? `${formItem.value.capacity} Siswa` : '-' }
@@ -176,6 +219,7 @@ const detailSections = computed(() => {
       id: 'info',
       title: 'Informasi Kelas',
       fields: [
+        { label: 'Tahun Ajaran', value: item.academic_year_name || '-' },
         { label: 'Nama Kelas', value: item.name },
         { label: 'Tingkat', value: `Kelas ${item.grade}` },
         { label: 'Jurusan / Program', value: item.major || '-' },
@@ -237,6 +281,7 @@ const rowActions = [
     <KelasTable 
       :items="kelasList"
       :loading="isLoading"
+      :academic-year-options="academicYearOptions"
       @create="handleCreate"
       @delete="handleDelete"
       :rowActions="rowActions"
@@ -265,7 +310,12 @@ const rowActions = [
         </SheetHeader>
 
         <div class="flex-1 overflow-y-auto py-6 pr-1 space-y-6 no-scrollbar">
-          <KelasForm :form="formItem" :errors="formErrors" :teacher-options="teacherOptions"/>
+          <KelasForm
+            :form="formItem"
+            :errors="formErrors"
+            :teacher-options="teacherOptions"
+            :academic-year-options="academicYearOptions"
+          />
         </div>
 
         <FormFooter

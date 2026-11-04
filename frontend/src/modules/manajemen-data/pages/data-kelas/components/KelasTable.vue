@@ -16,6 +16,10 @@ const props = defineProps({
     type: Array,
     required: true
   },
+  academicYearOptions: {
+    type: Array,
+    default: () => []
+  },
   loading: {
     type: Boolean,
     default: undefined
@@ -40,6 +44,15 @@ watch(
 
 const filters = computed(() => {
   const list = []
+
+  if (props.academicYearOptions && props.academicYearOptions.length > 0) {
+    list.push({
+      key: 'academic_year_id',
+      type: 'select',
+      placeholder: 'Semua Tahun Ajaran',
+      options: props.academicYearOptions
+    })
+  }
 
   list.push({
     key: 'grade',
@@ -84,6 +97,7 @@ const actions = computed(() => {
 const columns = computed(() => {
   return [
     { key: 'name', label: 'NAMA KELAS', class: 'font-bold text-foreground' },
+    { key: 'academic_year_name', label: 'TAHUN AJARAN' },
     { key: 'grade', label: 'TINGKAT' },
     { key: 'homeroom_teacher', label: 'WALI KELAS' },
     { key: 'room', label: 'RUANGAN' },
@@ -98,6 +112,7 @@ const filteredItems = computed(() => {
     const fSearch = filterValues.value.search?.toLowerCase() || ''
     const fGrade = filterValues.value.grade || 'all'
     const fStatus = filterValues.value.status || 'all'
+    const fAcademicYear = filterValues.value.academic_year_id || 'all'
 
     const matchesSearch =
       !fSearch ||
@@ -107,8 +122,12 @@ const filteredItems = computed(() => {
 
     const matchesGrade = fGrade === 'all' || String(item.grade) === String(fGrade)
     const matchesStatus = fStatus === 'all' || item.status === fStatus
+    const matchesAcademicYear =
+      fAcademicYear === 'all' ||
+      String(item.academic_year_id) === String(fAcademicYear) ||
+      String(item.academic_year_name) === String(fAcademicYear)
 
-    return matchesSearch && matchesGrade && matchesStatus
+    return matchesSearch && matchesGrade && matchesStatus && matchesAcademicYear
   })
 })
 
@@ -194,6 +213,13 @@ const tingkatOptions = computed(() => {
     @update:perPage="perPage = $event"
     @delete="(id, item) => emit('delete', id, item)"
   >
+    <!-- Custom Render untuk Kolom Tahun Ajaran -->
+    <template #cell-academic_year_name="{ item }">
+      <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-primary/10 text-primary font-mono">
+        {{ item.academic_year_name || '-' }}
+      </span>
+    </template>
+
     <!-- Custom Render untuk Kolom Wali Kelas -->
     <template #cell-homeroom_teacher="{ item }">
       <span

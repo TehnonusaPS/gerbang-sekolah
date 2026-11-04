@@ -24,8 +24,14 @@ defineProps({
   teacherOptions: {
     type: Array,
     default: () => []
+  },
+  academicYearOptions: {
+    type: Array,
+    default: () => []
   }
 })
+
+defineEmits(['create-academic-year'])
 
 const schoolLevel = computed(() => auth.user?.school?.level)
 
@@ -77,6 +83,15 @@ const isSMA = computed(() => {
         <AccordionTrigger class="text-sm font-semibold"> Informasi Kelas </AccordionTrigger>
         <AccordionContent class="space-y-4 pt-3">
           <div class="grid gap-4 grid-cols-1">
+            <FormSelect
+              v-model="form.academic_year_id"
+              label="Tahun Ajaran"
+              placeholder="Pilih tahun ajaran"
+              :options="academicYearOptions"
+              :error="errors.academic_year_id"
+              required
+            />
+
             <FormInput
               v-model="form.name"
               label="Nama Kelas"
