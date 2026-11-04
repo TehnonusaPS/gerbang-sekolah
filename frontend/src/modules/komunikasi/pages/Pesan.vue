@@ -13,8 +13,8 @@ const currentRole = computed(() => auth.user?.role)
 </script>
 
 <template>
-  <GuruPesan v-if="currentRole === 'guru'" />
-  <WaliKelasPesan v-else-if="currentRole === 'wali_kelas'" />
+  <WaliKelasPesan v-if="currentRole === 'guru' && auth.isWaliKelas" />
+  <GuruPesan v-else-if="currentRole === 'guru'" />
   <SiswaPesan v-else-if="currentRole === 'siswa'" />
   <OrangTuaPesan v-else-if="currentRole === 'orang_tua'" />
   <PlaceholderPage v-else />

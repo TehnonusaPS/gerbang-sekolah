@@ -429,27 +429,27 @@ class DatabaseSeeder extends Seeder
             // School 1 (SD) - 5 Teachers
             ['name' => 'Guru Pengajar', 'email' => 'guru@mail.com', 'role' => 'guru', 'position' => 'Guru MTK', 'gender' => 'male', 'school_index' => 0],
             ['name' => 'Guru Pengajar 2', 'email' => 'guru2@mail.com', 'role' => 'guru', 'position' => 'Guru IPA', 'gender' => 'female', 'school_index' => 0],
-            ['name' => 'Wali Kelas 1-A', 'email' => 'walikelas@mail.com', 'role' => 'wali_kelas', 'position' => 'Wali Kelas', 'gender' => 'female', 'school_index' => 0],
-            ['name' => 'Wali Kelas 1-B', 'email' => 'walikelas2@mail.com', 'role' => 'wali_kelas', 'position' => 'Wali Kelas', 'gender' => 'male', 'school_index' => 0],
+            ['name' => 'Wali Kelas 1-A', 'email' => 'walikelas@mail.com', 'role' => 'guru', 'position' => 'Wali Kelas', 'gender' => 'female', 'school_index' => 0],
+            ['name' => 'Wali Kelas 1-B', 'email' => 'walikelas2@mail.com', 'role' => 'guru', 'position' => 'Wali Kelas', 'gender' => 'male', 'school_index' => 0],
             ['name' => 'Guru Agama SD', 'email' => 'guru.sd5@mail.com', 'role' => 'guru', 'position' => 'Guru PAI', 'gender' => 'male', 'school_index' => 0],
 
             // School 2 (SMP) - 5 Teachers
-            ['name' => 'Guru SMP 1 (Wali 7-A)', 'email' => 'guru.smp1@mail.com', 'role' => 'wali_kelas', 'position' => 'Wali Kelas 7-A', 'gender' => 'female', 'school_index' => 1],
-            ['name' => 'Guru SMP 2 (Wali 7-B)', 'email' => 'guru.smp2@mail.com', 'role' => 'wali_kelas', 'position' => 'Wali Kelas 7-B', 'gender' => 'male', 'school_index' => 1],
+            ['name' => 'Guru SMP 1 (Wali 7-A)', 'email' => 'guru.smp1@mail.com', 'role' => 'guru', 'position' => 'Wali Kelas 7-A', 'gender' => 'female', 'school_index' => 1],
+            ['name' => 'Guru SMP 2 (Wali 7-B)', 'email' => 'guru.smp2@mail.com', 'role' => 'guru', 'position' => 'Wali Kelas 7-B', 'gender' => 'male', 'school_index' => 1],
             ['name' => 'Guru Matematika SMP', 'email' => 'guru.smp3@mail.com', 'role' => 'guru', 'position' => 'Guru MTK', 'gender' => 'male', 'school_index' => 1],
             ['name' => 'Guru Bahasa Inggris SMP', 'email' => 'guru.smp4@mail.com', 'role' => 'guru', 'position' => 'Guru BIG', 'gender' => 'female', 'school_index' => 1],
             ['name' => 'Guru IPA SMP', 'email' => 'guru.smp5@mail.com', 'role' => 'guru', 'position' => 'Guru IPA', 'gender' => 'female', 'school_index' => 1],
 
             // School 3 (SMA) - 5 Teachers
-            ['name' => 'Guru SMA 1 (Wali 10-MIPA)', 'email' => 'guru.sma1@mail.com', 'role' => 'wali_kelas', 'position' => 'Wali Kelas 10-MIPA', 'gender' => 'male', 'school_index' => 2],
-            ['name' => 'Guru SMA 2 (Wali 10-IPS)', 'email' => 'guru.sma2@mail.com', 'role' => 'wali_kelas', 'position' => 'Wali Kelas 10-IPS', 'gender' => 'female', 'school_index' => 2],
+            ['name' => 'Guru SMA 1 (Wali 10-MIPA)', 'email' => 'guru.sma1@mail.com', 'role' => 'guru', 'position' => 'Wali Kelas 10-MIPA', 'gender' => 'male', 'school_index' => 2],
+            ['name' => 'Guru SMA 2 (Wali 10-IPS)', 'email' => 'guru.sma2@mail.com', 'role' => 'guru', 'position' => 'Wali Kelas 10-IPS', 'gender' => 'female', 'school_index' => 2],
             ['name' => 'Guru Fisika SMA', 'email' => 'guru.sma3@mail.com', 'role' => 'guru', 'position' => 'Guru Fisika', 'gender' => 'male', 'school_index' => 2],
             ['name' => 'Guru Kimia SMA', 'email' => 'guru.sma4@mail.com', 'role' => 'guru', 'position' => 'Guru Kimia', 'gender' => 'female', 'school_index' => 2],
             ['name' => 'Guru Biologi SMA', 'email' => 'guru.sma5@mail.com', 'role' => 'guru', 'position' => 'Guru Biologi', 'gender' => 'male', 'school_index' => 2],
 
             // School 4 (SMK) - 5 Teachers
-            ['name' => 'Guru SMK 1 (Wali 10-TKJ)', 'email' => 'guru.smk1@mail.com', 'role' => 'wali_kelas', 'position' => 'Wali Kelas 10-TKJ', 'gender' => 'female', 'school_index' => 3],
-            ['name' => 'Guru SMK 2 (Wali 10-RPL)', 'email' => 'guru.smk2@mail.com', 'role' => 'wali_kelas', 'position' => 'Wali Kelas 10-RPL', 'gender' => 'male', 'school_index' => 3],
+            ['name' => 'Guru SMK 1 (Wali 10-TKJ)', 'email' => 'guru.smk1@mail.com', 'role' => 'guru', 'position' => 'Wali Kelas 10-TKJ', 'gender' => 'female', 'school_index' => 3],
+            ['name' => 'Guru SMK 2 (Wali 10-RPL)', 'email' => 'guru.smk2@mail.com', 'role' => 'guru', 'position' => 'Wali Kelas 10-RPL', 'gender' => 'male', 'school_index' => 3],
             ['name' => 'Guru Produktif RPL', 'email' => 'guru.smk3@mail.com', 'role' => 'guru', 'position' => 'Guru RPL', 'gender' => 'male', 'school_index' => 3],
             ['name' => 'Guru Produktif TKJ', 'email' => 'guru.smk4@mail.com', 'role' => 'guru', 'position' => 'Guru TKJ', 'gender' => 'female', 'school_index' => 3],
             ['name' => 'Guru Kewirausahaan SMK', 'email' => 'guru.smk5@mail.com', 'role' => 'guru', 'position' => 'Guru KWU', 'gender' => 'female', 'school_index' => 3],

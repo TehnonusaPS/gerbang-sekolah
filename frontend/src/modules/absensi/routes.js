@@ -30,14 +30,13 @@ export default [
     path: 'absensi/guru-staff',
     meta: {
       requiresAuth: true,
-      roles: ['admin_sekolah', 'guru', 'wali_kelas', 'kepala_sekolah', 'tata_usaha']
+      roles: ['admin_sekolah', 'guru', 'kepala_sekolah', 'tata_usaha']
     },
     redirect: () => {
       const auth = useAuthStore()
       const role = auth.user?.role
       if (role === 'admin_sekolah') return '/absensi/admin-sekolah/absensi-diri'
       if (role === 'guru') return '/absensi/guru/absensi-diri'
-      if (role === 'wali_kelas') return '/absensi/wali-kelas/absensi-diri'
       if (role === 'kepala_sekolah') return '/absensi/kepala-sekolah/absensi-diri'
       if (role === 'tata_usaha') return '/absensi/tata-usaha/absensi-diri'
       return '/dashboard'
@@ -67,14 +66,7 @@ export default [
   },
   {
     path: 'absensi/wali-kelas/absensi-diri',
-    component: () => import('./pages/wali-kelas/absensi-diri/index.vue'),
-    meta: {
-      requiresAuth: true,
-      roles: ['wali_kelas'],
-      title: 'Absensi Guru',
-      parent: 'Absensi',
-      description: 'Mandiri mencatat kehadiran menggunakan kamera.'
-    }
+    redirect: '/absensi/guru/absensi-diri'
   },
   {
     path: 'absensi/kepala-sekolah/absensi-diri',
@@ -153,13 +145,12 @@ export default [
     path: 'absensi/input',
     meta: {
       requiresAuth: true,
-      roles: ['guru', 'wali_kelas']
+      roles: ['guru']
     },
     redirect: () => {
       const auth = useAuthStore()
-      if (auth.user?.role === 'guru') return '/absensi/guru/input-kehadiran'
-      if (auth.user?.role === 'wali_kelas') return '/absensi/wali-kelas/input-kehadiran'
-      return '/dashboard'
+      if (auth.isWaliKelas) return '/absensi/wali-kelas/input-kehadiran'
+      return '/absensi/guru/input-kehadiran'
     }
   },
   {
@@ -178,7 +169,8 @@ export default [
     component: () => import('./pages/wali-kelas/input-kehadiran/index.vue'),
     meta: {
       requiresAuth: true,
-      roles: ['wali_kelas'],
+      roles: ['guru'],
+      requiresWaliKelas: true,
       title: 'Kehadiran',
       parent: 'Absensi',
       description: 'Isi lembar kehadiran siswa secara harian dan periodik.'
@@ -232,14 +224,7 @@ export default [
   },
   {
     path: 'absensi/wali-kelas/izin-cuti',
-    component: () => import('./pages/wali-kelas/izin-cuti/index.vue'),
-    meta: {
-      requiresAuth: true,
-      roles: ['wali_kelas'],
-      title: 'Pengajuan Izin / Cuti',
-      parent: 'Absensi',
-      description: 'Ajukan izin atau cuti kerja.'
-    }
+    redirect: '/absensi/guru/izin-cuti'
   },
   {
     path: 'absensi/kepala-sekolah/izin-cuti',

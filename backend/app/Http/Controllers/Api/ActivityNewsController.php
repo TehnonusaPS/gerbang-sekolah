@@ -123,9 +123,9 @@ class ActivityNewsController extends Controller
             'publish_date'  => $request->tanggal,
         ]);
 
-        // Dispatch notifications to Guru, Wali Kelas, Siswa of this school
+        // Dispatch notifications to Guru, Siswa of this school
         $schoolUsers = User::whereHas('role', function ($q) {
-            $q->whereIn('name', ['guru', 'wali_kelas', 'siswa']);
+            $q->whereIn('name', ['guru', 'siswa']);
         })->where('school_id', $schoolId)->get();
 
         // Dispatch notifications to Orang Tua of children in this school

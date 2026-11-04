@@ -58,8 +58,7 @@ const topbarDelay = computed(() => isLoginTransition.value ? 1200 : 200)
 
 const chatRoute = computed(() => {
   const role = auth.user?.role
-  if (role === 'guru') return '/komunikasi/guru/chat'
-  if (role === 'wali_kelas') return '/komunikasi/wali-kelas/chat'
+  if (role === 'guru') return auth.isWaliKelas ? '/komunikasi/wali-kelas/chat' : '/komunikasi/guru/chat'
   if (role === 'siswa') return '/komunikasi/siswa/chat'
   if (role === 'orang_tua') return '/komunikasi/orang-tua/chat'
   return '/komunikasi/chat'
@@ -319,8 +318,8 @@ const handleCrumbClick = (e, path) => {
               />
             </div>
 
-            <!-- Chat Icon (Guru, Siswa, Wali Kelas, & Orang Tua) -->
-            <div v-if="auth.user?.role === 'guru' || auth.user?.role === 'siswa' || auth.user?.role === 'wali_kelas' || auth.user?.role === 'orang_tua'" class="relative">
+            <!-- Chat Icon (Guru, Siswa, & Orang Tua) -->
+            <div v-if="auth.user?.role === 'guru' || auth.user?.role === 'siswa' || auth.user?.role === 'orang_tua'" class="relative">
               <Button
                 variant="ghost"
                 size="icon"

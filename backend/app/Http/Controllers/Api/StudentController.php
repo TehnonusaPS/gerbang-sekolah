@@ -342,7 +342,7 @@ class StudentController extends Controller
             if ($request->has('school_id')) {
                 $query->where('school_id', $request->input('school_id'));
             }
-        } else { // admin_sekolah, kepala_sekolah, tata_usaha, wali_kelas
+        } else { // admin_sekolah, kepala_sekolah, tata_usaha, guru
             $query->where('school_id', $user->school_id);
         }
 
@@ -421,7 +421,7 @@ class StudentController extends Controller
             if ($request->has('school_id')) {
                 $statsQuery->where('school_id', $request->input('school_id'));
             }
-        } else { // admin_sekolah, kepala_sekolah, tata_usaha, wali_kelas
+        } else { // admin_sekolah, kepala_sekolah, tata_usaha, guru
             $statsQuery->where('school_id', $user->school_id);
         }
 

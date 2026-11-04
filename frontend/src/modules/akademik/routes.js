@@ -134,7 +134,7 @@ export default [
     component: () => import('./pages/KalenderAkademikReadonly.vue'),
     meta: {
       requiresAuth: true,
-      roles: ['guru', 'wali_kelas', 'orang_tua'],
+      roles: ['guru', 'orang_tua'],
       title: 'Kalender Akademik',
       parent: 'Akademik'
     }

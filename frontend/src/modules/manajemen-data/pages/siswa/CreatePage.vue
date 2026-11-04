@@ -17,7 +17,7 @@ import { createSiswa } from '@/services/siswaService'
 
 const auth = useAuthStore()
 const isSuperAdmin = computed(() => auth.user?.role === 'superadmin')
-const isWaliKelas = computed(() => auth.user?.role === 'wali_kelas')
+const isWaliKelas = computed(() => Boolean(auth.user?.is_wali_kelas))
 
 const yayasanOptions = ref([])
 const sekolahOptions = ref([])

@@ -18,7 +18,7 @@ import { Users, UserCheck, UserRound, UserRoundCheck } from 'lucide-vue-next'
 
 const auth = useAuthStore()
 const isSuperAdmin = computed(() => auth.user?.role === 'superadmin')
-const isWaliKelas = computed(() => auth.user?.role === 'wali_kelas')
+const isWaliKelas = computed(() => Boolean(auth.user?.is_wali_kelas))
 const isKepalaSekolah = computed(() => auth.user?.role === 'kepala_sekolah')
 
 const tableColumns = computed(() =>

@@ -255,7 +255,7 @@ onUnmounted(() => {
     <!-- ── Header ── -->
     <PageHeader
       title="Absensi Mandiri Staff"
-      :description="`Selamat datang kembali, ${authStore.user?.name ?? 'User'} (${authStore.user?.role === 'guru' ? 'Guru Pengajar' : authStore.user?.role === 'wali_kelas' ? 'Wali Kelas' : authStore.user?.role === 'kepala_sekolah' ? 'Kepala Sekolah' : authStore.user?.role === 'tata_usaha' ? 'Tata Usaha' : 'Admin Sekolah'})`"
+      :description="`Selamat datang kembali, ${authStore.user?.name ?? 'User'} (${authStore.user?.role === 'guru' ? (authStore.isWaliKelas ? 'Wali Kelas / Guru' : 'Guru Pengajar') : authStore.user?.role === 'kepala_sekolah' ? 'Kepala Sekolah' : authStore.user?.role === 'tata_usaha' ? 'Tata Usaha' : 'Admin Sekolah'})`"
     />
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">

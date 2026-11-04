@@ -60,12 +60,12 @@ export const navMain = [
       { 
         title: 'Siswa', 
         url: '/manajemen-data/siswa',
-        roles: ['superadmin', 'admin_sekolah', 'tata_usaha', 'kepala_sekolah', 'wali_kelas']
+        roles: ['superadmin', 'admin_sekolah', 'tata_usaha', 'kepala_sekolah', 'guru']
       },
       { 
         title: 'Mata Pelajaran', 
         url: '/manajemen-data/mata-pelajaran', 
-        excludeRoles: ['tata_usaha', 'superadmin', 'admin_yayasan', 'wali_kelas'] 
+        excludeRoles: ['tata_usaha', 'superadmin', 'admin_yayasan'] 
       },
       { 
         title: 'Jadwal Pelajaran', 
@@ -90,12 +90,12 @@ export const navMain = [
     icon: GraduationCap,
     excludeRoles: ['superadmin', 'admin_yayasan', 'tata_usaha'],
     items: [
-      { title: 'Kalender Sekolah', url: '/akademik/jadwal', excludeRoles: ['kepala_sekolah', 'admin_sekolah', 'wali_kelas', 'orang_tua'] },
-      { title: 'Nilai & Rapor', url: '/akademik/nilai', excludeRoles: ['kepala_sekolah', 'admin_sekolah', 'guru', 'wali_kelas', 'siswa', 'orang_tua'] },
+      { title: 'Kalender Sekolah', url: '/akademik/jadwal', excludeRoles: ['kepala_sekolah', 'admin_sekolah', 'orang_tua'] },
+      { title: 'Nilai & Rapor', url: '/akademik/nilai', excludeRoles: ['kepala_sekolah', 'admin_sekolah', 'guru', 'siswa', 'orang_tua'] },
       { title: 'Ujian & Penilaian', url: '/akademik/ujian', roles: ['admin_sekolah', 'superadmin', 'kepala_sekolah'] },
-      { title: 'Kurikulum', url: '/akademik/kurikulum', excludeRoles: ['kepala_sekolah', 'admin_sekolah', 'guru', 'wali_kelas', 'siswa', 'orang_tua'] },
-      { title: 'Mata Pelajaran', url: '/akademik/mapel', excludeRoles: ['kepala_sekolah', 'admin_sekolah', 'wali_kelas', 'siswa', 'orang_tua'] },
-      { title: 'Ekstrakurikuler', url: '/akademik/ekskul', excludeRoles: ['kepala_sekolah', 'admin_sekolah', 'guru', 'wali_kelas', 'siswa', 'orang_tua'] },
+      { title: 'Kurikulum', url: '/akademik/kurikulum', excludeRoles: ['kepala_sekolah', 'admin_sekolah', 'guru', 'siswa', 'orang_tua'] },
+      { title: 'Mata Pelajaran', url: '/akademik/mapel', excludeRoles: ['kepala_sekolah', 'admin_sekolah', 'siswa', 'orang_tua'] },
+      { title: 'Ekstrakurikuler', url: '/akademik/ekskul', excludeRoles: ['kepala_sekolah', 'admin_sekolah', 'guru', 'siswa', 'orang_tua'] },
       {
         title: 'Kalender',
         url: '/akademik/kalender',
@@ -142,7 +142,7 @@ export const navMain = [
     title: 'Keuangan',
     url: '/keuangan',
     icon: Wallet,
-    excludeRoles: ['kepala_sekolah', 'guru', 'wali_kelas'],
+    excludeRoles: ['kepala_sekolah', 'guru'],
     items: [
       { title: 'SPP Siswa', url: '/keuangan/spp', excludeRoles: ['tata_usaha', 'superadmin', 'admin_yayasan', 'admin_sekolah', 'siswa', 'orang_tua'] },
       { 
@@ -215,17 +215,12 @@ export const navMain = [
       {
         title: 'Absensi Guru',
         url: '/absensi/guru-staff',
-        roles: ['guru', 'wali_kelas']
+        roles: ['guru']
       },
       {
         title: 'Pengajuan Izin/Cuti',
         url: '/absensi/guru/izin-cuti',
         roles: ['guru']
-      },
-      {
-        title: 'Pengajuan Izin/Cuti',
-        url: '/absensi/wali-kelas/izin-cuti',
-        roles: ['wali_kelas']
       },
       {
         title: 'Pengajuan Izin/Cuti',
@@ -240,7 +235,7 @@ export const navMain = [
       {
         title: 'Kehadiran',
         url: '/absensi/input',
-        roles: ['guru', 'wali_kelas']
+        roles: ['guru']
       },
       {
         title: 'Rekap Absensi',
@@ -260,11 +255,11 @@ export const navMain = [
     icon: MessageSquare,
     excludeRoles: ['superadmin'],
     items: [
-      { title: 'Pengumuman', url: '/komunikasi/pengumuman', excludeRoles: ['tata_usaha', 'orang_tua', 'guru', 'wali_kelas', 'siswa'] },
+      { title: 'Pengumuman', url: '/komunikasi/pengumuman', excludeRoles: ['tata_usaha', 'orang_tua', 'guru', 'siswa'] },
       { title: 'Berita Kegiatan', url: '/komunikasi/berita-kegiatan', excludeRoles: ['tata_usaha', 'admin_yayasan'] },
-      { title: 'Feedback', url: '/komunikasi/feedback', excludeRoles: ['tata_usaha', 'admin_yayasan', 'guru', 'wali_kelas', 'siswa'] },
-      { title: 'Pesan Internal', url: '/komunikasi/pesan', excludeRoles: ['tata_usaha', 'admin_yayasan', 'kepala_sekolah', 'admin_sekolah', 'orang_tua', 'guru', 'wali_kelas', 'siswa'] },
-      { title: 'Notifikasi', url: '/komunikasi/notifikasi', excludeRoles: ['tata_usaha', 'admin_yayasan', 'kepala_sekolah', 'admin_sekolah', 'orang_tua', 'guru', 'wali_kelas', 'siswa'] },
+      { title: 'Feedback', url: '/komunikasi/feedback', excludeRoles: ['tata_usaha', 'admin_yayasan', 'guru', 'siswa'] },
+      { title: 'Pesan Internal', url: '/komunikasi/pesan', excludeRoles: ['tata_usaha', 'admin_yayasan', 'kepala_sekolah', 'admin_sekolah', 'orang_tua', 'guru', 'siswa'] },
+      { title: 'Notifikasi', url: '/komunikasi/notifikasi', excludeRoles: ['tata_usaha', 'admin_yayasan', 'kepala_sekolah', 'admin_sekolah', 'orang_tua', 'guru', 'siswa'] },
       { title: 'Keterangan Aktif', url: '/komunikasi/persuratan/aktif', roles: ['tata_usaha'] },
       {
         title: 'Surat Dispensasi',
@@ -285,7 +280,7 @@ export const navMain = [
     icon: FileBarChart,
     excludeRoles: ['siswa'],
     items: [
-      { title: 'Akademik', url: '/laporan/akademik', excludeRoles: ['tata_usaha', 'superadmin', 'admin_yayasan', 'kepala_sekolah', 'admin_sekolah', 'guru', 'wali_kelas', 'orang_tua'] },
+      { title: 'Akademik', url: '/laporan/akademik', excludeRoles: ['tata_usaha', 'superadmin', 'admin_yayasan', 'kepala_sekolah', 'admin_sekolah', 'guru', 'orang_tua'] },
       { 
         title: 'Akademik', 
         url: '/laporan/akademik',
@@ -296,7 +291,7 @@ export const navMain = [
         url: '/laporan/akademik',
         roles: ['kepala_sekolah', 'admin_sekolah']
       },
-      { title: 'Keuangan', url: '/laporan/keuangan', excludeRoles: ['tata_usaha', 'superadmin', 'admin_yayasan', 'kepala_sekolah', 'admin_sekolah', 'guru', 'wali_kelas', 'orang_tua'] },
+      { title: 'Keuangan', url: '/laporan/keuangan', excludeRoles: ['tata_usaha', 'superadmin', 'admin_yayasan', 'kepala_sekolah', 'admin_sekolah', 'guru', 'orang_tua'] },
       { 
         title: 'Keuangan', 
         url: '/laporan/keuangan',
@@ -307,27 +302,28 @@ export const navMain = [
         url: '/laporan/keuangan',
         roles: ['kepala_sekolah', 'admin_sekolah']
       },
-      { title: 'Absensi', url: '/laporan/absensi', excludeRoles: ['tata_usaha', 'superadmin', 'admin_yayasan', 'kepala_sekolah', 'admin_sekolah', 'guru', 'wali_kelas', 'orang_tua'] },
+      { title: 'Absensi', url: '/laporan/absensi', excludeRoles: ['tata_usaha', 'superadmin', 'admin_yayasan', 'kepala_sekolah', 'admin_sekolah', 'guru', 'orang_tua'] },
       { 
         title: 'Absensi', 
         url: '/laporan/absensi',
         roles: ['tata_usaha']
       },
-      { title: 'Ekspor Data', url: '/laporan/ekspor', excludeRoles: ['tata_usaha', 'superadmin', 'admin_yayasan', 'kepala_sekolah', 'admin_sekolah', 'guru', 'wali_kelas', 'orang_tua'] },
+      { title: 'Ekspor Data', url: '/laporan/ekspor', excludeRoles: ['tata_usaha', 'superadmin', 'admin_yayasan', 'kepala_sekolah', 'admin_sekolah', 'guru', 'orang_tua'] },
       {
         title: 'Laporan Nilai',
         url: '/laporan/nilai',
-        roles: ['guru', 'wali_kelas']
+        roles: ['guru']
       },
       {
         title: 'Kehadiran',
         url: '/laporan/kehadiran-siswa',
-        roles: ['guru', 'wali_kelas']
+        roles: ['guru']
       },
       {
         title: 'Raport Siswa',
         url: '/laporan/raport',
-        roles: ['wali_kelas']
+        roles: ['guru'],
+        requiresWaliKelas: true
       },
       {
         title: 'Perkembangan',
@@ -375,7 +371,7 @@ export const navMain = [
     title: 'Lainnya',
     url: '/lainnya',
     icon: MoreHorizontal,
-    excludeRoles: ['tata_usaha', 'guru', 'wali_kelas', 'siswa', 'orang_tua'],
+    excludeRoles: ['tata_usaha', 'guru', 'siswa', 'orang_tua'],
     items: [
       { title: 'Pengaturan Sekolah', url: '/lainnya/pengaturan', excludeRoles: ['superadmin', 'admin_yayasan', 'kepala_sekolah', 'admin_sekolah'] },
       { title: 'Pengguna', url: '/lainnya/pengguna', excludeRoles: ['superadmin', 'admin_yayasan', 'kepala_sekolah', 'admin_sekolah'] },

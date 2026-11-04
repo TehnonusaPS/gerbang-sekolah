@@ -21,8 +21,8 @@ const currentRole = computed(() => auth.user?.role)
   <KepalaSekolahNotif v-else-if="currentRole === 'kepala_sekolah'" />
   <AdminSekolahNotif v-else-if="currentRole === 'admin_sekolah'" />
   <TataUsahaNotif v-else-if="currentRole === 'tata_usaha'" />
+  <WaliKelasNotif v-else-if="currentRole === 'guru' && auth.isWaliKelas" />
   <GuruNotif v-else-if="currentRole === 'guru'" />
-  <WaliKelasNotif v-else-if="currentRole === 'wali_kelas'" />
   <SiswaNotif v-else-if="currentRole === 'siswa'" />
   <OrangTuaNotif v-else-if="currentRole === 'orang_tua'" />
   <PlaceholderPage v-else />

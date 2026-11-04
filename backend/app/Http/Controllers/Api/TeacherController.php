@@ -373,7 +373,7 @@ class TeacherController extends Controller
             $q->where('is_active', true);
         })->count();
         $guru = (clone $statsQuery)->whereHas('user.role', function ($q) {
-            $q->whereIn('name', ['guru', 'wali_kelas', 'kepala_sekolah']);
+            $q->whereIn('name', ['guru', 'kepala_sekolah']);
         })->count();
         $staff = (clone $statsQuery)->whereHas('user.role', function ($q) {
             $q->whereIn('name', ['tata_usaha', 'admin_sekolah', 'admin_yayasan']);

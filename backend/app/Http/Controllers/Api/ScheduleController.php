@@ -432,7 +432,7 @@ class ScheduleController extends Controller
     public function mySchedule(Request $request): JsonResponse
     {
         $user = $request->user();
-        if (!$user->hasAnyRole(['guru', 'wali_kelas'])) {
+        if (!$user->hasRole('guru')) {
             return response()->json(['status' => 'error', 'message' => 'Only teachers can access this.'], 403);
         }
 

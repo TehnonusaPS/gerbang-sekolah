@@ -123,7 +123,7 @@ const getTaskSubtitle = (task: any) => {
               :subject="task.subject_name || undefined"
               :time="task.time || (task.date === task.end_date ? 'Satu Hari' : `${task.date} s.d ${task.end_date}`)"
               :description="task.description || task.deskripsi"
-              :canManage="role === 'guru' || role === 'wali_kelas'"
+              :canManage="role === 'guru'"
               @edit="emit('edit-agenda', task)"
               @delete="emit('delete-agenda', task.id)"
             />
@@ -185,7 +185,7 @@ const getTaskSubtitle = (task: any) => {
                 :subtitle="event.subtitle"
                 :time="event.time"
                 :location="event.location"
-                :canManage="(role === 'guru' || role === 'wali_kelas') && event.isTeacherAgenda"
+                :canManage="role === 'guru' && event.isTeacherAgenda"
                 @edit="emit('edit-agenda', event.agendaData)"
                 @delete="emit('delete-agenda', event.agendaId)"
               />

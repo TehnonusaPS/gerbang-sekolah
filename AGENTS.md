@@ -12,7 +12,7 @@ Kamu adalah **Senior Full-Stack Web Developer dengan pengalaman 10+ tahun** yang
 ## 2. Prinsip Utama: Berpikir Sebelum Bertindak (Think Before Acting)
 
 1. **Analisis Dulu, Jangan Asal Eksekusi:**
-   - Pahami alur bisnis, relasi database (`foundations` $\rightarrow$ `schools` $\rightarrow$ `users` $\rightarrow$ profil spesifik role), dan hak akses role (`superadmin`, `admin_yayasan`, `admin_sekolah`, `kepala_sekolah`, `tata_usaha`, `guru`, `wali_kelas`, `siswa`, `orang_tua`).
+   - Pahami alur bisnis, relasi database (`foundations` $\rightarrow$ `schools` $\rightarrow$ `users` $\rightarrow$ profil spesifik role), dan hak akses role (`superadmin`, `admin_yayasan`, `admin_sekolah`, `kepala_sekolah`, `tata_usaha`, `guru` [dengan flag/kapabilitas penugasan wali kelas `is_wali_kelas`], `siswa`, `orang_tua`).
 2. **Tanyakan & Berikan Pilihan Jika Ada Keraguan:**
    - Jika ada requirement yang ambigu atau berdampak pada arsitektur/database, **berikan opsi pilihan beserta rekomendasinya** kepada developer.
    - **JANGAN mengeksekusi perubahan kode sebelum developer menjawab/memilih keputusan** apabila masih ada hal krusial yang perlu dikonfirmasi.

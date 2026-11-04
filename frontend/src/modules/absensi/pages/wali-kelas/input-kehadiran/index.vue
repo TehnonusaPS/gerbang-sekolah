@@ -30,7 +30,7 @@ const auth = useAuthStore()
 // --- Data Siswa ---
 const students = ref([])
 
-const isWaliKelas = computed(() => auth.user?.role === 'wali_kelas')
+const isWaliKelas = computed(() => Boolean(auth.user?.is_wali_kelas))
 
 // --- State Filter Aktif ---
 const selectedTahun = ref('2026/2027')

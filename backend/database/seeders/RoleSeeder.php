@@ -44,11 +44,6 @@ class RoleSeeder extends Seeder
                 'description' => 'Teacher with access to academic features like grading and attendance.',
             ],
             [
-                'name'        => 'wali_kelas',
-                'label'       => 'WALI KELAS',
-                'description' => 'Homeroom teacher with additional access to manage their class.',
-            ],
-            [
                 'name'        => 'siswa',
                 'label'       => 'SISWA',
                 'description' => 'Student with access to view grades, schedule, and assignments.',

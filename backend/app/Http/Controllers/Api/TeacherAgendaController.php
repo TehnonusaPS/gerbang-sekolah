@@ -68,7 +68,7 @@ class TeacherAgendaController extends Controller
                     });
                 }
             }
-        } elseif ($user->hasRole('guru') || $user->hasRole('wali_kelas')) {
+        } elseif ($user->hasRole('guru')) {
             // Show agendas created by this teacher or assigned to their school
             $query->where('teacher_id', $user->id);
         }

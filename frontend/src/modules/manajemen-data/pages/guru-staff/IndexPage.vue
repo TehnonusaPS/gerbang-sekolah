@@ -23,7 +23,7 @@ const stats = computed(() => {
   const list = tableItems.value || []
   const totalVal = list.length
   const aktifVal = list.filter(item => item.status_aktif === 'Aktif').length
-  const guruVal = list.filter(item => ['guru', 'wali_kelas', 'kepala_sekolah'].includes(item.role)).length
+  const guruVal = list.filter(item => ['guru', 'kepala_sekolah'].includes(item.role)).length
   const staffVal = list.filter(item => ['tata_usaha', 'admin_sekolah', 'admin_yayasan'].includes(item.role)).length
 
   const guruProgress = totalVal > 0 ? Math.round((guruVal / totalVal) * 100) : 0

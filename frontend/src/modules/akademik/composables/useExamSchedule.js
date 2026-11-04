@@ -12,7 +12,7 @@ export function useExamSchedule() {
   const canEditExams = computed(() => ['admin_sekolah', 'superadmin'].includes(userRole.value))
   const canViewExams = computed(() => ['kepala_sekolah'].includes(userRole.value))
   const canManageExams = computed(() => canEditExams.value || canViewExams.value)
-  const isTeacherOrStaff = computed(() => ['guru', 'wali_kelas'].includes(userRole.value))
+  const isTeacherOrStaff = computed(() => userRole.value === 'guru')
   const isStudentOrParent = computed(() => ['siswa', 'orang_tua'].includes(userRole.value))
 
   const loading = ref(false)

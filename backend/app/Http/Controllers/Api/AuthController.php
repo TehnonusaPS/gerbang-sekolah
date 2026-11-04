@@ -59,19 +59,26 @@ class AuthController extends Controller
         $token = $user->createToken('auth_token')->plainTextToken;
 
         // 6. Map response to match frontend expectations
+        $activeClassroom = $user->activeHomeroomClassroom();
         $mappedUser = [
-            'id'            => $user->id,
-            'name'          => $user->name,
-            'email'         => $user->email,
-            'role'          => $user->role ? $user->role->name : null,
-            'roleLabel'     => $user->role ? $user->role->label : null,
-            'phone'         => $user->phone,
-            'photo'         => $user->photo,
-            'is_active'     => $user->is_active,
-            'foundation_id' => $user->foundation_id,
-            'school_id'     => $user->school_id,
-            'foundation'    => $user->foundation,
-            'school'        => $user->school,
+            'id'                 => $user->id,
+            'name'               => $user->name,
+            'email'              => $user->email,
+            'role'               => $user->role ? $user->role->name : null,
+            'roleLabel'          => $user->role ? $user->role->label : null,
+            'is_wali_kelas'      => $user->isWaliKelas(),
+            'homeroom_classroom' => $activeClassroom ? [
+                'id'    => $activeClassroom->id,
+                'name'  => $activeClassroom->name,
+                'grade' => $activeClassroom->grade,
+            ] : null,
+            'phone'              => $user->phone,
+            'photo'              => $user->photo,
+            'is_active'          => $user->is_active,
+            'foundation_id'      => $user->foundation_id,
+            'school_id'          => $user->school_id,
+            'foundation'         => $user->foundation,
+            'school'             => $user->school,
         ];
 
         return response()->json([
@@ -104,27 +111,34 @@ class AuthController extends Controller
         $nameParts = explode(' ', $user->name ?? '');
         $namaDepan = $nameParts[0] ?? '';
         $namaBelakang = count($nameParts) > 1 ? implode(' ', array_slice($nameParts, 1)) : '';
+        $activeClassroom = $user->activeHomeroomClassroom();
 
         $mappedUser = [
-            'id'              => $user->id,
-            'name'            => $user->name,
-            'nama_depan'      => $namaDepan,
-            'nama_belakang'   => $namaBelakang,
-            'email'           => $user->email,
+            'id'                 => $user->id,
+            'name'               => $user->name,
+            'nama_depan'         => $namaDepan,
+            'nama_belakang'      => $namaBelakang,
+            'email'              => $user->email,
             'emailLogin'      => $user->email,
-            'role'            => $user->role ? $user->role->name : null,
-            'roleLabel'       => $user->role ? $user->role->label : null,
-            'phone'           => $user->phone,
-            'noHpLogin'       => $user->phone,
-            'photo'           => $user->photo,
-            'is_active'       => $user->is_active,
-            'foundation_id'   => $user->foundation_id,
-            'school_id'       => $user->school_id,
-            'foundation'      => $user->foundation,
-            'school'          => $user->school,
-            'teacher_profile' => $user->teacherProfile,
-            'student_profile' => $user->studentProfile,
-            'parent_profile'  => $user->parentProfile,
+            'role'               => $user->role ? $user->role->name : null,
+            'roleLabel'          => $user->role ? $user->role->label : null,
+            'is_wali_kelas'      => $user->isWaliKelas(),
+            'homeroom_classroom' => $activeClassroom ? [
+                'id'    => $activeClassroom->id,
+                'name'  => $activeClassroom->name,
+                'grade' => $activeClassroom->grade,
+            ] : null,
+            'phone'              => $user->phone,
+            'noHpLogin'          => $user->phone,
+            'photo'              => $user->photo,
+            'is_active'          => $user->is_active,
+            'foundation_id'      => $user->foundation_id,
+            'school_id'          => $user->school_id,
+            'foundation'         => $user->foundation,
+            'school'             => $user->school,
+            'teacher_profile'    => $user->teacherProfile,
+            'student_profile'    => $user->studentProfile,
+            'parent_profile'     => $user->parentProfile,
         ];
 
         return response()->json([
@@ -207,7 +221,6 @@ class AuthController extends Controller
         $roleName = $user->role ? $user->role->name : '';
         $staffRoles = [
             'guru',
-            'wali_kelas',
             'kepala_sekolah',
             'tata_usaha',
             'admin_sekolah',

@@ -108,7 +108,7 @@ class SchoolController extends Controller
             ]);
         }
 
-        if ($user->school_id) { // admin_sekolah, kepala_sekolah, tata_usaha, wali_kelas
+        if ($user->school_id) { // admin_sekolah, kepala_sekolah, tata_usaha, guru
             $school = School::with('foundation:id,name,code', 'curriculum:id,name,code,level')->withCount('students')->find($user->school_id);
             if (!$school) {
                 return response()->json([

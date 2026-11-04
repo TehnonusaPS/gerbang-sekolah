@@ -53,6 +53,7 @@ const filteredNavMain = computed(() => {
 
   return navMain
     .filter(item => {
+      if (item.requiresWaliKelas && !auth.isWaliKelas) return false
       if (item.excludeRoles && item.excludeRoles.includes(currentRole)) return false
       if (!item.roles) return true
       return item.roles.includes(currentRole)
@@ -62,6 +63,7 @@ const filteredNavMain = computed(() => {
         return {
           ...item,
           items: item.items.filter(sub => {
+            if (sub.requiresWaliKelas && !auth.isWaliKelas) return false
             if (sub.excludeRoles && sub.excludeRoles.includes(currentRole)) return false
             if (!sub.roles) return true
             return sub.roles.includes(currentRole)

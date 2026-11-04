@@ -23,7 +23,7 @@ class UserController extends Controller
      */
     private function getRoleCategory(string $roleName): string
     {
-        $teacherRoles = ['guru', 'wali_kelas', 'kepala_sekolah', 'tata_usaha', 'admin_sekolah'];
+        $teacherRoles = ['guru', 'kepala_sekolah', 'tata_usaha', 'admin_sekolah'];
         if (in_array($roleName, $teacherRoles)) {
             return 'teacher';
         }

@@ -45,7 +45,7 @@ export default [
       parent: 'Komunikasi',
       description: 'Kelola berita kegiatan untuk siswa dan orang tua.',
       requiresAuth: true,
-      roles: ['kepala_sekolah', 'admin_sekolah', 'guru', 'wali_kelas', 'siswa', 'orang_tua']
+      roles: ['kepala_sekolah', 'admin_sekolah', 'guru', 'siswa', 'orang_tua']
     }
   },
   {
@@ -65,7 +65,7 @@ export default [
       parent: 'Komunikasi',
       description: 'Pesan internal antar warga sekolah.',
       requiresAuth: true,
-      roles: ['guru', 'wali_kelas', 'siswa', 'orang_tua']
+      roles: ['guru', 'siswa', 'orang_tua']
     }
   },
   {
@@ -81,13 +81,12 @@ export default [
     path: 'komunikasi/chat',
     meta: {
       requiresAuth: true,
-      roles: ['guru', 'siswa', 'wali_kelas', 'orang_tua']
+      roles: ['guru', 'siswa', 'orang_tua']
     },
     redirect: to => {
       const auth = useAuthStore()
       const role = auth.user?.role
-      if (role === 'guru') return '/komunikasi/guru/chat'
-      if (role === 'wali_kelas') return '/komunikasi/wali-kelas/chat'
+      if (role === 'guru') return auth.isWaliKelas ? '/komunikasi/wali-kelas/chat' : '/komunikasi/guru/chat'
       if (role === 'siswa') return '/komunikasi/siswa/chat'
       if (role === 'orang_tua') return '/komunikasi/orang-tua/chat'
       return '/dashboard'
@@ -110,7 +109,8 @@ export default [
       title: 'Chat Wali Kelas',
       parent: 'Komunikasi',
       requiresAuth: true,
-      roles: ['wali_kelas']
+      roles: ['guru'],
+      requiresWaliKelas: true
     }
   },
   {

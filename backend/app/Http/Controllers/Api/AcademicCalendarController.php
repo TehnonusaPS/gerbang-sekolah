@@ -419,7 +419,7 @@ class AcademicCalendarController extends Controller
             ->whereIn('academic_year_id', $ayIds);
 
         if ($activeYear->calendar_status !== 'approved') {
-            if (!$user->hasRole('admin_sekolah') && !$user->hasRole('kepala_sekolah') && !$user->hasRole('guru') && !$user->hasRole('wali_kelas')) {
+            if (!$user->hasRole('admin_sekolah') && !$user->hasRole('kepala_sekolah') && !$user->hasRole('guru')) {
                 return response()->json(['status' => 'success', 'data' => []]);
             }
         }

@@ -80,7 +80,7 @@ const onCellAddAgenda = (dateStr) => {
           v-model:month="visibleMonth"
           v-model:year="visibleYear"
         >
-          <template #action v-if="role === 'guru' || role === 'wali_kelas'">
+          <template #action v-if="role === 'guru'">
             <Button
               @click="onTambahAgenda"
               size="sm"

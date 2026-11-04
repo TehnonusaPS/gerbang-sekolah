@@ -52,13 +52,12 @@ const routes = [
     name: 'CetakKehadiran',
     meta: {
       requiresAuth: true,
-      roles: ['guru', 'wali_kelas']
+      roles: ['guru']
     },
     redirect: () => {
       const auth = useAuthStore()
-      if (auth.user?.role === 'guru') return '/absensi/guru/input-kehadiran/print'
-      if (auth.user?.role === 'wali_kelas') return '/absensi/wali-kelas/input-kehadiran/print'
-      return '/dashboard'
+      if (auth.isWaliKelas) return '/absensi/wali-kelas/input-kehadiran/print'
+      return '/absensi/guru/input-kehadiran/print'
     }
   },
   {
@@ -75,7 +74,8 @@ const routes = [
     component: () => import('../modules/absensi/pages/wali-kelas/input-kehadiran/print.vue'),
     meta: {
       requiresAuth: true,
-      roles: ['wali_kelas'],
+      roles: ['guru'],
+      requiresWaliKelas: true,
       title: 'Cetak Kehadiran Siswa'
     }
   },
@@ -126,6 +126,11 @@ router.beforeEach(async (to, from) => {
         return '/login'
       }
     }
+  }
+
+  // ❌ butuh hak akses wali kelas tapi bukan wali kelas
+  if (to.meta.requiresWaliKelas && !auth.isWaliKelas) {
+    return '/dashboard'
   }
 
   // ❌ role tidak sesuai

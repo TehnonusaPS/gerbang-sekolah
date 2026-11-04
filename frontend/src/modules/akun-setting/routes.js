@@ -15,7 +15,6 @@ export default [
       if (role === 'admin_sekolah') return '/akun-setting/admin-sekolah'
       if (role === 'tata_usaha') return '/akun-setting/tata-usaha'
       if (role === 'guru') return '/akun-setting/guru'
-      if (role === 'wali_kelas') return '/akun-setting/wali-kelas'
       if (role === 'siswa') return '/akun-setting/siswa'
       if (role === 'orang_tua') return '/akun-setting/orang-tua'
       return '/dashboard'
@@ -53,8 +52,7 @@ export default [
   },
   {
     path: 'akun-setting/wali-kelas',
-    component: () => import('./pages/wali-kelas/SettingPage.vue'),
-    meta: { requiresAuth: true, roles: ['wali_kelas'], title: 'Pengaturan Akun' }
+    redirect: '/akun-setting/guru'
   },
   {
     path: 'akun-setting/siswa',

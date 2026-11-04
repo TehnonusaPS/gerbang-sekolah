@@ -78,7 +78,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the school this user belongs to (for kepala_sekolah, admin_sekolah, tata_usaha, guru, wali_kelas).
+     * Get the school this user belongs to (for kepala_sekolah, admin_sekolah, tata_usaha, guru).
      */
     public function school(): BelongsTo
     {
@@ -86,7 +86,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Get teacher/staff profile (for guru, wali_kelas, kepala_sekolah, tata_usaha, admin_sekolah).
+     * Get teacher/staff profile (for guru, kepala_sekolah, tata_usaha, admin_sekolah).
      */
     public function teacherProfile(): HasOne
     {
@@ -154,11 +154,39 @@ class User extends Authenticatable
     }
 
     /**
-     * Get all subject-classroom teaching assignments for this user (guru/wali_kelas).
+     * Get all subject-classroom teaching assignments for this user (guru).
      */
     public function teacherSubjectAssignments(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(TeacherSubjectAssignment::class, 'teacher_id');
+    }
+
+    /**
+     * Get the classrooms where this teacher is assigned as homeroom teacher.
+     */
+    public function homeroomClassrooms(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Classroom::class, 'homeroom_teacher_id');
+    }
+
+    /**
+     * Check if this teacher is actively a homeroom teacher (in an active academic year).
+     */
+    public function isWaliKelas(): bool
+    {
+        return $this->homeroomClassrooms()
+            ->whereHas('academicYear', fn($q) => $q->where('is_active', true))
+            ->exists();
+    }
+
+    /**
+     * Get the active homeroom classroom for this teacher.
+     */
+    public function activeHomeroomClassroom(): ?Classroom
+    {
+        return $this->homeroomClassrooms()
+            ->whereHas('academicYear', fn($q) => $q->where('is_active', true))
+            ->first();
     }
 
     /**

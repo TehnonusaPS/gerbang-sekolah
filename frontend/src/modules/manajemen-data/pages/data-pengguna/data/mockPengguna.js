@@ -5,7 +5,6 @@ export const ROLE_OPTIONS = [
   { label: 'Admin Sekolah', value: 'admin_sekolah' },
   { label: 'Tata Usaha', value: 'tata_usaha' },
   { label: 'Guru', value: 'guru' },
-  { label: 'Wali Kelas', value: 'wali_kelas' },
   { label: 'Siswa', value: 'siswa' },
   { label: 'Orang Tua / Wali', value: 'orang_tua' }
 ]
@@ -17,7 +16,6 @@ export const ROLE_LABELS = {
   admin_sekolah: 'Admin Sekolah',
   tata_usaha: 'Tata Usaha',
   guru: 'Guru',
-  wali_kelas: 'Wali Kelas',
   siswa: 'Siswa',
   orang_tua: 'Orang Tua / Wali'
 }
@@ -79,9 +77,9 @@ export const initialPengguna = [
   },
   {
     id: '7',
-    nama: 'Wali Kelas',
+    nama: 'Wali Kelas 1-A',
     email: 'walikelas@mail.com',
-    role: 'wali_kelas',
+    role: 'guru',
     yayasan: 'Yayasan Nusantara Pintar',
     sekolah: 'SD Nusantara Pintar Bekasi',
     status: 'aktif'

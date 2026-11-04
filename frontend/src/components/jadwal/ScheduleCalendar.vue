@@ -135,7 +135,7 @@ const handleCellAddAgenda = (dateStr: string) => {
 
               <!-- "+ Tambah" button for Guru -->
               <button
-                v-if="(role === 'guru' || role === 'wali_kelas') && weekDate.month === month.value.month"
+                v-if="role === 'guru' && weekDate.month === month.value.month"
                 type="button"
                 @click.stop="handleCellAddAgenda(weekDate.toString())"
                 class="absolute top-1.5 right-1.5 z-10 opacity-0 group-hover/cell:opacity-100 transition-opacity px-1.5 py-0.5 rounded-full border border-dashed border-primary/60 bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground text-[9px] font-bold flex items-center gap-0.5 shadow-2xs cursor-pointer"

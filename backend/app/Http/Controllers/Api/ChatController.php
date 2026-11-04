@@ -190,13 +190,13 @@ class ChatController extends Controller
     {
         $user->loadMissing('role', 'parentProfile');
 
-        $allowedRoles = ['guru', 'wali_kelas', 'siswa', 'orang_tua'];
+        $allowedRoles = ['guru', 'siswa', 'orang_tua'];
         if (!$user->role || !in_array($user->role->name, $allowedRoles)) {
             return [];
         }
 
-        // 1. Guru & Wali Kelas: see only Siswa (same school) and Orang Tua (parents of children in same school)
-        if ($user->role && in_array($user->role->name, ['guru', 'wali_kelas'])) {
+        // 1. Guru: see only Siswa (same school) and Orang Tua (parents of children in same school)
+        if ($user->role && $user->role->name === 'guru') {
             $schoolId = $user->school_id;
             if (!$schoolId) {
                 return [];
@@ -225,7 +225,7 @@ class ChatController extends Controller
                 ->toArray();
         }
 
-        // 2. Siswa: see only Guru (same school) and their own homeroom teacher (role wali_kelas)
+        // 2. Siswa: see only Guru (same school) and their own homeroom teacher
         if ($user->role && $user->role->name === 'siswa') {
             $schoolId = $user->school_id;
             if (!$schoolId) {
@@ -249,13 +249,9 @@ class ChatController extends Controller
                         })->where('school_id', $schoolId);
                     });
                     
-                    // Match their own Wali Kelas (role wali_kelas)
+                    // Match their own Wali Kelas
                     if ($homeroomTeacherId) {
-                        $q->orWhere(function ($sub) use ($homeroomTeacherId) {
-                            $sub->whereHas('role', function ($r) {
-                                $r->where('name', 'wali_kelas');
-                            })->where('id', $homeroomTeacherId);
-                        });
+                        $q->orWhere('id', $homeroomTeacherId);
                     }
                 })
                 ->pluck('id')
@@ -304,13 +300,9 @@ class ChatController extends Controller
                         });
                     }
                     
-                    // Match children's own Wali Kelas (role wali_kelas)
+                    // Match children's own Wali Kelas
                     if (!empty($homeroomTeacherIds)) {
-                        $q->orWhere(function ($sub) use ($homeroomTeacherIds) {
-                            $sub->whereHas('role', function ($r) {
-                                $r->where('name', 'wali_kelas');
-                            })->whereIn('id', $homeroomTeacherIds);
-                        });
+                        $q->orWhereIn('id', $homeroomTeacherIds);
                     }
                 })
                 ->pluck('id')
@@ -388,7 +380,7 @@ class ChatController extends Controller
     public function getUnreadCount(Request $request): JsonResponse
     {
         $user = $request->user();
-        $allowedRoles = ['guru', 'wali_kelas', 'siswa', 'orang_tua'];
+        $allowedRoles = ['guru', 'siswa', 'orang_tua'];
         if (!$user->role || !in_array($user->role->name, $allowedRoles)) {
             return response()->json([
                 'unread_count' => 0

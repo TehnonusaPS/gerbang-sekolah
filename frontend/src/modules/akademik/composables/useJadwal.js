@@ -54,7 +54,7 @@ export function useJadwal() {
     isLoadingSchedule.value = true;
     try {
       let res;
-      if (role.value === 'guru' || role.value === 'wali_kelas') {
+      if (role.value === 'guru') {
         res = await getMySchedule();
         apiScheduleData.value = res.data;
       } else if (role.value === 'orang_tua') {

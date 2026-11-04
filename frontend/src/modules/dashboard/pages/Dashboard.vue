@@ -77,9 +77,9 @@ const auth = useAuthStore()
     </div>
   </div>
 
-  <!-- ── Guru & Wali Kelas Dashboard ── -->
+  <!-- ── Guru Dashboard ── -->
   <div
-    v-else-if="auth.user?.role === 'guru' || auth.user?.role === 'wali_kelas'"
+    v-else-if="auth.user?.role === 'guru'"
     class="space-y-6"
   >
     <GuruTopSection />

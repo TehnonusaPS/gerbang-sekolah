@@ -197,7 +197,7 @@ onMounted(() => {
                   >
                     <TableCell class="font-semibold">{{ leave.user?.name }}</TableCell>
                     <TableCell class="capitalize text-muted-foreground text-xs">
-                      {{ leave.user?.role?.name === 'guru' ? 'Guru' : leave.user?.role?.name === 'wali_kelas' ? 'Wali Kelas' : leave.user?.role?.name === 'kepala_sekolah' ? 'Kepala Sekolah' : leave.user?.role?.name === 'tata_usaha' ? 'Tata Usaha' : 'Admin' }}
+                      {{ leave.user?.role?.name === 'guru' ? (leave.user?.is_wali_kelas ? 'Wali Kelas' : 'Guru') : leave.user?.role?.name === 'kepala_sekolah' ? 'Kepala Sekolah' : leave.user?.role?.name === 'tata_usaha' ? 'Tata Usaha' : 'Admin' }}
                     </TableCell>
                     <TableCell>
                       <Badge 

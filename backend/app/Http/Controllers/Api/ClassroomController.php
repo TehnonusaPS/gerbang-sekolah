@@ -37,7 +37,7 @@ class ClassroomController extends Controller
 
     /**
      * Get available teacher options for homeroom teacher selection.
-     * Filtered by school and role (guru/wali_kelas), sorted by availability (available first).
+     * Filtered by school and role (guru), sorted by availability (available first).
      */
     public function getTeacherOptions(Request $request): JsonResponse
     {
@@ -88,7 +88,7 @@ class ClassroomController extends Controller
         // Hanya ambil user guru dari sekolah tersebut
         $teachers = User::where('school_id', $schoolId)
             ->whereHas('role', function ($q) {
-                $q->whereIn('name', ['guru', 'wali_kelas']);
+                $q->where('name', 'guru');
             })
             ->with('teacherProfile')
             ->get();
@@ -157,7 +157,7 @@ class ClassroomController extends Controller
             if ($request->has('school_id')) {
                 $query->where('school_id', $request->input('school_id'));
             }
-        } else { // admin_sekolah, kepala_sekolah, tata_usaha, wali_kelas
+        } else { // admin_sekolah, kepala_sekolah, tata_usaha, guru
             $query->where('school_id', $user->school_id);
         }
 
@@ -270,7 +270,7 @@ class ClassroomController extends Controller
             $teacherName = $request->input('homeroom_teacher');
             $teacher = \App\Models\User::where('name', 'like', "%{$teacherName}%")
                 ->whereHas('role', function($q) {
-                    $q->whereIn('name', ['guru', 'wali_kelas']);
+                    $q->where('name', 'guru');
                 })
                 ->first();
             if ($teacher) {
@@ -436,7 +436,7 @@ class ClassroomController extends Controller
             $teacherName = $request->input('homeroom_teacher');
             $teacher = \App\Models\User::where('name', 'like', "%{$teacherName}%")
                 ->whereHas('role', function($q) {
-                    $q->whereIn('name', ['guru', 'wali_kelas']);
+                    $q->where('name', 'guru');
                 })
                 ->first();
             if ($teacher) {

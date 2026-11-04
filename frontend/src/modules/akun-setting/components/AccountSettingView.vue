@@ -53,7 +53,7 @@ const imagePreview = ref('')
 const roleName = computed(() => auth.user?.role || '')
 
 const isEduStaff = computed(() =>
-  ['guru', 'wali_kelas', 'kepala_sekolah'].includes(roleName.value)
+  ['guru', 'kepala_sekolah'].includes(roleName.value)
 )
 const isTu = computed(() => roleName.value === 'tata_usaha')
 const isAdminSekolah = computed(() => roleName.value === 'admin_sekolah')

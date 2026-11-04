@@ -28,6 +28,12 @@ export const useAuthStore = defineStore('auth', {
     notificationChannel: null
   }),
 
+  getters: {
+    isWaliKelas: (state) => Boolean(state.user?.is_wali_kelas),
+    userRole: (state) => state.user?.role,
+    homeroomClassroom: (state) => state.user?.homeroom_classroom || null
+  },
+
   actions: {
     /**
      * Inisialisasi: refresh profil user dari server agar role & data terbaru termuat.
