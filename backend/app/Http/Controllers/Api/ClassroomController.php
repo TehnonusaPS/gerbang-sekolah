@@ -68,8 +68,10 @@ class ClassroomController extends Controller
             $academicYearId = $activeYear?->id;
         }
 
+        $currentClassroomId = $request->input('current_classroom_id');
+
         // Ambil pemetaan wali kelas di tahun ajaran yang bersangkutan
-        $assignedClasses = [];
+        $assignedClasses = collect();
         if ($academicYearId) {
             $targetYear = AcademicYear::find($academicYearId);
             $yearIds = $targetYear
@@ -79,8 +81,8 @@ class ClassroomController extends Controller
             $assignedClasses = Classroom::where('school_id', $schoolId)
                 ->whereIn('academic_year_id', $yearIds)
                 ->whereNotNull('homeroom_teacher_id')
-                ->pluck('name', 'homeroom_teacher_id')
-                ->toArray();
+                ->get(['id', 'name', 'homeroom_teacher_id'])
+                ->keyBy('homeroom_teacher_id');
         }
 
         // Hanya ambil user guru dari sekolah tersebut
@@ -91,25 +93,41 @@ class ClassroomController extends Controller
             ->with('teacherProfile')
             ->get();
 
-        $options = $teachers->map(function ($teacher) use ($assignedClasses) {
-            $assignedClass = $assignedClasses[$teacher->id] ?? null;
+        $options = $teachers->map(function ($teacher) use ($assignedClasses, $currentClassroomId) {
+            $assigned = $assignedClasses->get($teacher->id);
             $frontTitle = $teacher->teacherProfile?->front_title ? $teacher->teacherProfile->front_title . ' ' : '';
             $backTitle = $teacher->teacherProfile?->back_title ? ', ' . $teacher->teacherProfile->back_title : '';
             $fullName = $frontTitle . $teacher->name . $backTitle;
 
-            $statusText = $assignedClass ? "(Wali Kelas {$assignedClass})" : "(Tersedia)";
+            $isCurrentClass = $assigned && $currentClassroomId && ((string) $assigned->id === (string) $currentClassroomId);
+            $isAssignedOther = $assigned && !$isCurrentClass;
+
+            if ($isCurrentClass) {
+                $statusText = "(Wali Kelas Saat Ini)";
+                $disabled = false;
+                $isAvailable = true;
+            } elseif ($isAssignedOther) {
+                $statusText = "(Wali Kelas {$assigned->name})";
+                $disabled = true;
+                $isAvailable = false;
+            } else {
+                $statusText = "(Tersedia)";
+                $disabled = false;
+                $isAvailable = true;
+            }
 
             return [
                 'id'             => (string) $teacher->id,
                 'value'          => (string) $teacher->id,
                 'name'           => $fullName,
-                'assigned_class' => $assignedClass,
-                'is_available'   => is_null($assignedClass),
+                'assigned_class' => $assigned?->name,
+                'is_available'   => $isAvailable,
+                'disabled'       => $disabled,
                 'label'          => "{$fullName} — {$statusText}",
             ];
         })
         ->sortBy([
-            ['is_available', 'desc'], // Yang belum ada kelas (Tersedia) diletakkan di paling atas!
+            ['disabled', 'asc'], // false (tersedia) diletakkan di paling atas!
             ['name', 'asc'],
         ])
         ->values();
@@ -210,6 +228,10 @@ class ClassroomController extends Controller
             ], 400);
         }
 
+        if ($request->input('homeroom_teacher_id') === 'none') {
+            $request->merge(['homeroom_teacher_id' => null]);
+        }
+
         $validator = Validator::make($request->all(), [
             'name'                => 'required|string|max:100',
             'grade'               => 'required|integer',
@@ -244,7 +266,7 @@ class ClassroomController extends Controller
         }
 
         $homeroomTeacherId = $request->input('homeroom_teacher_id');
-        if (!$homeroomTeacherId && $request->filled('homeroom_teacher')) {
+        if (!$request->has('homeroom_teacher_id') && $request->filled('homeroom_teacher')) {
             $teacherName = $request->input('homeroom_teacher');
             $teacher = \App\Models\User::where('name', 'like', "%{$teacherName}%")
                 ->whereHas('role', function($q) {
@@ -253,6 +275,27 @@ class ClassroomController extends Controller
                 ->first();
             if ($teacher) {
                 $homeroomTeacherId = $teacher->id;
+            }
+        }
+
+        // Cegah guru ditugaskan jika sudah menjadi wali kelas lain di tahun ajaran ini
+        if ($homeroomTeacherId) {
+            $targetYear = AcademicYear::find($academicYearId);
+            $yearIds = $targetYear
+                ? AcademicYear::where('school_id', $schoolId)->where('name', $targetYear->name)->pluck('id')
+                : [$academicYearId];
+
+            $conflict = Classroom::where('school_id', $schoolId)
+                ->whereIn('academic_year_id', $yearIds)
+                ->where('homeroom_teacher_id', $homeroomTeacherId)
+                ->first();
+
+            if ($conflict) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => "Guru ini sudah menjadi wali kelas di kelas \"{$conflict->name}\" pada tahun ajaran ini.",
+                    'errors'  => ['homeroom_teacher_id' => ["Guru ini sudah menjadi wali kelas di kelas \"{$conflict->name}\"."]],
+                ], 422);
             }
         }
 
@@ -365,6 +408,10 @@ class ClassroomController extends Controller
             }
         }
 
+        if ($request->input('homeroom_teacher_id') === 'none') {
+            $request->merge(['homeroom_teacher_id' => null]);
+        }
+
         $validator = Validator::make($request->all(), [
             'name'                => 'sometimes|required|string|max:100',
             'grade'               => 'sometimes|required|integer',
@@ -385,7 +432,7 @@ class ClassroomController extends Controller
         }
 
         $homeroomTeacherId = $request->input('homeroom_teacher_id');
-        if (!$homeroomTeacherId && $request->filled('homeroom_teacher')) {
+        if (!$request->has('homeroom_teacher_id') && $request->filled('homeroom_teacher')) {
             $teacherName = $request->input('homeroom_teacher');
             $teacher = \App\Models\User::where('name', 'like', "%{$teacherName}%")
                 ->whereHas('role', function($q) {
@@ -394,6 +441,29 @@ class ClassroomController extends Controller
                 ->first();
             if ($teacher) {
                 $homeroomTeacherId = $teacher->id;
+            }
+        }
+
+        // Cegah guru ditugaskan jika sudah menjadi wali kelas lain di tahun ajaran ini
+        if ($homeroomTeacherId) {
+            $academicYearId = $request->input('academic_year_id', $classroom->academic_year_id);
+            $targetYear = AcademicYear::find($academicYearId);
+            $yearIds = $targetYear
+                ? AcademicYear::where('school_id', $classroom->school_id)->where('name', $targetYear->name)->pluck('id')
+                : [$academicYearId];
+
+            $conflict = Classroom::where('school_id', $classroom->school_id)
+                ->whereIn('academic_year_id', $yearIds)
+                ->where('homeroom_teacher_id', $homeroomTeacherId)
+                ->where('id', '!=', $classroom->id)
+                ->first();
+
+            if ($conflict) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => "Guru ini sudah menjadi wali kelas di kelas \"{$conflict->name}\" pada tahun ajaran ini.",
+                    'errors'  => ['homeroom_teacher_id' => ["Guru ini sudah menjadi wali kelas di kelas \"{$conflict->name}\"."]],
+                ], 422);
             }
         }
 

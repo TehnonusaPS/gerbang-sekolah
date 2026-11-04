@@ -8,8 +8,11 @@ import {
 import FormInput from '@/components/forms/FormInput.vue'
 import FormSelect from '@/components/forms/FormSelect.vue'
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import { Plus } from 'lucide-vue-next'
 
+const router = useRouter()
 const auth = useAuthStore()
 
 defineProps({
@@ -119,13 +122,27 @@ const isSMA = computed(() => {
               />
             </div>
 
-            <FormSelect
-              v-model="form.homeroom_teacher_id"
-              label="Wali Kelas"
-              placeholder="Pilih wali kelas"
-              :options="teacherOptions"
-              :error="errors.homeroom_teacher_id"
-            />
+            <div>
+              <FormSelect
+                v-model="form.homeroom_teacher_id"
+                label="Wali Kelas"
+                placeholder="Pilih wali kelas"
+                :options="teacherOptions"
+                :error="errors.homeroom_teacher_id"
+              />
+              <div class="flex items-center justify-between text-xs text-muted-foreground px-0.5 mt-1.5">
+                <span v-if="!form.homeroom_teacher_id || form.homeroom_teacher_id === 'none'">Belum ada wali kelas terpilih</span>
+                <span v-else class="text-emerald-600 dark:text-emerald-400 font-medium">Wali kelas terpilih</span>
+                <button
+                  type="button"
+                  class="inline-flex items-center gap-1 font-medium text-primary hover:underline cursor-pointer"
+                  @click="router.push('/manajemen-data/guru-staff/tambah')"
+                >
+                  <Plus class="size-3.5" />
+                  <span>Tambah Guru Baru</span>
+                </button>
+              </div>
+            </div>
 
             <div class="grid grid-cols-2 gap-4">
               <FormInput

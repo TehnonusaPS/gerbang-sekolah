@@ -48,15 +48,23 @@ const fetchClassrooms = async () => {
   }
 }
 
-const teacherOptions = ref([])
+const teacherOptions = ref([
+  { label: '— Tanpa Wali Kelas (Kosongkan) —', value: 'none', is_available: true, disabled: false }
+])
 
-const fetchTeachers = async (academicYearId) => {
+const fetchTeachers = async (academicYearId, currentClassroomId) => {
   try {
-    const res = await getClassroomTeacherOptions(academicYearId)
-    teacherOptions.value = res.data || []
+    const res = await getClassroomTeacherOptions(academicYearId, currentClassroomId)
+    const options = res.data || []
+    teacherOptions.value = [
+      { label: '— Tanpa Wali Kelas (Kosongkan) —', value: 'none', is_available: true, disabled: false },
+      ...options
+    ]
   } catch (err) {
     console.error('Gagal memuat guru:', err)
-    teacherOptions.value = []
+    teacherOptions.value = [
+      { label: '— Tanpa Wali Kelas (Kosongkan) —', value: 'none', is_available: true, disabled: false }
+    ]
     toast.error('Gagal memuat pilihan wali kelas')
   }
 }
@@ -126,8 +134,8 @@ const {
 watch(
   () => formItem.value.academic_year_id,
   (newYearId) => {
-    if (newYearId) {
-      fetchTeachers(newYearId)
+    if (newYearId && isFormSheetOpen.value) {
+      fetchTeachers(newYearId, isEditMode.value ? formItem.value.id : null)
     }
   }
 )
@@ -142,12 +150,13 @@ const handleCreate = () => {
     grade: '',
     major: '',
     homeroom_teacher: '',
-    homeroom_teacher_id: '',
+    homeroom_teacher_id: 'none',
     room: '',
     capacity: 36,
     students_count: 0,
     status: 'active'
   }
+  fetchTeachers(formItem.value.academic_year_id, null)
   isFormSheetOpen.value = true
 }
 
@@ -160,8 +169,9 @@ const handleEdit = (item) => {
     grade: item.grade != null ? String(item.grade) : '',
     homeroom_teacher_id: item.homeroom_teacher_id != null
       ? String(item.homeroom_teacher_id)
-      : ''
+      : 'none'
   }
+  fetchTeachers(formItem.value.academic_year_id, item.id)
   isFormSheetOpen.value = true
 }
 
@@ -180,6 +190,10 @@ const saveSummary = computed(() => [
 
 const handleSave = async () => {
   const data = { ...formItem.value }
+  if (data.homeroom_teacher_id === 'none' || !data.homeroom_teacher_id) {
+    data.homeroom_teacher_id = null
+    data.homeroom_teacher = null
+  }
   isSaving.value = true
 
   try {

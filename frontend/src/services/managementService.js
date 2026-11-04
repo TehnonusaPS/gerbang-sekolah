@@ -132,8 +132,10 @@ export async function deleteClassroom(id) {
   return response.data
 }
 
-export async function getClassroomTeacherOptions(academicYearId) {
-  const params = academicYearId ? { academic_year_id: academicYearId } : {}
+export async function getClassroomTeacherOptions(academicYearId, currentClassroomId) {
+  const params = {}
+  if (academicYearId) params.academic_year_id = academicYearId
+  if (currentClassroomId) params.current_classroom_id = currentClassroomId
   const response = await api.get('/management/classrooms/teacher-options', { params })
   return response.data
 }
