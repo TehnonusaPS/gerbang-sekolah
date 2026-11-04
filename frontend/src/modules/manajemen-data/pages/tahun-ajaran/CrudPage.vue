@@ -392,7 +392,6 @@ const headerActions = computed(() => [
           :summary-items="saveSummary"
           :before-confirm="handleBeforeConfirm"
           @submit="executeSave"
-          @save="executeSave"
         />
       </SheetContent>
     </Sheet>

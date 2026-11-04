@@ -170,6 +170,19 @@ class ClassroomController extends Controller
             }
         }
 
+        $existing = Classroom::where('school_id', $schoolId)
+            ->where('academic_year_id', $academicYearId)
+            ->whereRaw('LOWER(name) = ?', [strtolower(trim($request->input('name')))])
+            ->first();
+
+        if ($existing) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Kelas dengan nama "' . $request->input('name') . '" sudah ada di tahun ajaran ini.',
+                'errors'  => ['name' => ['Kelas dengan nama ini sudah terdaftar pada tahun ajaran yang dipilih.']],
+            ], 422);
+        }
+
         $classroom = Classroom::create([
             'school_id'           => $schoolId,
             'academic_year_id'    => $academicYearId,

@@ -254,6 +254,15 @@ const requestDelete = (item) => {
   isDeleteDialogOpen.value = true
 }
 
+const handleDelete = (id, item) => {
+  if (item) {
+    requestDelete(item)
+  } else {
+    const found = kelasList.value.find(k => k.id === id)
+    requestDelete(found || { id, name: 'Kelas' })
+  }
+}
+
 const confirmDelete = async () => {
   if (!itemToDelete.value) return
   isDeleting.value = true

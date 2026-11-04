@@ -46,12 +46,25 @@ class AcademicYearController extends Controller
             return 0;
         }
 
+        $existingNames = Classroom::where('school_id', $schoolId)
+            ->where('academic_year_id', $targetAcademicYearId)
+            ->pluck('name')
+            ->map(fn($n) => trim(strtolower($n)))
+            ->toArray();
+
+        // Ambil kelas sumber dan pastikan unik berdasarkan nama kelas
         $sourceClassrooms = Classroom::where('school_id', $schoolId)
             ->where('academic_year_id', $sourceYear->id)
-            ->get();
+            ->get()
+            ->unique(fn($c) => trim(strtolower($c->name)));
 
         $count = 0;
         foreach ($sourceClassrooms as $src) {
+            $cleanName = trim(strtolower($src->name));
+            if (in_array($cleanName, $existingNames)) {
+                continue;
+            }
+
             Classroom::create([
                 'school_id'           => $schoolId,
                 'academic_year_id'    => $targetAcademicYearId,
@@ -63,6 +76,7 @@ class AcademicYearController extends Controller
                 'homeroom_teacher_id' => null,
                 'capacity'            => $src->capacity,
             ]);
+            $existingNames[] = $cleanName;
             $count++;
         }
 
@@ -132,6 +146,18 @@ class AcademicYearController extends Controller
 
         // Check if creating full academic year (both odd and even semesters)
         if ($request->has('odd_start_date') && $request->has('even_start_date')) {
+            $existingName = AcademicYear::where('school_id', $schoolId)
+                ->where('name', trim($request->input('name')))
+                ->exists();
+
+            if ($existingName) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Tahun ajaran "' . $request->input('name') . '" sudah terdaftar.',
+                    'errors'  => ['name' => ['Tahun ajaran ini sudah ada di sistem.']],
+                ], 422);
+            }
+
             $validator = Validator::make($request->all(), [
                 'name'            => 'required|string|max:100',
                 'odd_start_date'  => 'required|date',
