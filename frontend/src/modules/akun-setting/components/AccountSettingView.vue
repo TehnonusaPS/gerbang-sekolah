@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   SquareUserRound,
   Image as ImageIcon,
@@ -45,6 +46,7 @@ const props = defineProps({
   }
 })
 
+const router = useRouter()
 const auth = useAuthStore()
 const isSaving = ref(false)
 const imagePreview = ref('')
@@ -200,11 +202,15 @@ const schema = computed(() => {
       nama_depan: (isParent.value || isAdminSekolah.value || isAdminYayasan.value)
         ? z.string().optional()
         : v.personName('Nama Depan', { required: true, min: 2, max: 100 }),
-      nama_belakang: v.personName('Nama Belakang', { required: false, min: 1, max: 100 }),
+      nama_belakang: (isParent.value || isAdminSekolah.value || isAdminYayasan.value)
+        ? z.string().optional()
+        : v.personName('Nama Belakang', { required: false, min: 1, max: 100 }),
       nama_wali: isParent.value
         ? v.personName('Nama Lengkap Wali', { required: true, min: 2, max: 100 })
         : z.string().optional(),
-      nik: z.string().optional(),
+      nik: (isEduStaff.value || isTu.value)
+        ? v.nik('NIK')
+        : z.string().optional(),
       noHpLogin: v.optionalPhone('No. HP / WhatsApp'),
       gelar_depan: isEduStaff.value ? v.academicTitle('Gelar Depan') : z.string().optional(),
       gelar_belakang: isEduStaff.value ? v.academicTitle('Gelar Belakang') : z.string().optional(),
@@ -388,6 +394,16 @@ const handleImageChange = file => {
   imagePreview.value = URL.createObjectURL(file)
 }
 
+const handleBeforeConfirm = () => {
+  if (!validate()) {
+    toast.error('Periksa kembali form', {
+      description: 'Mohon periksa data yang ditandai merah sebelum menyimpan.'
+    })
+    return false
+  }
+  return true
+}
+
 // Simpan Perubahan Akun & Profil Sesuai AGENTS.md
 const handleSave = async () => {
   if (!validate()) {
@@ -406,15 +422,11 @@ const handleSave = async () => {
       formData.append('name', form.value.nama_wali.trim())
     } else if (!isAdminSekolah.value && !isAdminYayasan.value) {
       formData.append('nama_depan', form.value.nama_depan.trim())
-      if (form.value.nama_belakang) {
-        formData.append('nama_belakang', form.value.nama_belakang.trim())
-      }
+      formData.append('nama_belakang', form.value.nama_belakang ? form.value.nama_belakang.trim() : '')
     }
 
     // Telepon
-    if (form.value.noHpLogin) {
-      formData.append('noHpLogin', form.value.noHpLogin.trim())
-    }
+    formData.append('noHpLogin', form.value.noHpLogin ? form.value.noHpLogin.trim() : '')
 
     // Foto
     if (form.value.foto instanceof File) {
@@ -481,6 +493,10 @@ const handleSave = async () => {
     toast.success('Pengaturan Akun Berhasil Diperbarui', {
       description: 'Perubahan data profil dan akun Anda telah disimpan dengan sukses.'
     })
+
+    setTimeout(() => {
+      router.push('/dashboard')
+    }, 800)
   } catch (err) {
     if (!setServerErrors(err)) {
       toast.error('Gagal memperbarui pengaturan akun', {
@@ -864,7 +880,8 @@ const handleSave = async () => {
         :loading="isSaving"
         confirm-title="Simpan Perubahan Akun?"
         confirm-description="Apakah Anda yakin data profil dan pengaturan akun yang Anda masukkan sudah benar?"
-        :before-confirm="validate"
+        :before-confirm="handleBeforeConfirm"
+        @save="handleSave"
       />
     </form>
   </div>
