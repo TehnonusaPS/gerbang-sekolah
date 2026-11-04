@@ -61,6 +61,11 @@ Sebelum menyatakan pekerjaan selesai kepada developer, **WAJIB** melakukan penge
 
 1. **Backend:** Cek sintaks PHP (`php -l <file>`), pastikan migration sinkron dengan model `$fillable` & `$casts`, dan pastikan query Eloquent aman dari _N+1 problem_ maupun kebocoran scope antar sekolah/yayasan.
 2. **Frontend:** Jalankan `npm run build` di folder `frontend` untuk memastikan tidak ada error kompilasi Vue, import yang putus, atau sintaks yang rusak.
+3. **Review UI di Browser (Browser MCP):**
+   - Setiap selesai mengimplementasikan atau mengubah halaman/komponen UI frontend:
+     - Pastikan dev server frontend menyala (misal `http://localhost:5173`).
+     - Buka halaman terkait menggunakan tool browser (`chrome-devtools`).
+     - Ambil snapshot/screenshot dan tinjau console browser untuk memastikan tidak ada warning/error runtime Vue, tata letak responsif & rapi, serta tombol/alur aksi berfungsi normal.
 
 ---
 
