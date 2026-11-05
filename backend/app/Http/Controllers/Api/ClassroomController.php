@@ -687,10 +687,14 @@ class ClassroomController extends Controller
                 }
             }
 
-            $studentParam = $request->input('student_id');
+            $studentParam = (string) $request->input('student_id');
             $profile = StudentProfile::where('classroom_id', $classroom->id)
                 ->where(function ($q) use ($studentParam) {
-                    $q->where('id', $studentParam)->orWhere('user_id', $studentParam);
+                    if (is_numeric($studentParam)) {
+                        $q->where('id', (int) $studentParam)->orWhere('user_id', $studentParam);
+                    } else {
+                        $q->where('user_id', $studentParam);
+                    }
                 })
                 ->lockForUpdate()
                 ->first();

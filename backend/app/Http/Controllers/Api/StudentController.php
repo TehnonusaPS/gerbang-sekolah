@@ -733,8 +733,8 @@ class StudentController extends Controller
                     'semester'           => $c->academicYear ? ($c->academicYear->semester === 'odd' ? 'Ganjil' : 'Genap') : '-',
                     'wali_kelas'         => $c->homeroomTeacher ? $c->homeroomTeacher->name : 'Belum Ada',
                     'status_keanggotaan' => $c->pivot->status,
-                    'start_date'         => $c->pivot->start_date ? $c->pivot->start_date->format('Y-m-d') : null,
-                    'end_date'           => $c->pivot->end_date ? $c->pivot->end_date->format('Y-m-d') : null,
+                    'start_date'         => !empty($c->pivot->start_date) ? substr((string)$c->pivot->start_date, 0, 10) : null,
+                    'end_date'           => !empty($c->pivot->end_date) ? substr((string)$c->pivot->end_date, 0, 10) : null,
                     'notes'              => $c->pivot->notes,
                 ];
             })->values()->toArray() : [],
