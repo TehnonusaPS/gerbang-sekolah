@@ -95,7 +95,20 @@ export const actions = [
 ]
 
 export const columns = [
-  { key: 'nama', label: 'Nama Sekolah', avatar: true, avatarKey: 'foto' },
+  { key: 'nama', label: 'Nama Sekolah', avatar: true, avatarKey: 'foto', sortable: true },
+  {
+    key: 'jenjang',
+    label: 'Jenjang',
+    badge: true,
+    sortable: true,
+    badgeVariant: {
+      TK: 'purple',
+      SD: 'red',
+      SMP: 'blue',
+      SMA: 'green',
+      SMK: 'amber'
+    }
+  },
   { key: 'namaYayasan', label: 'Nama Yayasan' },
   { key: 'alamatSekolah', label: 'Alamat Sekolah', type: 'muted', truncate: true },
   { key: 'jmlSiswa', label: 'Jumlah Siswa', type: 'number' },

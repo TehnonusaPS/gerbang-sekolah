@@ -32,36 +32,83 @@ class SchoolController extends Controller
                 });
             }
 
-            if ($request->has('foundation_id')) {
+            if ($request->filled('foundation_id')) {
                 $query->where('foundation_id', $request->input('foundation_id'));
             }
 
-            if ($request->has('level')) {
-                $query->where('level', $request->input('level'));
+            if ($request->filled('level') && $request->input('level') !== 'all') {
+                $level = strtoupper(trim((string) $request->input('level')));
+                $levelMap = [
+                    'TK'    => ['TK', 'JP001'],
+                    'JP001' => ['TK', 'JP001'],
+                    'SD'    => ['SD', 'JP002'],
+                    'JP002' => ['SD', 'JP002'],
+                    'SMP'   => ['SMP', 'JP003'],
+                    'JP003' => ['SMP', 'JP003'],
+                    'SMA'   => ['SMA'],
+                    'SMK'   => ['SMK'],
+                ];
+                $matchingLevels = $levelMap[$level] ?? [$level];
+                $query->whereIn('level', $matchingLevels);
             }
 
-            if ($request->has('status')) {
+            if ($request->filled('status') && $request->input('status') !== 'all') {
                 $query->where('status', $request->input('status'));
             }
 
+            // Sorting:
+            // 1. Status: Aktif -> Trial -> Nonaktif
+            // 2. Default: Jenjang (TK -> SD -> SMP -> SMA -> SMK), lalu Nama Sekolah (A-Z)
+            $sortBy = $request->input('sort_by', 'jenjang');
+            $sortOrder = strtolower((string) $request->input('sort_order', 'asc')) === 'desc' ? 'desc' : 'asc';
+
+            $jenjangOrderSql = "CASE 
+                WHEN UPPER(level) IN ('TK', 'JP001') THEN 1 
+                WHEN UPPER(level) IN ('SD', 'JP002') THEN 2 
+                WHEN UPPER(level) IN ('SMP', 'JP003') THEN 3 
+                WHEN UPPER(level) IN ('SMA', 'JP004') THEN 4 
+                WHEN UPPER(level) IN ('SMK', 'JP005') THEN 5 
+                ELSE 6 END";
+
+            $query->orderByRaw("CASE WHEN status = 'active' THEN 1 WHEN status = 'trial' THEN 2 ELSE 3 END ASC");
+
+            if ($sortBy === 'jenjang' || $sortBy === 'level') {
+                $query->orderByRaw("{$jenjangOrderSql} {$sortOrder}")
+                      ->orderBy('name', 'asc');
+            } elseif ($sortBy === 'nama' || $sortBy === 'name') {
+                $query->orderBy('name', $sortOrder)
+                      ->orderByRaw("{$jenjangOrderSql} ASC");
+            } else {
+                $query->orderByRaw("{$jenjangOrderSql} ASC")
+                      ->orderBy('name', 'asc');
+            }
+            $query->orderBy('id', 'asc');
+
             $statsQuery = School::query();
+            if ($request->filled('foundation_id')) {
+                $statsQuery->where('foundation_id', $request->input('foundation_id'));
+            }
             $total = (clone $statsQuery)->count();
             $active = (clone $statsQuery)->where('status', 'active')->count();
             $trial = (clone $statsQuery)->where('status', 'trial')->count();
             $inactive = (clone $statsQuery)->where('status', 'inactive')->count();
 
+            $rawLevels = (clone $statsQuery)->whereNotNull('level')->where('level', '!=', '')->distinct()->pluck('level')->toArray();
+            $availableLevels = $this->formatAvailableLevels($rawLevels);
+
             $perPage = (int) $request->input('per_page', 15);
             $page    = (int) $request->input('page', 1);
 
             return response()->json([
-                'status' => 'success',
-                'data'   => $query->latest('schools.created_at')->paginate($request->input('per_page', $perPage), ['*'], 'page', $page),
-                'stats'  => [
-                    'total' => $total,
-                    'active' => $active,
-                    'trial' => $trial,
+                'status'           => 'success',
+                'data'             => $query->paginate($request->input('per_page', $perPage), ['*'], 'page', $page),
+                'stats'            => [
+                    'total'    => $total,
+                    'active'   => $active,
+                    'trial'    => $trial,
                     'inactive' => $inactive,
-                ]
+                ],
+                'available_levels' => $availableLevels,
             ]);
         }
 
@@ -79,13 +126,53 @@ class SchoolController extends Controller
                 });
             }
 
-            if ($request->has('level')) {
-                $query->where('level', $request->input('level'));
+            if ($request->filled('level') && $request->input('level') !== 'all') {
+                $level = strtoupper(trim((string) $request->input('level')));
+                $levelMap = [
+                    'TK'    => ['TK', 'JP001'],
+                    'JP001' => ['TK', 'JP001'],
+                    'SD'    => ['SD', 'JP002'],
+                    'JP002' => ['SD', 'JP002'],
+                    'SMP'   => ['SMP', 'JP003'],
+                    'JP003' => ['SMP', 'JP003'],
+                    'SMA'   => ['SMA'],
+                    'SMK'   => ['SMK'],
+                ];
+                $matchingLevels = $levelMap[$level] ?? [$level];
+                $query->whereIn('level', $matchingLevels);
             }
 
-            if ($request->has('status')) {
+            if ($request->filled('status') && $request->input('status') !== 'all') {
                 $query->where('status', $request->input('status'));
             }
+
+            // Sorting:
+            // 1. Status: Aktif -> Trial -> Nonaktif
+            // 2. Default: Jenjang (TK -> SD -> SMP -> SMA -> SMK), lalu Nama Sekolah (A-Z)
+            $sortBy = $request->input('sort_by', 'jenjang');
+            $sortOrder = strtolower((string) $request->input('sort_order', 'asc')) === 'desc' ? 'desc' : 'asc';
+
+            $jenjangOrderSql = "CASE 
+                WHEN UPPER(level) IN ('TK', 'JP001') THEN 1 
+                WHEN UPPER(level) IN ('SD', 'JP002') THEN 2 
+                WHEN UPPER(level) IN ('SMP', 'JP003') THEN 3 
+                WHEN UPPER(level) IN ('SMA', 'JP004') THEN 4 
+                WHEN UPPER(level) IN ('SMK', 'JP005') THEN 5 
+                ELSE 6 END";
+
+            $query->orderByRaw("CASE WHEN status = 'active' THEN 1 WHEN status = 'trial' THEN 2 ELSE 3 END ASC");
+
+            if ($sortBy === 'jenjang' || $sortBy === 'level') {
+                $query->orderByRaw("{$jenjangOrderSql} {$sortOrder}")
+                      ->orderBy('name', 'asc');
+            } elseif ($sortBy === 'nama' || $sortBy === 'name') {
+                $query->orderBy('name', $sortOrder)
+                      ->orderByRaw("{$jenjangOrderSql} ASC");
+            } else {
+                $query->orderByRaw("{$jenjangOrderSql} ASC")
+                      ->orderBy('name', 'asc');
+            }
+            $query->orderBy('id', 'asc');
 
             $statsQuery = School::where('foundation_id', $user->foundation_id);
             $total = (clone $statsQuery)->count();
@@ -93,18 +180,22 @@ class SchoolController extends Controller
             $trial = (clone $statsQuery)->where('status', 'trial')->count();
             $inactive = (clone $statsQuery)->where('status', 'inactive')->count();
 
+            $rawLevels = (clone $statsQuery)->whereNotNull('level')->where('level', '!=', '')->distinct()->pluck('level')->toArray();
+            $availableLevels = $this->formatAvailableLevels($rawLevels);
+
             $perPage = (int) $request->input('per_page', 15);
             $page    = (int) $request->input('page', 1);
 
             return response()->json([
-                'status' => 'success',
-                'data'   => $query->latest('schools.created_at')->paginate($request->input('per_page', $perPage), ['*'], 'page', $page),
-                'stats'  => [
-                    'total' => $total,
-                    'active' => $active,
-                    'trial' => $trial,
+                'status'           => 'success',
+                'data'             => $query->paginate($request->input('per_page', $perPage), ['*'], 'page', $page),
+                'stats'            => [
+                    'total'    => $total,
+                    'active'   => $active,
+                    'trial'    => $trial,
                     'inactive' => $inactive,
-                ]
+                ],
+                'available_levels' => $availableLevels,
             ]);
         }
 
@@ -434,11 +525,79 @@ class SchoolController extends Controller
             ], 403);
         }
 
+        // Proteksi: Cek apakah masih ada siswa aktif atau guru/staff aktif
+        $activeStudentsCount = $school->users()
+            ->where('is_active', true)
+            ->whereHas('role', fn($q) => $q->where('name', 'siswa'))
+            ->count();
+
+        $activeStaffCount = $school->users()
+            ->where('is_active', true)
+            ->whereHas('role', fn($q) => $q->whereIn('name', ['guru', 'wali_kelas', 'tata_usaha', 'kepala_sekolah', 'admin_sekolah']))
+            ->count();
+
+        if ($activeStudentsCount > 0 || $activeStaffCount > 0) {
+            $parts = [];
+            if ($activeStudentsCount > 0) {
+                $parts[] = "{$activeStudentsCount} siswa aktif";
+            }
+            if ($activeStaffCount > 0) {
+                $parts[] = "{$activeStaffCount} guru/staf aktif";
+            }
+            $details = implode(' dan ', $parts);
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => "Sekolah tidak dapat dihapus karena masih memiliki {$details}.",
+            ], 422);
+        }
+
+        // Nonaktifkan user yang terkait sebelum sekolah dihapus
+        User::where('school_id', $school->id)->update([
+            'school_id' => null,
+            'is_active' => false,
+        ]);
+
         $school->delete();
 
         return response()->json([
             'status'  => 'success',
             'message' => 'School deleted successfully.',
         ]);
+    }
+
+    /**
+     * Map distinct level strings to friendly options.
+     */
+    private function formatAvailableLevels(array $rawLevels): array
+    {
+        $levelLabelMap = [
+            'TK'    => ['value' => 'TK', 'label' => 'Taman Kanak-Kanak (TK)'],
+            'JP001' => ['value' => 'TK', 'label' => 'Taman Kanak-Kanak (TK)'],
+            'SD'    => ['value' => 'SD', 'label' => 'Sekolah Dasar (SD)'],
+            'JP002' => ['value' => 'SD', 'label' => 'Sekolah Dasar (SD)'],
+            'SMP'   => ['value' => 'SMP', 'label' => 'Sekolah Menengah Pertama (SMP)'],
+            'JP003' => ['value' => 'SMP', 'label' => 'Sekolah Menengah Pertama (SMP)'],
+            'SMA'   => ['value' => 'SMA', 'label' => 'Sekolah Menengah Atas (SMA)'],
+            'SMK'   => ['value' => 'SMK', 'label' => 'Sekolah Menengah Kejuruan (SMK)'],
+        ];
+
+        $availableLevels = [];
+        foreach ($rawLevels as $rawLvl) {
+            $upper = strtoupper(trim((string) $rawLvl));
+            $opt = $levelLabelMap[$upper] ?? ['value' => $upper, 'label' => $upper];
+            if (!isset($availableLevels[$opt['value']])) {
+                $availableLevels[$opt['value']] = $opt;
+            }
+        }
+
+        $order = ['TK' => 1, 'SD' => 2, 'SMP' => 3, 'SMA' => 4, 'SMK' => 5];
+        usort($availableLevels, function ($a, $b) use ($order) {
+            $oa = $order[$a['value']] ?? 99;
+            $ob = $order[$b['value']] ?? 99;
+            return $oa <=> $ob;
+        });
+
+        return array_values($availableLevels);
     }
 }

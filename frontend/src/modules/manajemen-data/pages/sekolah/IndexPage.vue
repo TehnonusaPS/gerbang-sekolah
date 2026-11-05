@@ -13,9 +13,22 @@ const jenjangLabelMap = {
   SMK: 'Sekolah Menengah Kejuruan (SMK)'
 }
 
-const formatJenjang = val => {
+const formatJenjangLong = val => {
   if (!val) return '-'
   return jenjangLabelMap[String(val).trim().toUpperCase()] || val
+}
+
+const formatJenjangShort = val => {
+  if (!val) return '-'
+  const upper = String(val).trim().toUpperCase()
+  const shortMap = {
+    JP001: 'TK',
+    JP002: 'SD',
+    JP003: 'SMP',
+    JP004: 'SMA',
+    JP005: 'SMK'
+  }
+  return shortMap[upper] || upper
 }
 import StatCard from '@/components/stat-card/StatCard.vue'
 import { useAuthStore } from '@/stores/authStore'
@@ -47,6 +60,9 @@ const statsData = ref({
 const fetchStats = async () => {
   try {
     const res = await getSchools({ per_page: 1000 })
+    if (res.available_levels && Array.isArray(res.available_levels)) {
+      dynamicJenjangOptions.value = res.available_levels
+    }
     const list = Array.isArray(res.data) ? res.data : (res.data.data || [])
     statsData.value = {
       total: list.length,
@@ -96,7 +112,47 @@ const stats = computed(() => [
 
 const filterValues = ref({
   search: '',
-  status: 'all'
+  status: 'all',
+  level: 'all'
+})
+
+const sortBy = ref('jenjang')
+const sortOrder = ref('asc')
+
+const dynamicJenjangOptions = ref([])
+
+const dynamicFilters = computed(() => {
+  const result = [
+    {
+      type: 'search',
+      key: 'search',
+      placeholder: 'Cari nama sekolah disini...'
+    }
+  ]
+
+  if (dynamicJenjangOptions.value.length > 0) {
+    result.push({
+      type: 'select',
+      key: 'level',
+      label: 'Filter Jenjang:',
+      placeholder: 'Semua',
+      options: dynamicJenjangOptions.value
+    })
+  }
+
+  result.push({
+    type: 'select',
+    key: 'status',
+    label: 'Filter Status:',
+    placeholder: 'Semua',
+    options: [
+      { label: 'Aktif', value: 'active' },
+      { label: 'Nonaktif', value: 'inactive' },
+      { label: 'Trial', value: 'trial' }
+    ]
+  })
+
+  return result
 })
 
 const formatDateDisplay = (dateStr) => {
@@ -122,7 +178,11 @@ const fetchSchools = async () => {
       per_page: perPage.value,
       search: filterValues.value.search,
     }
-    if (filterValues.value.status !== 'all') {
+    if (sortBy.value && sortOrder.value) {
+      params.sort_by = sortBy.value
+      params.sort_order = sortOrder.value
+    }
+    if (filterValues.value.status && filterValues.value.status !== 'all') {
       const statusMap = {
         aktif: 'active',
         nonaktif: 'inactive',
@@ -133,7 +193,13 @@ const fetchSchools = async () => {
       }
       params.status = statusMap[filterValues.value.status] || filterValues.value.status
     }
+    if (filterValues.value.level && filterValues.value.level !== 'all') {
+      params.level = filterValues.value.level
+    }
     const res = await getSchools(params)
+    if (res.available_levels && Array.isArray(res.available_levels)) {
+      dynamicJenjangOptions.value = res.available_levels
+    }
     tableItems.value = res.data.data.map(item => ({
       ...item,
       id: item.id,
@@ -141,7 +207,8 @@ const fetchSchools = async () => {
       npsn: item.npsn,
       yayasan: item.foundation ? item.foundation.name : '-',
       namaYayasan: item.foundation ? item.foundation.name : '-',
-      jenjang: formatJenjang(item.level),
+      jenjang: formatJenjangShort(item.level),
+      jenjang_lengkap: formatJenjangLong(item.level),
       kurikulum: item.curriculum?.name || '-',
       tanggal_berdiri: formatDateDisplay(item.established_date),
       alamat: item.address,
@@ -187,20 +254,34 @@ onMounted(() => {
   fetchStats()
 })
 
-watch([currentPage, perPage, filterValues], () => {
+watch(
+  () => [filterValues.value.search, filterValues.value.status, filterValues.value.level],
+  () => {
+    if (currentPage.value !== 1) {
+      currentPage.value = 1
+    } else {
+      fetchSchools()
+    }
+  }
+)
+
+watch([currentPage, perPage, sortBy, sortOrder], () => {
   fetchSchools()
-}, { deep: true })
+})
 
 const deleteItem = async (id, item) => {
   try {
-    await deleteSchool(id)
+    const res = await deleteSchool(id)
     toast.success('Berhasil dihapus', {
-      description: `${item.nama} telah dihapus dari sistem.`
+      description: res.message || `${item.nama} telah dihapus dari sistem.`
     })
     fetchSchools()
     fetchStats()
   } catch (err) {
-    toast.error('Gagal menghapus sekolah')
+    const errorMsg = err.response?.data?.message || 'Gagal menghapus sekolah.'
+    toast.error('Gagal Menghapus Sekolah', {
+      description: errorMsg
+    })
   }
 }
 
@@ -241,10 +322,13 @@ const handleViewDetail = id => {
       :columns="columns"
       :items="tableItems"
       :loading="isLoading"
-      :filters="filters"
+      :filters="dynamicFilters"
       :actions="actions"
       v-model:filterValues="filterValues"
       v-model:perPage="perPage"
+      v-model:sortBy="sortBy"
+      v-model:sortOrder="sortOrder"
+      manual-sort
       illustration="globe"
       :from="from"
       :to="to"

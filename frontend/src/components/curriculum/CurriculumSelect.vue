@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue'
 import { fetchCurriculums } from '@/services/curriculumService'
-import { BookOpen, Check, Sparkles, Layers } from 'lucide-vue-next'
+import { BookOpen, Check, Sparkles, Layers, X } from 'lucide-vue-next'
 import {
   Select,
   SelectContent,
@@ -89,23 +89,37 @@ const availableOptions = computed(() => {
     items = items.filter(c => c.level === 'SD' || c.level === 'ALL')
   } else if (props.levelFilter === 'SMP' || props.levelFilter === 'JP003') {
     items = items.filter(c => c.level === 'SMP' || c.level === 'ALL')
+  } else if (props.levelFilter === 'TK' || props.levelFilter === 'JP001') {
+    items = items.filter(c => c.level === 'ALL')
   }
 
   return items
 })
 
 function handleChange(val) {
-  emit('update:modelValue', val)
-  const selectedObj = curriculums.value.find(c => String(c.id) === String(val))
-  emit('change', selectedObj)
+  const finalVal = (!val || val === 'none') ? '' : val
+  emit('update:modelValue', finalVal)
+  const selectedObj = curriculums.value.find(c => String(c.id) === String(finalVal))
+  emit('change', selectedObj || null)
 }
 </script>
 
 <template>
   <div class="space-y-1.5 w-full text-left">
-    <label v-if="label" class="block text-sm font-medium text-foreground dark:text-zinc-200">
-      {{ label }}
-    </label>
+    <div class="flex items-center justify-between">
+      <label v-if="label" class="block text-sm font-medium text-foreground dark:text-zinc-200">
+        {{ label }}
+      </label>
+      <button
+        v-if="modelValue && !disabled"
+        type="button"
+        class="text-xs text-muted-foreground hover:text-destructive transition-colors flex items-center gap-1 focus:outline-none"
+        @click="handleChange('none')"
+      >
+        <X class="size-3" />
+        <span>Hapus pilihan</span>
+      </button>
+    </div>
 
     <Select
       :model-value="modelValue ? String(modelValue) : ''"
@@ -124,6 +138,15 @@ function handleChange(val) {
       </SelectTrigger>
 
       <SelectContent class="bg-popover dark:bg-zinc-900 border border-border dark:border-zinc-800 shadow-xl">
+        <SelectItem
+          value="none"
+          class="cursor-pointer focus:bg-accent dark:focus:bg-zinc-800 transition-colors py-2 text-muted-foreground italic border-b border-border/50 mb-1"
+        >
+          <div class="flex items-center gap-2">
+            <X class="size-3.5 text-muted-foreground" />
+            <span>Tanpa Kurikulum / Belum Ditentukan</span>
+          </div>
+        </SelectItem>
         <SelectItem
           v-for="item in availableOptions"
           :key="item.id"

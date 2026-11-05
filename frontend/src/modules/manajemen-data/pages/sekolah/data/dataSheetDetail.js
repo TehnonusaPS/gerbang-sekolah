@@ -3,6 +3,7 @@ export const rawSekolahItem = {
   npsn: '20212345',
   yayasan: 'Yayasan Gerbang Sekolah',
   jenjang: 'SMA',
+  jenjang_lengkap: 'Sekolah Menengah Atas (SMA)',
   tanggal_berdiri: '15 Januari 2005',
   status: 'Aktif',
 
@@ -35,7 +36,7 @@ export const sekolahSheetSections = [
       { label: 'Nama Sekolah', key: 'nama' },
       { label: 'NPSN', key: 'npsn' },
       { label: 'Yayasan', key: 'yayasan' },
-      { label: 'Jenjang Pendidikan', key: 'jenjang' },
+      { label: 'Jenjang Pendidikan', key: 'jenjang_lengkap' },
       { label: 'Jenis Kurikulum', key: 'kurikulum' },
       { label: 'Tanggal Berdiri', key: 'tanggal_berdiri' },
       { label: 'Status', key: 'status' }

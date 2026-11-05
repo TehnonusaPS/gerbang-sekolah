@@ -152,7 +152,7 @@ const handleSubmit = async () => {
     if (form.value.akreditasi) formData.append('accreditation', form.value.akreditasi)
     if (form.value.tanggal_akreditasi) formData.append('accreditation_date', form.value.tanggal_akreditasi)
     if (form.value.no_akreditasi) formData.append('accreditation_number', form.value.no_akreditasi)
-    if (form.value.curriculum_id) formData.append('curriculum_id', form.value.curriculum_id)
+    formData.append('curriculum_id', form.value.curriculum_id || '')
     if (form.value.emailLogin) formData.append('emailLogin', form.value.emailLogin)
     if (form.value.noHpLogin) formData.append('noHpLogin', form.value.noHpLogin)
     if (form.value.password_baru) formData.append('password', form.value.password_baru)

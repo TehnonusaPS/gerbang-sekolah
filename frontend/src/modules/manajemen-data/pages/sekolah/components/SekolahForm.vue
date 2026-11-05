@@ -19,6 +19,10 @@ import FormSelect from '@/components/forms/FormSelect.vue'
 import CurriculumSelect from '@/components/curriculum/CurriculumSelect.vue'
 import BentoFormLayout from '@/components/forms/BentoFormLayout.vue'
 import { getPhotoUrl } from '@/utils/getPhotoUrl'
+import { useAuthStore } from '@/stores/authStore'
+
+const auth = useAuthStore()
+const isSuperAdmin = computed(() => auth.user?.role === 'superadmin')
 
 const props = defineProps({
   form: { type: Object, required: true },
@@ -170,9 +174,11 @@ const handleImageChange = (file) => {
             label="Yayasan Induk"
             placeholder="Pilih yayasan naungan"
             :options="foundationOptions"
-            :disabled="isReadOnlyInstitutional"
+            searchable
+            search-placeholder="Cari nama yayasan..."
+            :disabled="isReadOnlyInstitutional || !isSuperAdmin"
             :error="errors.foundation_id || errors.yayasan"
-            :required="!isReadOnlyInstitutional"
+            :required="!isReadOnlyInstitutional && isSuperAdmin"
           />
           <FormSelect
             v-model="form.jenjang"

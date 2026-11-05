@@ -28,12 +28,22 @@ onMounted(async () => {
       label: y.name,
       value: y.id
     }))
+    if (!isSuperAdmin.value) {
+      if (auth.user?.foundation_id) {
+        form.value.yayasan = auth.user.foundation_id
+      } else if (foundationOptions.value.length > 0) {
+        form.value.yayasan = foundationOptions.value[0].value
+      }
+    }
   } catch (err) {
     toast.error('Gagal mengambil daftar yayasan')
   }
 })
 
-const form = ref({ ...defaultForm })
+const form = ref({
+  ...defaultForm,
+  yayasan: !isSuperAdmin.value && auth.user?.foundation_id ? auth.user.foundation_id : ''
+})
 const imagePreview = ref('')
 const logoFile = ref(null)
 
