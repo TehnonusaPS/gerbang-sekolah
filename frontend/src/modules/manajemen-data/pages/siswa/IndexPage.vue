@@ -135,10 +135,14 @@ onMounted(async () => {
 
     const classFilter = filters.find(f => f.key === 'kelasId')
 
-    const classroomOptions = activeClassrooms.value.map(c => ({
-      label: c.name,
-      value: String(c.id)
-    }))
+    const classroomOptions = [
+      { label: 'Semua Kelas', value: 'all' },
+      { label: 'Belum Ada Kelas', value: 'unassigned' },
+      ...activeClassrooms.value.map(c => ({
+        label: c.name,
+        value: String(c.id)
+      }))
+    ]
 
     if (!classFilter) {
       filters.push({

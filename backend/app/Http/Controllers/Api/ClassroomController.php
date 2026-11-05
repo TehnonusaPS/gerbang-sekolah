@@ -759,4 +759,138 @@ class ClassroomController extends Controller
             'data'   => $data,
         ]);
     }
+
+    /**
+     * Kenaikan kelas masal (Bulk Student Promotion) dari kelas ini ke kelas berikutnya.
+     */
+    public function promoteStudents(Request $request, string $id): JsonResponse
+    {
+        $user = $request->user();
+
+        $validator = Validator::make($request->all(), [
+            'target_classroom_id'  => 'required|exists:classrooms,id|different:id',
+            'retained_student_ids' => 'nullable|array',
+            'retained_student_ids.*' => 'string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Validasi gagal.',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        return DB::transaction(function () use ($user, $id, $request) {
+            $sourceClass = Classroom::lockForUpdate()->find($id);
+            $targetClass = Classroom::lockForUpdate()->find($request->input('target_classroom_id'));
+
+            if (!$sourceClass || !$targetClass) {
+                return response()->json(['status' => 'error', 'message' => 'Kelas tidak ditemukan.'], 404);
+            }
+
+            // Otorisasi Scope
+            if (!$user->isSuperAdmin()) {
+                if ($user->hasRole('admin_yayasan')) {
+                    if ($sourceClass->school->foundation_id != $user->foundation_id || $targetClass->school->foundation_id != $user->foundation_id) {
+                        return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+                    }
+                } else {
+                    if ($sourceClass->school_id != $user->school_id || $targetClass->school_id != $user->school_id) {
+                        return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+                    }
+                }
+            }
+
+            // Ambil semua siswa aktif di kelas asal
+            $activeStudents = StudentProfile::where('classroom_id', $sourceClass->id)
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->get();
+
+            if ($activeStudents->isEmpty()) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => "Tidak ada siswa aktif di kelas {$sourceClass->name} untuk dinaikkan.",
+                ], 422);
+            }
+
+            $retainedIds = collect($request->input('retained_student_ids', []))->map(fn($v) => (string) $v)->toArray();
+
+            $promoted = $activeStudents->filter(fn($sp) => !in_array((string)$sp->id, $retainedIds) && !in_array((string)$sp->user_id, $retainedIds));
+            $retained = $activeStudents->filter(fn($sp) => in_array((string)$sp->id, $retainedIds) || in_array((string)$sp->user_id, $retainedIds));
+
+            if ($promoted->isEmpty()) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Semua siswa ditandai tinggal kelas. Tidak ada siswa yang dinaikkan.',
+                ], 422);
+            }
+
+            // Validasi Kapasitas Kelas Tujuan
+            $targetActiveCount = StudentProfile::where('classroom_id', $targetClass->id)->where('status', 'active')->count();
+            if ($targetClass->capacity && ($targetActiveCount + $promoted->count()) > $targetClass->capacity) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => "Kapasitas kelas tujuan ({$targetClass->name}) tidak mencukupi! Kapasitas: {$targetClass->capacity}, Terisi: {$targetActiveCount}, Siswa Naik: {$promoted->count()}.",
+                ], 422);
+            }
+
+            $now = now();
+
+            // 1. Proses Siswa yang Tinggal Kelas (Retained)
+            foreach ($retained as $sp) {
+                \App\Models\ClassroomStudent::where('classroom_id', $sourceClass->id)
+                    ->where('student_profile_id', $sp->id)
+                    ->where('status', 'active')
+                    ->update([
+                        'status' => 'retained',
+                        'notes'  => "Tinggal kelas di {$sourceClass->name}",
+                    ]);
+            }
+
+            // 2. Proses Siswa yang Naik Kelas (Promoted)
+            foreach ($promoted as $sp) {
+                // Tandai kelas lama sebagai 'promoted'
+                \App\Models\ClassroomStudent::where('classroom_id', $sourceClass->id)
+                    ->where('student_profile_id', $sp->id)
+                    ->where('status', 'active')
+                    ->update([
+                        'status'   => 'promoted',
+                        'end_date' => $now->toDateString(),
+                        'notes'    => "Naik ke kelas {$targetClass->name}",
+                    ]);
+
+                // Buat record baru di kelas tujuan
+                \App\Models\ClassroomStudent::updateOrCreate(
+                    [
+                        'classroom_id'       => $targetClass->id,
+                        'student_profile_id' => $sp->id,
+                    ],
+                    [
+                        'academic_year_id' => $targetClass->academic_year_id,
+                        'status'           => 'active',
+                        'start_date'       => $now->toDateString(),
+                        'end_date'         => null,
+                        'notes'            => "Kenaikan kelas dari {$sourceClass->name}",
+                    ]
+                );
+
+                // Update pointer kelas aktif pada student_profile
+                $sp->update(['classroom_id' => $targetClass->id]);
+            }
+
+            $message = "Sebanyak {$promoted->count()} siswa berhasil dinaikkan ke kelas {$targetClass->name}.";
+            if ($retained->isNotEmpty()) {
+                $message .= " ({$retained->count()} siswa tinggal kelas).";
+            }
+
+            return response()->json([
+                'status'         => 'success',
+                'message'        => $message,
+                'promoted_count' => $promoted->count(),
+                'retained_count' => $retained->count(),
+            ]);
+        });
+    }
 }

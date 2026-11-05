@@ -1,7 +1,7 @@
 <script setup>
 import DataTableCard from '@/components/data-table/DataTableCard.vue'
 import PageHeader from '@/components/page-header/PageHeader.vue'
-import { Building2, School, Settings, Users2, VenusAndMars } from 'lucide-vue-next'
+import { Building2, School, Settings, Users2, VenusAndMars, ArrowUpRight } from 'lucide-vue-next'
 import { actions, columns, filters } from './data/siswaKelas'
 import { usePagination } from '@/composables/usePagination'
 import { ref, computed, watch } from 'vue'
@@ -17,8 +17,21 @@ import Separator from '@/components/ui/separator/Separator.vue'
 import Avatar from '@/components/ui/avatar/Avatar.vue'
 import AvatarImage from '@/components/ui/avatar/AvatarImage.vue'
 import AvatarFallback from '@/components/ui/avatar/AvatarFallback.vue'
+import FormSelect from '@/components/forms/FormSelect.vue'
+import Dialog from '@/components/ui/dialog/Dialog.vue'
+import DialogContent from '@/components/ui/dialog/DialogContent.vue'
+import DialogHeader from '@/components/ui/dialog/DialogHeader.vue'
+import DialogTitle from '@/components/ui/dialog/DialogTitle.vue'
+import DialogDescription from '@/components/ui/dialog/DialogDescription.vue'
+import DialogFooter from '@/components/ui/dialog/DialogFooter.vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getClassroom, getTeacher, getClassroomHistoryStudents } from '@/services/managementService'
+import {
+  getClassroom,
+  getClassrooms,
+  getTeacher,
+  getClassroomHistoryStudents,
+  promoteClassroomStudents
+} from '@/services/managementService'
 import { fetchAllSiswa } from '@/services/siswaService'
 import { getPhotoUrl } from '@/utils/getPhotoUrl'
 
@@ -40,13 +53,90 @@ const goToManageStudent = () => {
   }
 }
 
-const headerAction = computed(() => [
-  {
-    label: 'Kelola Anggota Kelas',
-    icon: Settings,
-    click: goToManageStudent
+const isPromoteOpen = ref(false)
+const targetClassroomId = ref('')
+const retainedIds = ref([])
+const availableClasses = ref([])
+const isPromoting = ref(false)
+
+const openPromoteDialog = async () => {
+  if (!classroom.value || tableItems.value.length === 0) {
+    toast.error('Tidak ada siswa di kelas ini untuk dinaikkan.')
+    return
   }
-])
+  try {
+    const params = classroom.value?.school_id ? { school_id: classroom.value.school_id } : {}
+    const res = await getClassrooms(params)
+    const allClasses = res.data || []
+    availableClasses.value = allClasses
+      .filter(c => String(c.id) !== String(classroom.value.id))
+      .map(c => ({
+        label: `Kelas ${c.name} (Tingkat ${c.grade})`,
+        value: String(c.id)
+      }))
+
+    targetClassroomId.value = ''
+    retainedIds.value = []
+    isPromoteOpen.value = true
+  } catch (err) {
+    toast.error('Gagal memuat daftar kelas tujuan')
+  }
+}
+
+const toggleRetained = (studentId) => {
+  const strId = String(studentId)
+  if (retainedIds.value.includes(strId)) {
+    retainedIds.value = retainedIds.value.filter(id => id !== strId)
+  } else {
+    retainedIds.value.push(strId)
+  }
+}
+
+const executePromote = async () => {
+  if (!targetClassroomId.value) {
+    toast.error('Silakan pilih kelas tujuan terlebih dahulu.')
+    return
+  }
+
+  isPromoting.value = true
+  try {
+    const res = await promoteClassroomStudents(classroom.value.id, {
+      target_classroom_id: targetClassroomId.value,
+      retained_student_ids: retainedIds.value
+    })
+    toast.success('Kenaikan Kelas Berhasil!', {
+      description: res.message || 'Siswa berhasil dinaikkan ke kelas tujuan.'
+    })
+    isPromoteOpen.value = false
+    await fetchDetailData(route.params.id)
+  } catch (err) {
+    toast.error('Gagal memproses kenaikan kelas', {
+      description: err.response?.data?.message || err.message
+    })
+  } finally {
+    isPromoting.value = false
+  }
+}
+
+const headerAction = computed(() => {
+  const acts = [
+    {
+      label: 'Kelola Anggota Kelas',
+      icon: Settings,
+      click: goToManageStudent
+    }
+  ]
+
+  if (tableItems.value.length > 0) {
+    acts.unshift({
+      label: 'Naikkan Kelas',
+      icon: ArrowUpRight,
+      click: openPromoteDialog
+    })
+  }
+
+  return acts
+})
 
 const filterValues = ref({
   search: '',
@@ -370,4 +460,86 @@ watch(
       </DataTableCard>
     </div>
   </div>
+
+  <!-- Dialog Kenaikan Kelas Masal -->
+  <Dialog v-model:open="isPromoteOpen">
+    <DialogContent class="max-w-lg">
+      <DialogHeader>
+        <DialogTitle class="flex items-center gap-2">
+          <ArrowUpRight class="size-5 text-primary" />
+          Kenaikan Kelas Siswa
+        </DialogTitle>
+        <DialogDescription>
+          Pindahkan seluruh siswa dari <strong>Kelas {{ classroom?.name }}</strong> ke kelas tingkat berikutnya secara masal.
+        </DialogDescription>
+      </DialogHeader>
+
+      <div class="space-y-4 py-2">
+        <FormSelect
+          label="Pilih Kelas Tujuan"
+          placeholder="Pilih kelas tingkat berikutnya..."
+          :options="availableClasses"
+          v-model="targetClassroomId"
+          required
+        />
+
+        <div class="border rounded-lg p-3 bg-muted/30">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-muted-foreground font-medium">Total Siswa Aktif:</span>
+            <span class="font-bold text-foreground">{{ tableItems.length }} Siswa</span>
+          </div>
+          <div class="flex items-center justify-between text-xs mt-1">
+            <span class="text-muted-foreground font-medium">Siswa Akan Naik Kelas:</span>
+            <span class="font-bold text-primary">{{ Math.max(0, tableItems.length - retainedIds.length) }} Siswa</span>
+          </div>
+          <div v-if="retainedIds.length > 0" class="flex items-center justify-between text-xs mt-1">
+            <span class="text-amber-600 font-medium">Siswa Tinggal Kelas:</span>
+            <span class="font-bold text-amber-600">{{ retainedIds.length }} Siswa</span>
+          </div>
+        </div>
+
+        <div v-if="tableItems.length > 0" class="space-y-2">
+          <label class="text-xs font-semibold text-muted-foreground">
+            Tandai Siswa Yang Tinggal Kelas (Opsional):
+          </label>
+          <div class="max-h-40 overflow-y-auto border rounded-md divide-y text-xs">
+            <div
+              v-for="s in tableItems"
+              :key="s.id"
+              class="flex items-center justify-between p-2 hover:bg-muted/50 cursor-pointer"
+              @click="toggleRetained(s.id)"
+            >
+              <div class="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  :checked="retainedIds.includes(String(s.id))"
+                  class="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                  @click.stop="toggleRetained(s.id)"
+                />
+                <span :class="{ 'line-through text-muted-foreground': retainedIds.includes(String(s.id)) }">
+                  {{ s.nama }} ({{ s.nisn }})
+                </span>
+              </div>
+              <span v-if="retainedIds.includes(String(s.id))" class="text-[10px] font-semibold text-amber-600">
+                Tinggal Kelas
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <DialogFooter class="flex justify-end gap-2">
+        <Button variant="outline" size="sm" :disabled="isPromoting" @click="isPromoteOpen = false">
+          Batal
+        </Button>
+        <Button
+          size="sm"
+          :disabled="isPromoting || !targetClassroomId"
+          @click="executePromote"
+        >
+          {{ isPromoting ? 'Memproses...' : 'Proses Kenaikan Kelas' }}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>

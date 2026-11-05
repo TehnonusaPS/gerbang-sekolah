@@ -159,6 +159,11 @@ export async function getClassroomHistoryStudents(classroomId) {
   return response.data
 }
 
+export async function promoteClassroomStudents(classroomId, payload) {
+  const response = await api.post(`/management/classrooms/${classroomId}/promote-students`, payload)
+  return response.data
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 //  Guru & Staff (Teachers & Staff) API
 // ─────────────────────────────────────────────────────────────────────────

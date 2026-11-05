@@ -348,9 +348,15 @@ class StudentController extends Controller
 
         // Filtering by class
         if ($request->has('kelasId') && $request->kelasId !== 'all') {
-            $query->whereHas('studentProfile', function ($q) use ($request) {
-                $q->where('classroom_id', $request->kelasId);
-            });
+            if ($request->kelasId === 'unassigned') {
+                $query->whereHas('studentProfile', function ($q) {
+                    $q->whereNull('classroom_id');
+                });
+            } else {
+                $query->whereHas('studentProfile', function ($q) use ($request) {
+                    $q->where('classroom_id', $request->kelasId);
+                });
+            }
         }
 
         // Filtering by status

@@ -351,19 +351,15 @@ class AcademicYearController extends Controller
         DB::beginTransaction();
         try {
             if ($request->has('is_active') && filter_var($request->input('is_active'), FILTER_VALIDATE_BOOLEAN) === true) {
-                // Deactivate other academic years with a different name for the same school
+                // Deactivate other academic years/semesters for the same school
                 AcademicYear::where('school_id', $academicYear->school_id)
-                    ->where('name', '!=', $academicYear->name)
+                    ->where('id', '!=', $academicYear->id)
                     ->update(['is_active' => false]);
 
-                // Activate all semesters (both odd and even) for this academic year
-                AcademicYear::where('school_id', $academicYear->school_id)
-                    ->where('name', $academicYear->name)
-                    ->update(['is_active' => true]);
-
-                if ($request->has('start_date') || $request->has('end_date') || $request->has('name')) {
-                    $academicYear->update($request->only(['name', 'semester', 'start_date', 'end_date']));
-                }
+                $academicYear->update(array_merge(
+                    $request->only(['name', 'semester', 'start_date', 'end_date']),
+                    ['is_active' => true]
+                ));
             } else {
                 $academicYear->update($request->only(['name', 'semester', 'start_date', 'end_date', 'is_active']));
             }
