@@ -12,7 +12,7 @@ export async function getContacts() {
  * Fetch total unread chats count.
  */
 export async function getUnreadCount() {
-  const response = await api.get('/chat/unread-count')
+  const response = await api.get('/chat/unread-count', { __skipGlobalLoading: true })
   return response.data.unread_count
 }
 

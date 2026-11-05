@@ -5,6 +5,7 @@ import { VisSingleContainer, VisDonut } from '@unovis/vue'
 import { Donut } from '@unovis/ts'
 import WidgetCard from '@/components/dashboard-widget/WidgetCard.vue'
 import RollingNumber from '@/components/ui/rolling-number/RollingNumber.vue'
+import { Badge } from '@/components/ui/badge'
 import { isClient } from '@vueuse/core'
 import { useId } from 'reka-ui'
 
