@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/authStore'
 import RollingNumber from '@/components/ui/rolling-number/RollingNumber.vue'
 import Card from '@/components/ui/card/Card.vue'
 import studentDummy from '@/assets/images/student-dummy.png'
+import { getPhotoUrl } from '@/utils/getPhotoUrl'
 
 const props = defineProps({
   delay: { type: Number, default: 0 }
@@ -13,6 +14,19 @@ const props = defineProps({
 
 const auth = useAuthStore()
 const computedDelay = computed(() => (auth.isJustLoggedIn ? 1400 : 0) + props.delay)
+
+const currentStudent = computed(() => {
+  const pp = auth.user?.parent_profile || auth.user?.parentProfile
+  return pp?.students?.[0] || null
+})
+
+const studentName = computed(() => currentStudent.value?.user?.name || 'Ahmad Wibowo')
+const studentClass = computed(() => currentStudent.value?.classroom?.name || 'Kelas')
+const studentNisn = computed(() => currentStudent.value?.nisn || '-')
+const studentPhoto = computed(() => {
+  const photo = currentStudent.value?.user?.photo
+  return photo ? getPhotoUrl(photo) : studentDummy
+})
 </script>
 
 <template>
@@ -42,9 +56,9 @@ const computedDelay = computed(() => (auth.isJustLoggedIn ? 1400 : 0) + props.de
         >
           Siswa
         </Badge>
-        <h2 class="text-xl font-bold leading-tight text-white">Aditya Pratama</h2>
-        <p class="text-sm text-white/85 mt-0.5">Kelas 10 - IPA 2</p>
-        <p class="text-xs text-white/65">NISN: 0092837411</p>
+        <h2 class="text-xl font-bold leading-tight text-white">{{ studentName }}</h2>
+        <p class="text-sm text-white/85 mt-0.5">Kelas {{ studentClass }}</p>
+        <p class="text-xs text-white/65">NISN: {{ studentNisn }}</p>
       </div>
 
       <!-- Mini stats -->
@@ -77,7 +91,7 @@ const computedDelay = computed(() => (auth.isJustLoggedIn ? 1400 : 0) + props.de
     <!-- Foto siswa sisi kanan -->
     <div class="relative flex-1 overflow-hidden">
       <img
-        :src="studentDummy"
+        :src="studentPhoto"
         alt="Foto Siswa"
         class="absolute inset-0 w-full h-full object-cover object-top"
       />

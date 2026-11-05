@@ -2,6 +2,7 @@
 import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
+import { getPhotoUrl } from '@/utils/getPhotoUrl'
 import { navMain } from '@/constants/navigation'
 import {
   LayoutDashboard,
@@ -44,7 +45,7 @@ const currentUser = computed(() => ({
   name: auth.user?.name || 'Pengguna',
   email: auth.user?.email || auth.user?.role || 'guest',
   role: auth.user?.roleLabel || auth.user?.role || 'guest',
-  avatar: ''
+  avatar: getPhotoUrl(auth.user?.photo) || ''
 }))
 
 // Filtered navigation items based on RBAC rules

@@ -55,4 +55,12 @@ class ParentProfile extends Model
             'student_profile_id'
         )->withTimestamps();
     }
+
+    /**
+     * Get all students (alias for children relationship used by AuthController).
+     */
+    public function students(): BelongsToMany
+    {
+        return $this->children();
+    }
 }

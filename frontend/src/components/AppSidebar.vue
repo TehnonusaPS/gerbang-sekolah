@@ -6,6 +6,7 @@ import { DropdownMenu, DropdownMenuTrigger } from '@/components/ui/dropdown-menu
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import { useTenantBrand } from '@/composables/useTenantBrand'
+import { getPhotoUrl } from '@/utils/getPhotoUrl'
 import {
   Sidebar,
   SidebarContent,
@@ -25,7 +26,7 @@ const currentUser = computed(() => ({
   name: auth.user?.name || 'Pengguna',
   email: auth.user?.email || auth.user?.role || 'guest',
   role: auth.user?.roleLabel || auth.user?.role || 'guest',
-  avatar: ''
+  avatar: getPhotoUrl(auth.user?.photo) || ''
 }))
 
 const { tenantName, tenantLogo, onLogoError } = useTenantBrand()

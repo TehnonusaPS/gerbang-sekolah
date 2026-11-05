@@ -80,7 +80,7 @@ export const v = {
           }
           return
         }
-        if (!/^[a-zA-ZÀ-ÿ\s'-]+$/.test(val)) {
+        if (!/^[a-zA-ZÀ-ÿ\s.,'-]+$/.test(val)) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: `${label} hanya boleh berisi huruf (tidak boleh angka atau simbol)`

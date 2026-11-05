@@ -8,7 +8,7 @@ import {
   Layers,
   Sparkles
 } from 'lucide-vue-next'
-import { onMounted, ref, nextTick } from 'vue'
+import { onMounted, ref, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
 import { toast } from 'vue-sonner'
@@ -45,6 +45,15 @@ const props = defineProps({
     type: Object,
     required: true
   }
+})
+
+const userInitials = computed(() => {
+  const name = props.user?.name || ''
+  const parts = name.trim().split(/\s+/)
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase()
+  }
+  return (name.slice(0, 2) || 'GS').toUpperCase()
 })
 
 const { isMobile } = useSidebar()
@@ -217,7 +226,7 @@ onMounted(() => {
                 :src="user.avatar"
                 :alt="user.name"
               />
-              <AvatarFallback class="rounded-lg"> CN </AvatarFallback>
+              <AvatarFallback class="rounded-lg bg-primary/10 text-primary font-semibold"> {{ userInitials }} </AvatarFallback>
             </Avatar>
             <div class="grid flex-1 text-left text-sm leading-tight">
               <span class="truncate font-medium">{{ user.name }}</span>
@@ -241,7 +250,7 @@ onMounted(() => {
                   :src="user.avatar"
                   :alt="user.name"
                 />
-                <AvatarFallback class="rounded-lg"> CN </AvatarFallback>
+                <AvatarFallback class="rounded-lg bg-primary/10 text-primary font-semibold"> {{ userInitials }} </AvatarFallback>
               </Avatar>
               <div class="grid flex-1 text-left text-sm leading-tight">
                 <span class="truncate font-semibold">{{ user.name }}</span>
