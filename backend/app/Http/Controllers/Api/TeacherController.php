@@ -552,13 +552,11 @@ class TeacherController extends Controller
                         ->where('is_active', true)
                         ->value('id') ?: AcademicYear::where('school_id', $subjSchoolId)->latest('id')->value('id');
 
-                    $classroomId = Classroom::where('school_id', $subjSchoolId)->value('id');
-
                     TeacherSubjectAssignment::create([
                         'school_id'        => $subjSchoolId,
                         'teacher_id'       => $newUser->id,
                         'subject_id'       => $subjectId,
-                        'classroom_id'     => $classroomId,
+                        'classroom_id'     => $request->input('classroom_id', null),
                         'academic_year_id' => $academicYearId,
                         'is_active'        => true,
                     ]);
@@ -892,13 +890,11 @@ class TeacherController extends Controller
                         ->where('is_active', true)
                         ->value('id') ?: AcademicYear::where('school_id', $subjSchoolId)->latest('id')->value('id');
 
-                    $classroomId = Classroom::where('school_id', $subjSchoolId)->value('id');
-
                     TeacherSubjectAssignment::create([
                         'school_id'        => $subjSchoolId,
                         'teacher_id'       => $u->id,
                         'subject_id'       => $subjectId,
-                        'classroom_id'     => $classroomId,
+                        'classroom_id'     => $request->input('classroom_id', null),
                         'academic_year_id' => $academicYearId,
                         'is_active'        => true,
                     ]);
@@ -947,8 +943,28 @@ class TeacherController extends Controller
             }
         }
 
+        // Proteksi jika guru masih menjabat sebagai wali kelas aktif
+        $assignedClass = Classroom::where('homeroom_teacher_id', $u->id)->first();
+        if ($assignedClass) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => "Guru tidak dapat dihapus karena masih bertugas sebagai wali kelas di kelas \"{$assignedClass->name}\". Silakan ganti wali kelas terlebih dahulu.",
+            ], 422);
+        }
+
+        // Proteksi jika guru masih memiliki jadwal mengajar
+        $scheduleCount = \App\Models\Schedule::where('teacher_id', $u->id)->count();
+        if ($scheduleCount > 0) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => "Guru tidak dapat dihapus karena masih memiliki {$scheduleCount} jadwal mengajar aktif. Silakan hapus atau alihkan jadwal mengajar terlebih dahulu.",
+            ], 422);
+        }
+
         DB::beginTransaction();
         try {
+            // Bersihkan penugasan mata pelajaran
+            TeacherSubjectAssignment::where('teacher_id', $u->id)->delete();
             // Delete TeacherProfile first
             TeacherProfile::where('user_id', $u->id)->delete();
             // Delete User

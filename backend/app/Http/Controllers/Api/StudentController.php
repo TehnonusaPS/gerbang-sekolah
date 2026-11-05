@@ -992,13 +992,67 @@ class StudentController extends Controller
             ], 404);
         }
 
-        // StudentProfile will be deleted via cascadeOnDelete foreign keys
-        // User account itself will be deleted
-        $studentUser->delete();
+        // Scope check
+        $currentUser = $request->user();
+        if (!$currentUser->isSuperAdmin()) {
+            if ($currentUser->hasRole('admin_yayasan')) {
+                if ($studentUser->foundation_id != $currentUser->foundation_id && ($studentUser->school && $studentUser->school->foundation_id != $currentUser->foundation_id)) {
+                    return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+                }
+            } else {
+                if ($studentUser->school_id != $currentUser->school_id) {
+                    return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+                }
+            }
+        }
 
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Student deleted successfully.',
-        ]);
+        $profile = $studentUser->studentProfile;
+
+        // Proteksi 1: Riwayat Keuangan / Pembayaran SPP
+        $hasPayments = \App\Models\StudentPayment::where('student_id', $studentUser->id)->exists();
+        $hasPaidBills = \App\Models\StudentBill::where('student_id', $studentUser->id)->where('status', 'paid')->exists();
+        if ($hasPayments || $hasPaidBills) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Siswa tidak dapat dihapus permanen karena memiliki riwayat transaksi keuangan (SPP). Silakan ubah status siswa menjadi Nonaktif, Pindah, atau Alumni.',
+            ], 422);
+        }
+
+        // Proteksi 2: Nilai Akademik
+        if ($profile && \App\Models\AssessmentScore::where('student_id', $profile->id)->exists()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Siswa tidak dapat dihapus permanen karena sudah memiliki riwayat nilai akademik. Silakan ubah status siswa menjadi Nonaktif, Pindah, atau Alumni.',
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Bersihkan relasi orang tua dan ekskul jika ada
+            if ($profile) {
+                $profile->parents()->detach();
+                $profile->extracurriculars()->detach();
+                \App\Models\ClassroomStudent::where('student_profile_id', $profile->id)->delete();
+                $profile->delete();
+            }
+
+            // Hapus tagihan unpaid (jika pendaftaran baru dibatalkan)
+            \App\Models\StudentBill::where('student_id', $studentUser->id)->delete();
+
+            $studentUser->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Siswa berhasil dihapus.',
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Gagal menghapus siswa: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }
