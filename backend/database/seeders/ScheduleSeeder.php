@@ -22,7 +22,7 @@ class ScheduleSeeder extends Seeder
         $subjects = Subject::where('is_active', true)->get();
         $timeSlots = TimeSlot::where('is_break', false)->orderBy('slot_number')->get();
         $teachers = User::whereHas('role', function($q) {
-            $q->whereIn('name', ['guru', 'wali_kelas']);
+            $q->where('name', 'guru');
         })->get();
 
         if (!$academicYear || !$classroom || $subjects->isEmpty() || $timeSlots->isEmpty() || $teachers->isEmpty()) {

@@ -175,7 +175,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Management Data Routes (Yayasan, Sekolah & Pengguna)
-    Route::middleware('role:superadmin,admin_yayasan,admin_sekolah,kepala_sekolah,tata_usaha,wali_kelas')->prefix('management')->group(function () {
+    Route::middleware('role:superadmin,admin_yayasan,admin_sekolah,kepala_sekolah,tata_usaha,guru')->prefix('management')->group(function () {
         Route::get('/roles', [UserController::class, 'getRoles']);
         Route::apiResource('/foundations', FoundationController::class);
         Route::apiResource('/schools', SchoolController::class);
@@ -204,8 +204,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('/schedules', \App\Http\Controllers\Api\ScheduleController::class);
     });
 
-    // Akademik Routes (Guru, Wali Kelas, Admin Sekolah, Kepala Sekolah)
-    Route::middleware('role:guru,wali_kelas,admin_sekolah,kepala_sekolah')
+    // Akademik Routes (Guru, Admin Sekolah, Kepala Sekolah)
+    Route::middleware('role:guru,admin_sekolah,kepala_sekolah')
         ->prefix('akademik')
         ->group(function () {
              // Data lookup
@@ -280,7 +280,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/exam-schedules/my-schedule', [\App\Http\Controllers\Api\ExamScheduleController::class, 'mySchedule']);
 
     // Teacher Agendas CRUD & Read
-    Route::middleware('role:guru,wali_kelas')
+    Route::middleware('role:guru')
         ->prefix('teacher-agendas')
         ->group(function () {
             Route::get('/my-classrooms', [TeacherAgendaController::class, 'myClassrooms']);
@@ -290,8 +290,8 @@ Route::middleware('auth:sanctum')->group(function () {
         });
     Route::get('/teacher-agendas', [TeacherAgendaController::class, 'index']);
 
-    // Kalender Akademik - Read-Only (Guru, Wali Kelas, Siswa, Orang Tua)
-    Route::middleware('role:guru,wali_kelas,siswa,orang_tua')
+    // Kalender Akademik - Read-Only (Guru, Siswa, Orang Tua)
+    Route::middleware('role:guru,siswa,orang_tua')
         ->prefix('academic-calendar')
         ->group(function () {
             Route::get('/public-events', [AcademicCalendarController::class, 'publicEvents']);
@@ -331,7 +331,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ─── Report Routes ──────────────────────────────────────────────────
     // School-level reports
-    Route::middleware('role:admin_sekolah,kepala_sekolah,tata_usaha,guru,wali_kelas,orang_tua')
+    Route::middleware('role:admin_sekolah,kepala_sekolah,tata_usaha,guru,orang_tua')
         ->prefix('reports/school')
         ->group(function () {
             Route::get('/attendance', [\App\Http\Controllers\Api\Reports\ReportSchoolController::class, 'attendance']);
