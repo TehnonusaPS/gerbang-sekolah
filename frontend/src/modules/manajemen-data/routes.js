@@ -76,7 +76,7 @@ export default [
   // TAHUN AJARAN
   {
     path: 'manajemen-data/tahun-ajaran',
-    component: () => import('./pages/TahunAjaran.vue'),
+    component: () => import('./pages/tahun-ajaran/IndexPage.vue'),
     meta: {
       title: 'Tahun Ajaran',
       parent: 'Manajemen Data',
@@ -138,11 +138,11 @@ export default [
   // HAK AKSES
   {
     path: 'manajemen-data/hak-akses',
-    component: () => import('./pages/HakAkses.vue'),
+    component: () => import('./pages/data-pengguna/IndexPage.vue'),
     meta: {
       title: 'Hak Akses Pengguna',
       parent: 'Manajemen Data',
-      description: 'Kelola kewenangan, lisensi, dan hak akses pengguna sistem. mmmmmm'
+      description: 'Kelola kewenangan, lisensi, dan hak akses pengguna sistem.'
     }
   },
   // GURU & STAFF
@@ -182,7 +182,7 @@ export default [
   },
   {
     path: 'manajemen-data/ekskul',
-    component: () => import('./pages/EkskulData.vue'),
+    component: () => import('./pages/ekstrakulikuler/IndexPage.vue'),
     meta: {
       title: 'Ekstrakulikuler',
       parent: 'Manajemen Data',
@@ -191,7 +191,7 @@ export default [
   },
   {
     path: 'manajemen-data/jadwal',
-    component: () => import('./pages/JadwalData.vue'),
+    component: () => import('./pages/jadwal/IndexPage.vue'),
     meta: {
       title: 'Jadwal Pelajaran',
       parent: 'Manajemen Data',
