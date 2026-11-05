@@ -28,32 +28,33 @@ class SiswaAkademikController extends Controller
             ], 404);
         }
 
-        $currentClassroom = Classroom::find($student->classroom_id);
-        if (!$currentClassroom) {
-            return response()->json([
-                'status' => 'success',
-                'data' => []
-            ]);
+        // Ambil riwayat kelas nyata siswa dari tabel pivot riwayat
+        $classrooms = $student->classroomHistories()->with(['academicYear', 'homeroomTeacher'])->get();
+
+        // Fallback jika belum tercatat di pivot tapi ada pointer kelas saat ini
+        if ($classrooms->isEmpty() && $student->classroom_id) {
+            $current = Classroom::with(['academicYear', 'homeroomTeacher'])->find($student->classroom_id);
+            if ($current) {
+                $classrooms = collect([$current]);
+            }
         }
 
-        $schoolId = $request->user()->school_id;
-
-        // Find all classrooms in the same school with the same name/grade across all academic years
-        $classrooms = Classroom::with('academicYear')
-            ->where('school_id', $schoolId)
-            ->where('name', $currentClassroom->name)
-            ->get();
-
         $data = $classrooms->map(function ($c) use ($student) {
+            $pivot = $c->pivot ?? null;
+            $teacher = $c->homeroomTeacher;
+            $teacherName = $teacher ? $teacher->name : 'Belum Ada';
+
             return [
-                'classroom_id'       => $c->id,
-                'classroom_name'     => $c->name,
-                'grade'              => $c->grade,
-                'academic_year_id'   => $c->academic_year_id,
-                'academic_year_name' => $c->academicYear ? $c->academicYear->name : '-',
-                'semester'           => $c->academicYear ? $c->academicYear->semester : 'odd',
-                'semester_label'     => ($c->academicYear && $c->academicYear->semester === 'odd') ? 'Ganjil' : 'Genap',
-                'is_current'         => $c->id === $student->classroom_id
+                'classroom_id'          => $c->id,
+                'classroom_name'        => $c->name,
+                'grade'                 => $c->grade,
+                'academic_year_id'      => $c->academic_year_id,
+                'academic_year_name'    => $c->academicYear ? $c->academicYear->name : '-',
+                'semester'              => $c->academicYear ? $c->academicYear->semester : 'odd',
+                'semester_label'        => ($c->academicYear && $c->academicYear->semester === 'odd') ? 'Ganjil' : 'Genap',
+                'homeroom_teacher_name' => $teacherName,
+                'status_keanggotaan'    => $pivot ? $pivot->status : ($c->id === $student->classroom_id ? 'active' : 'archived'),
+                'is_current'            => $c->id === $student->classroom_id,
             ];
         })->sortByDesc('academic_year_id')->values();
 

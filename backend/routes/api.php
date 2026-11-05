@@ -183,6 +183,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('/students', StudentController::class);
         Route::get('/classrooms/teacher-options', [ClassroomController::class, 'getTeacherOptions']);
         Route::post('/classrooms/{id}/assign-students', [ClassroomController::class, 'assignStudents']);
+        Route::post('/classrooms/{id}/remove-student', [ClassroomController::class, 'removeStudent']);
+        Route::get('/classrooms/{id}/history-students', [ClassroomController::class, 'getHistoryStudents']);
         Route::apiResource('/classrooms', ClassroomController::class);
         Route::apiResource('/teachers', TeacherController::class);
         Route::apiResource('/extracurriculars', ExtracurricularController::class);

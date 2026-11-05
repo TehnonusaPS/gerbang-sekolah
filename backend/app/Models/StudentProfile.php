@@ -78,11 +78,38 @@ class StudentProfile extends Model
     }
 
     /**
-     * Get the classroom this student is assigned to.
+     * Get the active classroom this student is currently assigned to.
      */
     public function classroom(): BelongsTo
     {
         return $this->belongsTo(Classroom::class);
+    }
+
+    /**
+     * Get all classroom memberships (history & active).
+     */
+    public function classroomMemberships(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ClassroomStudent::class);
+    }
+
+    /**
+     * Get active classroom membership.
+     */
+    public function activeClassroomMembership(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(ClassroomStudent::class)->where('status', 'active');
+    }
+
+    /**
+     * Get all classrooms this student attended with academic year and homeroom teacher.
+     */
+    public function classroomHistories(): BelongsToMany
+    {
+        return $this->belongsToMany(Classroom::class, 'classroom_students')
+            ->withPivot('status', 'notes', 'start_date', 'end_date')
+            ->with(['academicYear', 'homeroomTeacher'])
+            ->withTimestamps();
     }
 
     /**

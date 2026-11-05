@@ -4,7 +4,19 @@ export const filters = [
   {
     type: 'search',
     key: 'search',
-    placeholder: 'Cari nama siswa disini...'
+    placeholder: 'Cari nama atau NISN...'
+  },
+  {
+    type: 'select',
+    key: 'keanggotaan',
+    label: 'Status Penempatan:',
+    placeholder: 'Semua Siswa',
+    options: [
+      { label: 'Semua Siswa', value: 'all' },
+      { label: 'Belum Ada Kelas', value: 'unassigned' },
+      { label: 'Anggota Kelas Ini', value: 'current' },
+      { label: 'Dari Kelas Lain', value: 'other' }
+    ]
   },
   {
     type: 'select',
@@ -12,14 +24,8 @@ export const filters = [
     label: 'Filter Status:',
     placeholder: 'Semua',
     options: [
-      {
-        label: 'Aktif',
-        value: 'Aktif'
-      },
-      {
-        label: 'Nonaktif',
-        value: 'Nonaktif'
-      }
+      { label: 'Aktif', value: 'Aktif' },
+      { label: 'Nonaktif', value: 'Nonaktif' }
     ]
   }
 ]
@@ -38,17 +44,17 @@ export const columns = [
       'Laki-laki': 'blue'
     }
   },
-  { key: 'kehadiran', label: 'Kehadiran' },
   { key: 'tahunMasuk', label: 'Tahun Masuk', type: 'number' },
   {
     key: 'status',
-    label: 'Status',
+    label: 'Status Siswa',
     badge: true,
     badgeVariant: {
       Aktif: 'green',
       Nonaktif: 'amber'
     }
-  }
+  },
+  { key: 'aksi', label: 'Aksi' }
 ]
 
 export const allItems = computed(() => [

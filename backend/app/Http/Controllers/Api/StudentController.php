@@ -562,6 +562,21 @@ class StudentController extends Controller
                 'status'          => $this->mapStatusToDb($request->status),
             ]);
 
+            // Catat keanggotaan kelas awal jika ada kelas dipilih
+            if ($request->filled('kelas')) {
+                $targetClass = Classroom::find($request->kelas);
+                if ($targetClass) {
+                    \App\Models\ClassroomStudent::create([
+                        'classroom_id'       => $targetClass->id,
+                        'student_profile_id' => $studentProfile->id,
+                        'academic_year_id'   => $targetClass->academic_year_id,
+                        'status'             => 'active',
+                        'start_date'         => now()->toDateString(),
+                        'notes'              => 'Pendaftaran awal',
+                    ]);
+                }
+            }
+
             // Foto Profil & Registrasi Biometrik AI
             if ($request->hasFile('foto')) {
                 $path = $request->file('foto')->store('student_faces', 'public');
@@ -703,6 +718,20 @@ class StudentController extends Controller
             'email'          => $rawStudentEmail,
             'no_hp'          => $student->phone ?? '',
             'foto'           => $student->photo ? (str_starts_with($student->photo, 'http') ? $student->photo : asset($student->photo)) : null,
+            'riwayat_kelas'  => $profile ? $profile->classroomHistories()->with(['academicYear', 'homeroomTeacher'])->get()->map(function ($c) {
+                return [
+                    'classroom_id'       => $c->id,
+                    'name'               => $c->name,
+                    'grade'              => $c->grade,
+                    'academic_year'      => $c->academicYear ? $c->academicYear->name : '-',
+                    'semester'           => $c->academicYear ? ($c->academicYear->semester === 'odd' ? 'Ganjil' : 'Genap') : '-',
+                    'wali_kelas'         => $c->homeroomTeacher ? $c->homeroomTeacher->name : 'Belum Ada',
+                    'status_keanggotaan' => $c->pivot->status,
+                    'start_date'         => $c->pivot->start_date ? $c->pivot->start_date->format('Y-m-d') : null,
+                    'end_date'           => $c->pivot->end_date ? $c->pivot->end_date->format('Y-m-d') : null,
+                    'notes'              => $c->pivot->notes,
+                ];
+            })->values()->toArray() : [],
         ], $parentData);
 
         return response()->json([
@@ -803,8 +832,12 @@ class StudentController extends Controller
 
             // 2. Update Student Profile
             if ($profile) {
+                $dbStatus = $this->mapStatusToDb($request->status);
+                $oldClassroomId = $profile->classroom_id;
+                $newClassroomId = in_array($dbStatus, ['expelled', 'transferred', 'alumni']) ? null : ($request->kelas ?: null);
+
                 $profile->update([
-                    'classroom_id'    => $request->kelas ?: null,
+                    'classroom_id'    => $newClassroomId,
                     'nisn'            => $request->nisn,
                     'nik'             => $request->nik,
                     'birth_place'     => $request->tempat_lahir,
@@ -813,8 +846,40 @@ class StudentController extends Controller
                     'religion'        => $request->agama ?: $profile->religion,
                     'address'         => $request->alamat,
                     'enrollment_date' => $enrollDate,
-                    'status'          => $this->mapStatusToDb($request->status),
+                    'status'          => $dbStatus,
                 ]);
+
+                // Sinkronkan ke tabel riwayat kelas
+                if ($oldClassroomId && ((string) $oldClassroomId !== (string) $newClassroomId)) {
+                    $histStatus = $dbStatus === 'alumni' ? 'graduated' : ($dbStatus === 'transferred' ? 'transferred' : 'transferred');
+                    \App\Models\ClassroomStudent::where('classroom_id', $oldClassroomId)
+                        ->where('student_profile_id', $profile->id)
+                        ->where('status', 'active')
+                        ->update([
+                            'status'   => $histStatus,
+                            'end_date' => now()->toDateString(),
+                            'notes'    => $newClassroomId ? 'Pindah kelas' : 'Status diperbarui: ' . $dbStatus,
+                        ]);
+                }
+
+                if ($newClassroomId && ((string) $oldClassroomId !== (string) $newClassroomId)) {
+                    $targetClass = Classroom::find($newClassroomId);
+                    if ($targetClass) {
+                        \App\Models\ClassroomStudent::updateOrCreate(
+                            [
+                                'classroom_id'       => $targetClass->id,
+                                'student_profile_id' => $profile->id,
+                            ],
+                            [
+                                'academic_year_id' => $targetClass->academic_year_id,
+                                'status'           => 'active',
+                                'start_date'       => now()->toDateString(),
+                                'end_date'         => null,
+                                'notes'            => 'Penempatan kelas',
+                            ]
+                        );
+                    }
+                }
             }
 
             // Foto Profil & Registrasi Biometrik AI

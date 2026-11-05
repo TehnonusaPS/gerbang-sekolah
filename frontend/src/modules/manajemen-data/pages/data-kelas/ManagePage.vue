@@ -1,13 +1,20 @@
 <script setup>
 import DataTableCard from '@/components/data-table/DataTableCard.vue'
 import PageHeader from '@/components/page-header/PageHeader.vue'
-import { Plus } from 'lucide-vue-next'
+import { Plus, UserMinus, UserPlus } from 'lucide-vue-next'
 import { columns, filters, guruOptions } from './data/siswaTersedia'
 import { usePagination } from '@/composables/usePagination'
 import { ref, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { toast } from 'vue-sonner'
-import { getClassroom, assignClassroomStudents, getTeacher, updateClassroom, getClassroomTeacherOptions } from '@/services/managementService'
+import {
+  getClassroom,
+  assignClassroomStudents,
+  removeClassroomStudent,
+  getTeacher,
+  updateClassroom,
+  getClassroomTeacherOptions
+} from '@/services/managementService'
 import { fetchAllSiswa } from '@/services/siswaService'
 import { getPhotoUrl } from '@/utils/getPhotoUrl'
 import Card from '@/components/ui/card/Card.vue'
@@ -47,8 +54,58 @@ const selectedClass = ref('')
 
 const filterValues = ref({
   search: '',
-  status: 'all'
+  status: 'all',
+  keanggotaan: 'all'
 })
+
+const isRemoving = ref(false)
+const isRemoveConfirmOpen = ref(false)
+const studentToRemove = ref(null)
+
+const confirmRemoveStudent = (student) => {
+  studentToRemove.value = student
+  isRemoveConfirmOpen.value = true
+}
+
+const executeRemoveStudent = async () => {
+  if (!studentToRemove.value || !classId.value) return
+  isRemoving.value = true
+  try {
+    await removeClassroomStudent(classId.value, studentToRemove.value.id)
+    toast.success('Siswa Berhasil Dikeluarkan', {
+      description: `${studentToRemove.value.nama} telah dikeluarkan dari kelas.`
+    })
+    isRemoveConfirmOpen.value = false
+    studentToRemove.value = null
+    await loadData()
+  } catch (err) {
+    toast.error('Gagal mengeluarkan siswa', {
+      description: err.response?.data?.message || err.message
+    })
+  } finally {
+    isRemoving.value = false
+  }
+}
+
+const quickAssignStudent = async (student) => {
+  if (!student?.id || !classId.value) return
+  if (capacityLimit.value && (currentStudentsCount.value + 1) > capacityLimit.value) {
+    toast.error(`Kapasitas kelas penuh! Kuota maksimal ${capacityLimit.value} siswa.`)
+    return
+  }
+  isPlacing.value = true
+  try {
+    const res = await assignClassroomStudents(classId.value, [student.id])
+    toast.success('Penempatan Berhasil', {
+      description: res.message || `${student.nama} berhasil ditempatkan ke kelas ${selectedClass.value}.`
+    })
+    await loadData()
+  } catch (err) {
+    toast.error(err.response?.data?.message || 'Gagal menempatkan siswa')
+  } finally {
+    isPlacing.value = false
+  }
+}
 
 const isOpenWaliKelas = ref(false)
 const selectedItem = ref(null)
@@ -67,12 +124,22 @@ const openChangeWaliKelas = () => {
 const filteredItems = computed(() => {
   return tableItems.value.filter(item => {
     const searchVal = filterValues.value.search?.trim().toLowerCase() || ''
-    const searchMatch = !searchVal || item.nama.toLowerCase().includes(searchVal)
+    const searchMatch = !searchVal || item.nama.toLowerCase().includes(searchVal) || item.nisn?.toLowerCase().includes(searchVal)
 
     const statusVal = filterValues.value.status
     const statusMatch = !statusVal || statusVal === 'all' || item.status === statusVal
 
-    return searchMatch && statusMatch
+    const keanggotaanVal = filterValues.value.keanggotaan
+    let keanggotaanMatch = true
+    if (keanggotaanVal === 'unassigned') {
+      keanggotaanMatch = item.kelas === 'Belum Ada Kelas'
+    } else if (keanggotaanVal === 'current') {
+      keanggotaanMatch = isCurrentClassStudent(item)
+    } else if (keanggotaanVal === 'other') {
+      keanggotaanMatch = !isCurrentClassStudent(item) && item.kelas !== 'Belum Ada Kelas'
+    }
+
+    return searchMatch && statusMatch && keanggotaanMatch
   })
 })
 
@@ -405,6 +472,33 @@ const placeStudentsToClass = async () => {
             </span>
           </div>
         </template>
+
+        <template #cell-aksi="{ item }">
+          <div class="flex items-center gap-2">
+            <Button
+              v-if="isCurrentClassStudent(item)"
+              variant="outline"
+              size="sm"
+              class="text-destructive hover:bg-destructive/10 border-destructive/30 h-8 px-2.5 text-xs"
+              @click="confirmRemoveStudent(item)"
+              :disabled="isRemoving || isPlacing"
+            >
+              <UserMinus class="size-3.5 mr-1" />
+              Keluarkan
+            </Button>
+            <Button
+              v-else-if="item.status === 'Aktif'"
+              variant="outline"
+              size="sm"
+              class="h-8 px-2.5 text-xs text-primary border-primary/30 hover:bg-primary/10"
+              @click="quickAssignStudent(item)"
+              :disabled="isRemoving || isPlacing"
+            >
+              <UserPlus class="size-3.5 mr-1" />
+              Tempatkan
+            </Button>
+          </div>
+        </template>
       </DataTableCard>
     </div>
   </div>
@@ -419,6 +513,30 @@ const placeStudentsToClass = async () => {
     @submit="handleSubmitWaliKelas"
     avatarKey="false"
   />
+
+  <!-- Dialog Konfirmasi Keluarkan Siswa -->
+  <AlertDialog v-model:open="isRemoveConfirmOpen">
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>Keluarkan Siswa dari Kelas</AlertDialogTitle>
+        <AlertDialogDescription>
+          Apakah Anda yakin ingin mengeluarkan <strong>{{ studentToRemove?.nama }}</strong> dari kelas <strong>{{ selectedClass }}</strong>?
+          <br /><br />
+          Siswa akan kembali berstatus <em>Belum Ada Kelas</em> dan riwayat keanggotaan kelasnya tetap tersimpan di arsip sekolah.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel :disabled="isRemoving">Batal</AlertDialogCancel>
+        <AlertDialogAction
+          class="bg-destructive hover:bg-destructive/90 text-white"
+          :disabled="isRemoving"
+          @click="executeRemoveStudent"
+        >
+          {{ isRemoving ? 'Mengeluarkan...' : 'Keluarkan dari Kelas' }}
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
 
   <AlertDialog v-model:open="isConfirmOpen">
     <AlertDialogContent>

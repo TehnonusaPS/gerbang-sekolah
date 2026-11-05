@@ -18,7 +18,7 @@ import Avatar from '@/components/ui/avatar/Avatar.vue'
 import AvatarImage from '@/components/ui/avatar/AvatarImage.vue'
 import AvatarFallback from '@/components/ui/avatar/AvatarFallback.vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getClassroom, getTeacher } from '@/services/managementService'
+import { getClassroom, getTeacher, getClassroomHistoryStudents } from '@/services/managementService'
 import { fetchAllSiswa } from '@/services/siswaService'
 import { getPhotoUrl } from '@/utils/getPhotoUrl'
 
@@ -173,7 +173,27 @@ const fetchDetailData = async (classId) => {
     // Load student list
     try {
       const studentRes = await fetchAllSiswa({ kelasId: classId })
-      const students = studentRes.data || []
+      let students = studentRes.data || []
+
+      // Jika siswa aktif kosong (misal kelas arsip masa lalu), ambil dari history students
+      if (students.length === 0) {
+        try {
+          const histRes = await getClassroomHistoryStudents(classId)
+          if (histRes.data && histRes.data.length > 0) {
+            students = histRes.data.map(h => ({
+              id: h.user_id || h.id,
+              nama: h.nama,
+              nisn: h.nisn,
+              jenisKelamin: h.jenis_kelamin,
+              status: h.status_keanggotaan === 'active' ? 'Aktif' : (h.status_keanggotaan === 'promoted' ? 'Naik Kelas' : (h.status_keanggotaan === 'graduated' ? 'Lulus' : 'Pindah')),
+              foto: null
+            }))
+          }
+        } catch (hErr) {
+          console.warn('Gagal memuat riwayat siswa:', hErr)
+        }
+      }
+
       tableItems.value = students.map(s => ({
         ...s,
         foto: s.foto ? getPhotoUrl(s.foto) : null
