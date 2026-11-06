@@ -1,7 +1,7 @@
 <script setup>
 import DataTableCard from '@/components/data-table/DataTableCard.vue'
 import PageHeader from '@/components/page-header/PageHeader.vue'
-import { Building2, School, Settings, Users2, VenusAndMars, ArrowUpRight } from 'lucide-vue-next'
+import { Building2, School, Settings, Users2, VenusAndMars, ArrowUpRight, MessageSquare } from 'lucide-vue-next'
 import { actions, columns, filters } from './data/siswaKelas'
 import { usePagination } from '@/composables/usePagination'
 import { ref, computed, watch } from 'vue'
@@ -337,89 +337,130 @@ watch(
     </Button>
   </div>
 
-  <div v-else class="grid gap-6 md:grid-cols-4">
-    <!-- Kolom Kiri: Overview Kelas -->
-    <div class="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle class="text-lg">Informasi Kelas</CardTitle>
-          <CardDescription>Informasi mengenai kelas {{ classroom.name || '-' }}</CardDescription>
+  <div v-else class="grid gap-6 grid-cols-1 lg:grid-cols-12 items-start">
+    <!-- Kolom Kiri: Overview Kelas & Wali Kelas -->
+    <div class="lg:col-span-4 xl:col-span-4 space-y-5 lg:sticky lg:top-6 self-start">
+      <!-- Card Informasi Kelas -->
+      <Card class="overflow-hidden border border-border/70 shadow-xs">
+        <CardHeader class="pb-3.5">
+          <div class="flex items-center justify-between">
+            <div>
+              <CardTitle class="text-base font-bold text-foreground">Informasi Kelas</CardTitle>
+              <CardDescription class="text-xs">Profil & kapasitas kelas {{ classroom.name || '-' }}</CardDescription>
+            </div>
+            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+              Tingkat {{ classroom.grade || '-' }}
+            </span>
+          </div>
         </CardHeader>
-        <Separator />
-        <CardContent>
-          <div class="flex items-center gap-4 border px-4 py-3 rounded-lg bg-background mb-4">
-            <School class="w-6 h-6 text-primary" />
-            <div>
-              <p class="text-xs text-muted-foreground">KELAS</p>
-              <p class="font-semibold text-sm">{{ classroom.name || '-' }}</p>
+        <CardContent class="pt-0">
+          <div class="grid grid-cols-2 gap-2.5">
+            <!-- Card 1: Nama Kelas -->
+            <div class="flex flex-col p-3 rounded-xl bg-muted/40 border border-border/50">
+              <div class="flex items-center gap-1.5 text-muted-foreground mb-1">
+                <School class="size-4 text-primary" />
+                <span class="text-[11px] font-semibold tracking-wider uppercase">Kelas</span>
+              </div>
+              <span class="text-base font-bold text-foreground">{{ classroom.name || '-' }}</span>
             </div>
-          </div>
 
-          <div class="flex items-center gap-4 border px-4 py-3 rounded-lg bg-background mb-4">
-            <Users2 class="w-6 h-6 text-primary" />
-            <div>
-              <p class="text-xs text-muted-foreground">TOTAL SISWA</p>
-              <p class="font-semibold text-sm">{{ totalStudents }}</p>
+            <!-- Card 2: Ruangan -->
+            <div class="flex flex-col p-3 rounded-xl bg-muted/40 border border-border/50">
+              <div class="flex items-center gap-1.5 text-muted-foreground mb-1">
+                <Building2 class="size-4 text-primary" />
+                <span class="text-[11px] font-semibold tracking-wider uppercase">Ruangan</span>
+              </div>
+              <span class="text-base font-bold text-foreground truncate" :title="classroom.room || '-'">
+                {{ classroom.room || '-' }}
+              </span>
             </div>
-          </div>
 
-          <div class="flex items-center gap-4 border px-4 py-3 rounded-lg bg-background mb-4">
-            <VenusAndMars class="w-6 h-6 text-primary" />
-            <div>
-              <p class="text-xs text-muted-foreground">LAKI-LAKI/PEREMPUAN</p>
-              <p class="font-semibold text-sm">{{ maleCount }}/{{ femaleCount }}</p>
+            <!-- Card 3: Total Siswa -->
+            <div class="flex flex-col p-3 rounded-xl bg-muted/40 border border-border/50">
+              <div class="flex items-center gap-1.5 text-muted-foreground mb-1">
+                <Users2 class="size-4 text-primary" />
+                <span class="text-[11px] font-semibold tracking-wider uppercase">Total Siswa</span>
+              </div>
+              <div class="flex items-baseline gap-1">
+                <span class="text-xl font-black text-foreground">{{ totalStudents }}</span>
+                <span class="text-xs text-muted-foreground font-medium">siswa</span>
+              </div>
             </div>
-          </div>
 
-          <div class="flex items-center gap-4 border px-4 py-3 rounded-lg bg-background mb-1">
-            <Building2 class="w-6 h-6 text-primary" />
-            <div>
-              <p class="text-xs text-muted-foreground">RUANGAN</p>
-              <p class="font-semibold text-sm">{{ classroom.room || '-' }}</p>
+            <!-- Card 4: Rasio Gender -->
+            <div class="flex flex-col p-3 rounded-xl bg-muted/40 border border-border/50">
+              <div class="flex items-center gap-1.5 text-muted-foreground mb-1">
+                <VenusAndMars class="size-4 text-primary" />
+                <span class="text-[11px] font-semibold tracking-wider uppercase">Gender</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs font-semibold mt-0.5">
+                <span class="text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/40 px-2 py-0.5 rounded-md">
+                  {{ maleCount }} L
+                </span>
+                <span class="text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-md">
+                  {{ femaleCount }} P
+                </span>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle class="text-lg">Wali Kelas</CardTitle>
-          <CardDescription>Informasi wali kelas {{ classroom.name || '-' }}</CardDescription>
+      <!-- Card Wali Kelas -->
+      <Card class="overflow-hidden border border-border/70 shadow-xs">
+        <CardHeader class="pb-3.5">
+          <div class="flex items-center justify-between">
+            <div>
+              <CardTitle class="text-base font-bold text-foreground">Wali Kelas</CardTitle>
+              <CardDescription class="text-xs">Penanggung jawab kelas {{ classroom.name || '-' }}</CardDescription>
+            </div>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-muted text-muted-foreground uppercase tracking-wide">
+              {{ teacherPosition }}
+            </span>
+          </div>
         </CardHeader>
-        <Separator />
-        <CardContent>
-          <div class="flex items-center gap-4 py-1">
-            <Avatar class="shrink-0 size-20">
+        <CardContent class="pt-0">
+          <div class="flex items-start gap-3.5 p-3.5 rounded-xl bg-muted/30 border border-border/50">
+            <Avatar class="size-13 rounded-full border border-border/80 shadow-xs shrink-0 mt-0.5">
               <AvatarImage
                 v-if="teacherPhoto"
                 :src="teacherPhoto"
                 :alt="teacherName"
+                class="object-cover"
               />
-              <AvatarFallback class="text-sm font-bold"> {{ teacherInitials }} </AvatarFallback>
+              <AvatarFallback class="bg-primary/10 text-primary text-sm font-bold">
+                {{ teacherInitials }}
+              </AvatarFallback>
             </Avatar>
-            <div class="min-w-0 flex-1">
-              <p class="font-semibold text-base mb-1 truncate">{{ teacherFullName }}</p>
-              <p class="text-xs text-muted-foreground mb-1 uppercase font-medium">{{ teacherPosition }}</p>
-              <p class="font-medium text-sm text-primary mb-1">{{ teacherNip }}</p>
+            <div class="min-w-0 flex-1 space-y-1">
+              <p class="font-bold text-sm text-foreground leading-snug break-words">
+                {{ teacherFullName }}
+              </p>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="inline-flex items-center text-xs font-medium text-muted-foreground bg-background px-2 py-0.5 rounded-md border border-border/60">
+                  {{ teacherNip }}
+                </span>
+              </div>
             </div>
           </div>
         </CardContent>
-        <CardFooter class="flex justify-end gap-2">
+        <CardFooter class="pt-0">
           <Button
             :disabled="!hasTeacherContact"
             variant="outline"
             size="sm"
-            class="text-xs font-semibold cursor-pointer"
+            class="w-full text-xs font-semibold gap-2 rounded-xl cursor-pointer hover:bg-primary/5 hover:text-primary transition-colors"
             @click="handleContactTeacher"
           >
-            Hubungi Wali Kelas
+            <MessageSquare class="size-3.5" />
+            <span>Hubungi Wali Kelas</span>
           </Button>
         </CardFooter>
       </Card>
     </div>
 
     <!-- Kolom Kanan: Tabel daftar siswa -->
-    <div class="md:col-span-3 space-y-6">
+    <div class="lg:col-span-8 xl:col-span-8 space-y-6">
       <DataTableCard
         :columns="columns"
         :items="paginatedItems"

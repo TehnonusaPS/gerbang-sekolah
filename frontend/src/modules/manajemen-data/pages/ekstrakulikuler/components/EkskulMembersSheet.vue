@@ -317,11 +317,11 @@ watch(
           <div
             v-for="member in filteredMembers"
             :key="member.id"
-            class="flex items-start justify-between p-3.5 rounded-xl border border-border bg-card hover:bg-muted/30 transition-colors gap-3"
+            class="flex items-center justify-between p-3.5 rounded-xl border border-border bg-card hover:bg-muted/30 transition-colors gap-3"
           >
             <!-- Info Siswa -->
-            <div class="flex items-start gap-3 min-w-0 flex-1">
-              <Avatar class="size-10 border shrink-0 mt-0.5">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <Avatar class="size-10 border shrink-0">
                 <AvatarImage v-if="getPhotoUrl(member.avatar)" :src="getPhotoUrl(member.avatar)" :alt="member.nama" />
                 <AvatarFallback class="bg-primary/10 text-primary text-xs font-semibold">
                   {{ member.nama?.charAt(0)?.toUpperCase() || 'S' }}
@@ -330,8 +330,8 @@ watch(
 
               <div class="min-w-0 flex-1 space-y-1">
                 <!-- Baris Nama & Gender -->
-                <div class="flex items-center gap-2 flex-wrap">
-                  <p class="text-sm font-semibold text-foreground truncate max-w-[220px] sm:max-w-[320px]">
+                <div class="flex items-center gap-2">
+                  <p class="text-sm font-semibold text-foreground truncate">
                     {{ member.nama }}
                   </p>
                   <span class="text-[10px] px-1.5 py-0.5 rounded font-medium bg-muted text-muted-foreground shrink-0">
@@ -340,7 +340,7 @@ watch(
                 </div>
 
                 <!-- Baris Kelas, NISN, Tanggal Bergabung -->
-                <div class="flex items-center flex-wrap gap-x-2.5 gap-y-1 text-xs text-muted-foreground">
+                <div class="flex items-center flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
                   <span class="inline-flex items-center gap-1 shrink-0">
                     <GraduationCap class="size-3.5 text-muted-foreground/70" />
                     <span>{{ member.kelas }}</span>
@@ -361,12 +361,12 @@ watch(
               v-if="canManage"
               variant="ghost"
               size="sm"
-              class="text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 shrink-0 gap-1.5 text-xs h-8 px-2.5 rounded-xl cursor-pointer"
+              class="text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 shrink-0 gap-1.5 text-xs h-8 px-2 sm:px-2.5 rounded-xl cursor-pointer ml-auto"
               title="Keluarkan dari ekskul"
               @click="confirmRemove(member)"
             >
-              <UserMinus class="size-3.5" />
-              <span>Keluarkan</span>
+              <UserMinus class="size-3.5 shrink-0" />
+              <span class="hidden sm:inline">Keluarkan</span>
             </Button>
           </div>
         </div>

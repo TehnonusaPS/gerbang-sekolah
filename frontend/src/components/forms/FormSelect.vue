@@ -130,7 +130,7 @@ const sanitizedOptions = computed(() => {
                   }"
                   class="flex items-center justify-between cursor-pointer py-2 px-3 text-sm"
                 >
-                  <span class="truncate pr-2">{{ item.label }}</span>
+                  <span class="line-clamp-2 leading-snug pr-2 text-left">{{ item.label }}</span>
                   <Check
                     v-if="String(item.value) === String(modelValue)"
                     class="h-4 w-4 text-primary shrink-0 ml-auto"
