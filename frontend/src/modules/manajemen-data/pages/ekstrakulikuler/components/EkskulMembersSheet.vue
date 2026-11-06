@@ -313,40 +313,44 @@ watch(
         </div>
 
         <!-- Members Table / Cards -->
-        <div v-else class="space-y-2">
+        <div v-else class="space-y-2.5">
           <div
             v-for="member in filteredMembers"
             :key="member.id"
-            class="flex items-center justify-between p-3.5 rounded-xl border border-border bg-card hover:bg-muted/40 transition-colors"
+            class="flex items-start justify-between p-3.5 rounded-xl border border-border bg-card hover:bg-muted/30 transition-colors gap-3"
           >
-            <div class="flex items-center gap-3 min-w-0">
-              <Avatar class="size-10 border shrink-0">
+            <!-- Info Siswa -->
+            <div class="flex items-start gap-3 min-w-0 flex-1">
+              <Avatar class="size-10 border shrink-0 mt-0.5">
                 <AvatarImage v-if="getPhotoUrl(member.avatar)" :src="getPhotoUrl(member.avatar)" :alt="member.nama" />
                 <AvatarFallback class="bg-primary/10 text-primary text-xs font-semibold">
                   {{ member.nama?.charAt(0)?.toUpperCase() || 'S' }}
                 </AvatarFallback>
               </Avatar>
 
-              <div class="min-w-0">
-                <div class="flex items-center gap-2">
-                  <p class="text-sm font-semibold text-foreground truncate">
+              <div class="min-w-0 flex-1 space-y-1">
+                <!-- Baris Nama & Gender -->
+                <div class="flex items-center gap-2 flex-wrap">
+                  <p class="text-sm font-semibold text-foreground truncate max-w-[220px] sm:max-w-[320px]">
                     {{ member.nama }}
                   </p>
-                  <span class="text-[10px] px-1.5 py-0.5 rounded font-medium bg-muted text-muted-foreground">
+                  <span class="text-[10px] px-1.5 py-0.5 rounded font-medium bg-muted text-muted-foreground shrink-0">
                     {{ member.jenis_kelamin }}
                   </span>
                 </div>
-                <div class="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                  <span class="flex items-center gap-1">
-                    <GraduationCap class="size-3 text-muted-foreground" />
-                    {{ member.kelas }}
+
+                <!-- Baris Kelas, NISN, Tanggal Bergabung -->
+                <div class="flex items-center flex-wrap gap-x-2.5 gap-y-1 text-xs text-muted-foreground">
+                  <span class="inline-flex items-center gap-1 shrink-0">
+                    <GraduationCap class="size-3.5 text-muted-foreground/70" />
+                    <span>{{ member.kelas }}</span>
                   </span>
-                  <span>•</span>
-                  <span>NISN: {{ member.nisn || '-' }}</span>
-                  <span>•</span>
-                  <span class="flex items-center gap-1">
-                    <Calendar class="size-3 text-muted-foreground" />
-                    {{ member.tanggal_bergabung }}
+                  <span class="text-muted-foreground/40">•</span>
+                  <span class="shrink-0">NISN: {{ member.nisn || '-' }}</span>
+                  <span class="text-muted-foreground/40">•</span>
+                  <span class="inline-flex items-center gap-1 shrink-0 whitespace-nowrap">
+                    <Calendar class="size-3.5 text-muted-foreground/70" />
+                    <span>{{ member.tanggal_bergabung }}</span>
                   </span>
                 </div>
               </div>
@@ -357,12 +361,12 @@ watch(
               v-if="canManage"
               variant="ghost"
               size="sm"
-              class="text-rose-500 hover:text-rose-600 hover:bg-rose-50 shrink-0 gap-1 text-xs cursor-pointer"
+              class="text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 shrink-0 gap-1.5 text-xs h-8 px-2.5 rounded-xl cursor-pointer"
               title="Keluarkan dari ekskul"
               @click="confirmRemove(member)"
             >
-              <UserMinus class="size-4" />
-              <span class="hidden sm:inline">Keluarkan</span>
+              <UserMinus class="size-3.5" />
+              <span>Keluarkan</span>
             </Button>
           </div>
         </div>

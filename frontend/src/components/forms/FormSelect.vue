@@ -109,7 +109,7 @@ const sanitizedOptions = computed(() => {
         </PopoverTrigger>
 
         <PopoverContent
-          class="w-[var(--reka-popover-trigger-width)] rounded-xl p-0 shadow-xl border border-border"
+          class="w-[var(--reka-popover-trigger-width)] min-w-[280px] sm:min-w-[340px] max-w-[calc(100vw-2rem)] rounded-xl p-0 shadow-xl border border-border z-[70]"
           align="start"
           :side-offset="4"
         >
@@ -130,10 +130,10 @@ const sanitizedOptions = computed(() => {
                   }"
                   class="flex items-center justify-between cursor-pointer py-2 px-3 text-sm"
                 >
-                  <span class="truncate">{{ item.label }}</span>
+                  <span class="truncate pr-2">{{ item.label }}</span>
                   <Check
                     v-if="String(item.value) === String(modelValue)"
-                    class="h-4 w-4 text-primary shrink-0 ml-2"
+                    class="h-4 w-4 text-primary shrink-0 ml-auto"
                   />
                 </CommandItem>
               </CommandGroup>

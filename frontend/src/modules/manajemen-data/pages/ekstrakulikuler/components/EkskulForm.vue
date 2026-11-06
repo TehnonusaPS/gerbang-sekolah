@@ -45,23 +45,21 @@ defineProps({
               :error="errors.nama"
               required
             />
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormSelect
-                v-model="form.advisor_id"
-                label="Guru Pembina"
-                placeholder="Pilih guru pembina (opsional)"
-                searchable
-                search-placeholder="Cari nama guru atau NIP..."
-                :error="errors.advisor_id"
-                :options="teacherOptions"
-              />
-              <FormInput
-                v-model="form.coach_name"
-                label="Pelatih / Instruktur Luar"
-                placeholder="Contoh: Coach Hendra (opsional)"
-                :error="errors.coach_name"
-              />
-            </div>
+            <FormSelect
+              v-model="form.advisor_id"
+              label="Guru Pembina"
+              placeholder="Pilih guru pembina dari sekolah (opsional)"
+              searchable
+              search-placeholder="Cari nama guru atau NIP..."
+              :error="errors.advisor_id"
+              :options="teacherOptions"
+            />
+            <FormInput
+              v-model="form.coach_name"
+              label="Pelatih / Instruktur Luar"
+              placeholder="Contoh: Coach Hendra (opsional jika pembina dari luar)"
+              :error="errors.coach_name"
+            />
             <FormTextArea
               v-model="form.deskripsi"
               label="Deskripsi"
