@@ -1,5 +1,6 @@
 export const columns = [
   { key: 'nama', label: 'Nama Ekskul' },
+  { key: 'pembina_nama', label: 'Pembina / Pelatih' },
   { key: 'jumlah_anggota', label: 'Jumlah Anggota' },
   { key: 'deskripsi', label: 'Deskripsi', truncate: true },
   {

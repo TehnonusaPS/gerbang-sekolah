@@ -26,8 +26,9 @@ import {
   SheetDescription
 } from '@/components/ui/sheet'
 import EkskulForm from './components/EkskulForm.vue'
+import EkskulMembersSheet from './components/EkskulMembersSheet.vue'
 import FormFooter from '@/components/forms/FormFooter.vue'
-import { Award, Plus, Eye, Pencil, Trash2, ToggleLeft, ToggleRight } from 'lucide-vue-next'
+import { Award, Plus, Eye, Pencil, Trash2, ToggleLeft, ToggleRight, Users } from 'lucide-vue-next'
 import { columns, filters } from './data/ekskulConfig'
 import { ekskulSchema } from './data/ekskulSchema'
 import {
@@ -37,6 +38,7 @@ import {
   deleteEkskul,
   toggleEkskulStatus
 } from '@/services/ekskulService'
+import { getTeachers } from '@/services/managementService'
 
 const auth = useAuthStore()
 
@@ -68,8 +70,24 @@ const loadEkskuls = async () => {
   }
 }
 
+// --- Teachers for Advisor Options ---
+const teacherOptions = ref([])
+const loadTeachers = async () => {
+  try {
+    const res = await getTeachers({ per_page: 100 })
+    const list = res.data || []
+    teacherOptions.value = list.map(t => ({
+      label: t.name ? `${t.name}${t.nip ? ` (${t.nip})` : ''}` : 'Guru',
+      value: t.id
+    }))
+  } catch (err) {
+    console.error('Gagal memuat daftar guru:', err)
+  }
+}
+
 onMounted(() => {
   loadEkskuls()
+  loadTeachers()
 })
 
 // --- Computed Stats ---
@@ -92,6 +110,8 @@ const isEditMode = ref(false)
 const formItem = ref({
   id: '',
   nama: '',
+  advisor_id: null,
+  coach_name: '',
   deskripsi: '',
   status: 'aktif'
 })
@@ -108,6 +128,8 @@ const handleCreate = () => {
   formItem.value = {
     id: '',
     nama: '',
+    advisor_id: null,
+    coach_name: '',
     deskripsi: '',
     status: 'aktif'
   }
@@ -120,22 +142,34 @@ const handleEdit = item => {
   formItem.value = {
     id: item.id,
     nama: item.nama,
+    advisor_id: item.advisor_id || null,
+    coach_name: item.coach_name || '',
     deskripsi: item.deskripsi || '',
     status: item.status || 'aktif'
   }
   isFormSheetOpen.value = true
 }
 
-const saveSummary = computed(() => [
-  { label: 'Nama Ekstrakulikuler', value: formItem.value.nama },
-  { label: 'Status', value: getStatusLabel(formItem.value.status) }
-])
+const saveSummary = computed(() => {
+  const selectedTeacher = teacherOptions.value.find(t => t.value === formItem.value.advisor_id)
+  const pembinaText = selectedTeacher
+    ? selectedTeacher.label
+    : (formItem.value.coach_name || '-')
+
+  return [
+    { label: 'Nama Ekstrakulikuler', value: formItem.value.nama },
+    { label: 'Pembina / Pelatih', value: pembinaText },
+    { label: 'Status', value: getStatusLabel(formItem.value.status) }
+  ]
+})
 
 const handleSave = async () => {
   isSaving.value = true
   try {
     const payload = {
       nama: formItem.value.nama.trim(),
+      advisor_id: formItem.value.advisor_id || null,
+      coach_name: formItem.value.coach_name ? formItem.value.coach_name.trim() : null,
       deskripsi: formItem.value.deskripsi ? formItem.value.deskripsi.trim() : null,
       status: formItem.value.status
     }
@@ -215,6 +249,15 @@ const rawDetailItem = computed(() => {
   }
 })
 
+// --- Member Management Sheet ---
+const isMembersSheetOpen = ref(false)
+const selectedItemForMembers = ref(null)
+
+const handleManageMembers = item => {
+  selectedItemForMembers.value = item
+  isMembersSheetOpen.value = true
+}
+
 const detailSections = computed(() => {
   if (!selectedItemForDetail.value) return []
   return [
@@ -223,6 +266,7 @@ const detailSections = computed(() => {
       title: 'Informasi Ekstrakulikuler',
       fields: [
         { label: 'Nama Ekstrakulikuler', value: selectedItemForDetail.value.nama },
+        { label: 'Pembina / Pelatih', value: selectedItemForDetail.value.pembina_nama || '-' },
         { label: 'Jumlah Anggota', value: `${selectedItemForDetail.value.jumlah_anggota ?? 0} Siswa` },
         { label: 'Deskripsi', value: selectedItemForDetail.value.deskripsi || '-', textarea: true },
         { label: 'Status', value: getStatusLabel(selectedItemForDetail.value.status) }
@@ -344,6 +388,16 @@ const confirmDelete = async () => {
             <span class="text-[9px] font-semibold leading-none">Detail</span>
           </button>
 
+          <!-- Kelola Anggota Siswa -->
+          <button
+            class="flex flex-col items-center justify-center gap-0.5 group/btn focus:outline-none text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+            title="Kelola Anggota Siswa"
+            @click="handleManageMembers(item)"
+          >
+            <Users class="size-4 transition-transform group-hover/btn:scale-110" />
+            <span class="text-[9px] font-semibold leading-none">Anggota</span>
+          </button>
+
           <!-- Aksi Pengelola (Admin Sekolah / Superadmin / Yayasan) -->
           <template v-if="canManage">
             <!-- Edit -->
@@ -400,6 +454,14 @@ const confirmDelete = async () => {
       :sections="detailSections"
     />
 
+    <!-- Kelola Anggota Sheet -->
+    <EkskulMembersSheet
+      v-model:open="isMembersSheetOpen"
+      :ekskul="selectedItemForMembers"
+      :can-manage="canManage"
+      @updated="loadEkskuls"
+    />
+
     <!-- Form Sheet (Create / Edit) -->
     <Sheet v-model:open="isFormSheetOpen">
       <SheetContent class="sm:max-w-[500px] flex flex-col h-full gap-2">
@@ -420,6 +482,7 @@ const confirmDelete = async () => {
           <EkskulForm
             :form="formItem"
             :errors="formErrors"
+            :teacher-options="teacherOptions"
           />
         </div>
 

@@ -17,6 +17,10 @@ defineProps({
   errors: {
     type: Object,
     default: () => ({})
+  },
+  teacherOptions: {
+    type: Array,
+    default: () => []
   }
 })
 </script>
@@ -41,6 +45,21 @@ defineProps({
               :error="errors.nama"
               required
             />
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormSelect
+                v-model="form.advisor_id"
+                label="Guru Pembina"
+                placeholder="Pilih guru pembina (opsional)"
+                :error="errors.advisor_id"
+                :options="teacherOptions"
+              />
+              <FormInput
+                v-model="form.coach_name"
+                label="Pelatih / Instruktur Luar"
+                placeholder="Contoh: Coach Hendra (opsional)"
+                :error="errors.coach_name"
+              />
+            </div>
             <FormTextArea
               v-model="form.deskripsi"
               label="Deskripsi"

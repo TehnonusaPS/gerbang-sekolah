@@ -30,3 +30,27 @@ export async function toggleEkskulStatus(id, newStatus) {
   return response.data
 }
 
+export async function getEkskulStudents(id) {
+  const response = await api.get(`/management/extracurriculars/${id}/students`)
+  return response.data
+}
+
+export async function addEkskulStudents(id, studentIds) {
+  const response = await api.post(`/management/extracurriculars/${id}/students`, {
+    student_ids: studentIds,
+  })
+  return response.data
+}
+
+export async function removeEkskulStudent(id, studentId) {
+  const response = await api.post(`/management/extracurriculars/${id}/remove-student`, {
+    student_id: studentId,
+  })
+  return response.data
+}
+
+export async function getAvailableEkskulStudents(id, params) {
+  const response = await api.get(`/management/extracurriculars/${id}/available-students`, { params })
+  return response.data
+}
+

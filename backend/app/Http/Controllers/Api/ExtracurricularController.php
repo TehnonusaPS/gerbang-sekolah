@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Extracurricular;
 use App\Models\School;
+use App\Models\StudentProfile;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class ExtracurricularController extends Controller
@@ -51,7 +54,7 @@ class ExtracurricularController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $query = Extracurricular::withCount('students');
+        $query = Extracurricular::with(['advisor'])->withCount('students');
 
         if ($user->isSuperAdmin()) {
             if ($request->has('school_id')) {
@@ -71,7 +74,12 @@ class ExtracurricularController extends Controller
         // Apply filters
         if ($request->has('search')) {
             $search = $request->input('search');
-            $query->where('name', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('coach_name', 'like', "%{$search}%")
+                  ->orWhereHas('advisor', fn($aq) => $aq->where('name', 'like', "%{$search}%"));
+            });
         }
 
         if ($request->has('status') && $request->status !== 'all') {
@@ -86,6 +94,9 @@ class ExtracurricularController extends Controller
                 'id'             => (string) $item->id,
                 'nama'           => $item->name,
                 'deskripsi'      => $item->description,
+                'advisor_id'     => $item->advisor_id ? (string) $item->advisor_id : null,
+                'pembina_nama'   => $item->advisor?->name ?? ($item->advisor_id ? 'Guru Tidak Dikenal' : '-'),
+                'coach_name'     => $item->coach_name ?? '',
                 'jumlah_anggota' => (int) ($item->students_count ?? 0),
                 'status'         => $this->mapDbToStatus($item->is_active),
                 'school_id'      => $item->school_id,
@@ -129,9 +140,11 @@ class ExtracurricularController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'nama'      => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
-            'status'    => 'nullable|string',
+            'nama'       => 'required|string|max:255',
+            'deskripsi'  => 'nullable|string',
+            'advisor_id' => 'nullable|string',
+            'coach_name' => 'nullable|string|max:255',
+            'status'     => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -142,22 +155,33 @@ class ExtracurricularController extends Controller
             ], 422);
         }
 
+        $advisorId = $request->input('advisor_id');
+        if ($advisorId === 'none' || empty($advisorId)) {
+            $advisorId = null;
+        }
+
         $ekskul = Extracurricular::create([
             'school_id'   => $schoolId,
             'name'        => $request->input('nama'),
             'description' => $request->input('deskripsi'),
+            'advisor_id'  => $advisorId,
+            'coach_name'  => $request->input('coach_name'),
             'is_active'   => $this->mapStatusToDb($request->input('status', 'aktif')),
         ]);
 
         return response()->json([
             'status'  => 'success',
-            'message' => 'Extracurricular created successfully.',
+            'message' => 'Ekstrakulikuler berhasil ditambahkan.',
             'data'    => [
-                'id'        => (string) $ekskul->id,
-                'nama'      => $ekskul->name,
-                'deskripsi' => $ekskul->description,
-                'status'    => $this->mapDbToStatus($ekskul->is_active),
-                'school_id' => $ekskul->school_id,
+                'id'             => (string) $ekskul->id,
+                'nama'           => $ekskul->name,
+                'deskripsi'      => $ekskul->description,
+                'advisor_id'     => $ekskul->advisor_id ? (string) $ekskul->advisor_id : null,
+                'pembina_nama'   => $ekskul->advisor?->name ?? ($ekskul->advisor_id ? 'Guru Tidak Dikenal' : '-'),
+                'coach_name'     => $ekskul->coach_name ?? '',
+                'jumlah_anggota' => 0,
+                'status'         => $this->mapDbToStatus($ekskul->is_active),
+                'school_id'      => $ekskul->school_id,
             ],
         ], 201);
     }
@@ -168,12 +192,12 @@ class ExtracurricularController extends Controller
     public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
-        $ekskul = Extracurricular::find($id);
+        $ekskul = Extracurricular::with(['advisor'])->find($id);
 
         if (!$ekskul) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Extracurricular not found.',
+                'message' => 'Ekstrakulikuler tidak ditemukan.',
             ], 404);
         }
 
@@ -196,6 +220,9 @@ class ExtracurricularController extends Controller
                 'id'             => (string) $ekskul->id,
                 'nama'           => $ekskul->name,
                 'deskripsi'      => $ekskul->description,
+                'advisor_id'     => $ekskul->advisor_id ? (string) $ekskul->advisor_id : null,
+                'pembina_nama'   => $ekskul->advisor?->name ?? ($ekskul->advisor_id ? 'Guru Tidak Dikenal' : '-'),
+                'coach_name'     => $ekskul->coach_name ?? '',
                 'jumlah_anggota' => (int) $ekskul->students()->count(),
                 'status'         => $this->mapDbToStatus($ekskul->is_active),
                 'school_id'      => $ekskul->school_id,
@@ -222,7 +249,7 @@ class ExtracurricularController extends Controller
         if (!$ekskul) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Extracurricular not found.',
+                'message' => 'Ekstrakulikuler tidak ditemukan.',
             ], 404);
         }
 
@@ -240,9 +267,11 @@ class ExtracurricularController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'nama'      => 'sometimes|required|string|max:255',
-            'deskripsi' => 'nullable|string',
-            'status'    => 'nullable|string',
+            'nama'       => 'sometimes|required|string|max:255',
+            'deskripsi'  => 'nullable|string',
+            'advisor_id' => 'nullable|string',
+            'coach_name' => 'nullable|string|max:255',
+            'status'     => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -256,19 +285,28 @@ class ExtracurricularController extends Controller
         $updateData = [];
         if ($request->has('nama')) $updateData['name'] = $request->input('nama');
         if ($request->has('deskripsi')) $updateData['description'] = $request->input('deskripsi');
+        if ($request->has('advisor_id')) {
+            $adv = $request->input('advisor_id');
+            $updateData['advisor_id'] = ($adv === 'none' || empty($adv)) ? null : $adv;
+        }
+        if ($request->has('coach_name')) $updateData['coach_name'] = $request->input('coach_name');
         if ($request->has('status')) $updateData['is_active'] = $this->mapStatusToDb($request->input('status'));
 
         $ekskul->update($updateData);
 
         return response()->json([
             'status'  => 'success',
-            'message' => 'Extracurricular updated successfully.',
+            'message' => 'Ekstrakulikuler berhasil diperbarui.',
             'data'    => [
-                'id'        => (string) $ekskul->id,
-                'nama'      => $ekskul->name,
-                'deskripsi' => $ekskul->description,
-                'status'    => $this->mapDbToStatus($ekskul->is_active),
-                'school_id' => $ekskul->school_id,
+                'id'             => (string) $ekskul->id,
+                'nama'           => $ekskul->name,
+                'deskripsi'      => $ekskul->description,
+                'advisor_id'     => $ekskul->advisor_id ? (string) $ekskul->advisor_id : null,
+                'pembina_nama'   => $ekskul->advisor?->name ?? ($ekskul->advisor_id ? 'Guru Tidak Dikenal' : '-'),
+                'coach_name'     => $ekskul->coach_name ?? '',
+                'jumlah_anggota' => (int) $ekskul->students()->count(),
+                'status'         => $this->mapDbToStatus($ekskul->is_active),
+                'school_id'      => $ekskul->school_id,
             ],
         ]);
     }
@@ -292,7 +330,7 @@ class ExtracurricularController extends Controller
         if (!$ekskul) {
             return response()->json([
                 'status'  => 'error',
-                'message' => 'Extracurricular not found.',
+                'message' => 'Ekstrakulikuler tidak ditemukan.',
             ], 404);
         }
 
@@ -309,11 +347,270 @@ class ExtracurricularController extends Controller
             }
         }
 
+        $ekskul->students()->detach();
         $ekskul->delete();
 
         return response()->json([
             'status'  => 'success',
-            'message' => 'Extracurricular deleted successfully.',
+            'message' => 'Ekstrakulikuler berhasil dihapus.',
+        ]);
+    }
+
+    /**
+     * Get all enrolled students for a given extracurricular.
+     */
+    public function getStudents(Request $request, string $id): JsonResponse
+    {
+        $user = $request->user();
+        $ekskul = Extracurricular::find($id);
+
+        if (!$ekskul) {
+            return response()->json(['status' => 'error', 'message' => 'Ekstrakulikuler tidak ditemukan.'], 404);
+        }
+
+        // Scope check
+        if (!$user->isSuperAdmin()) {
+            if ($user->hasRole('admin_yayasan')) {
+                if ($ekskul->school->foundation_id != $user->foundation_id) {
+                    return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+                }
+            } else {
+                if ($ekskul->school_id != $user->school_id) {
+                    return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+                }
+            }
+        }
+
+        $students = $ekskul->students()
+            ->with(['user', 'classroom'])
+            ->orderByPivot('created_at', 'desc')
+            ->get();
+
+        $formatted = $students->map(function ($profile) {
+            $u = $profile->user;
+            return [
+                'id'                 => (string) ($u?->id ?? $profile->id),
+                'student_profile_id' => $profile->id,
+                'user_id'            => $u?->id,
+                'nisn'               => $profile->nisn ?? '-',
+                'nama'               => $u?->name ?? 'Tanpa Nama',
+                'kelas'              => $profile->classroom?->name ?? 'Belum Ada Kelas',
+                'jenis_kelamin'      => $profile->gender === 'male' ? 'Laki-laki' : ($profile->gender === 'female' ? 'Perempuan' : '-'),
+                'join_date'          => $profile->pivot?->created_at ? $profile->pivot->created_at->format('Y-m-d') : null,
+            ];
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => $formatted,
+        ]);
+    }
+
+    /**
+     * Add/Enroll students to an extracurricular.
+     */
+    public function addStudents(Request $request, string $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isSuperAdmin() && !$user->hasAnyRole(['admin_yayasan', 'admin_sekolah'])) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+        }
+
+        $ekskul = Extracurricular::find($id);
+        if (!$ekskul) {
+            return response()->json(['status' => 'error', 'message' => 'Ekstrakulikuler tidak ditemukan.'], 404);
+        }
+
+        // Scope check
+        if (!$user->isSuperAdmin()) {
+            if ($user->hasRole('admin_yayasan')) {
+                if ($ekskul->school->foundation_id != $user->foundation_id) {
+                    return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+                }
+            } else {
+                if ($ekskul->school_id != $user->school_id) {
+                    return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+                }
+            }
+        }
+
+        $validator = Validator::make($request->all(), [
+            'student_ids'   => 'required|array|min:1',
+            'student_ids.*' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Validasi gagal.',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        $rawIds = $request->input('student_ids');
+
+        return DB::transaction(function () use ($ekskul, $rawIds) {
+            // Find valid student profiles belonging to this school
+            $profiles = StudentProfile::whereHas('user', function ($q) use ($ekskul) {
+                $q->where('school_id', $ekskul->school_id);
+            })
+            ->where(function ($q) use ($rawIds) {
+                $numericIds = array_filter($rawIds, fn($id) => is_numeric($id));
+                $uuidIds = array_filter($rawIds, fn($id) => !is_numeric($id));
+
+                if (!empty($numericIds) && !empty($uuidIds)) {
+                    $q->whereIn('id', $numericIds)->orWhereIn('user_id', $uuidIds);
+                } elseif (!empty($numericIds)) {
+                    $q->whereIn('id', $numericIds);
+                } else {
+                    $q->whereIn('user_id', $uuidIds);
+                }
+            })
+            ->get();
+
+            if ($profiles->isEmpty()) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Tidak ada siswa valid yang ditemukan untuk ditambahkan.',
+                ], 422);
+            }
+
+            $profileIds = $profiles->pluck('id')->toArray();
+            $ekskul->students()->syncWithoutDetaching($profileIds);
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => count($profileIds) . ' siswa berhasil ditambahkan ke ekstrakulikuler ' . $ekskul->name . '.',
+            ]);
+        });
+    }
+
+    /**
+     * Remove a student from an extracurricular.
+     */
+    public function removeStudent(Request $request, string $id): JsonResponse
+    {
+        $user = $request->user();
+
+        if (!$user->isSuperAdmin() && !$user->hasAnyRole(['admin_yayasan', 'admin_sekolah'])) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+        }
+
+        $ekskul = Extracurricular::find($id);
+        if (!$ekskul) {
+            return response()->json(['status' => 'error', 'message' => 'Ekstrakulikuler tidak ditemukan.'], 404);
+        }
+
+        // Scope check
+        if (!$user->isSuperAdmin()) {
+            if ($user->hasRole('admin_yayasan')) {
+                if ($ekskul->school->foundation_id != $user->foundation_id) {
+                    return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+                }
+            } else {
+                if ($ekskul->school_id != $user->school_id) {
+                    return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+                }
+            }
+        }
+
+        $studentParam = (string) $request->input('student_id');
+        if (empty($studentParam)) {
+            return response()->json(['status' => 'error', 'message' => 'Parameter student_id wajib diisi.'], 422);
+        }
+
+        $profile = StudentProfile::whereHas('user', function ($q) use ($ekskul) {
+            $q->where('school_id', $ekskul->school_id);
+        })
+        ->where(function ($q) use ($studentParam) {
+            if (is_numeric($studentParam)) {
+                $q->where('id', (int) $studentParam);
+            } else {
+                $q->where('user_id', $studentParam);
+            }
+        })
+        ->first();
+
+        if (!$profile) {
+            return response()->json(['status' => 'error', 'message' => 'Siswa tidak ditemukan.'], 404);
+        }
+
+        $ekskul->students()->detach($profile->id);
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Siswa berhasil dikeluarkan dari ekstrakulikuler ' . $ekskul->name . '.',
+        ]);
+    }
+
+    /**
+     * Get available students in this school who are not yet enrolled in this extracurricular.
+     */
+    public function getAvailableStudents(Request $request, string $id): JsonResponse
+    {
+        $user = $request->user();
+        $ekskul = Extracurricular::find($id);
+
+        if (!$ekskul) {
+            return response()->json(['status' => 'error', 'message' => 'Ekstrakulikuler tidak ditemukan.'], 404);
+        }
+
+        // Scope check
+        if (!$user->isSuperAdmin()) {
+            if ($user->hasRole('admin_yayasan')) {
+                if ($ekskul->school->foundation_id != $user->foundation_id) {
+                    return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+                }
+            } else {
+                if ($ekskul->school_id != $user->school_id) {
+                    return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+                }
+            }
+        }
+
+        // Existing enrolled student profile IDs
+        $enrolledIds = $ekskul->students()->pluck('student_profiles.id')->toArray();
+
+        $query = StudentProfile::whereHas('user', function ($q) use ($ekskul) {
+            $q->where('school_id', $ekskul->school_id)
+              ->where('is_active', true)
+              ->whereHas('role', fn($rq) => $rq->where('name', 'siswa'));
+        })
+        ->where('status', 'active')
+        ->whereNotIn('id', $enrolledIds)
+        ->with(['user', 'classroom']);
+
+        if ($request->has('classroom_id') && $request->classroom_id !== 'all') {
+            $query->where('classroom_id', $request->classroom_id);
+        }
+
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('nisn', 'like', "%{$search}%")
+                  ->orWhereHas('user', fn($uq) => $uq->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        $students = $query->orderBy('nisn')->get();
+
+        $formatted = $students->map(function ($profile) {
+            $u = $profile->user;
+            return [
+                'id'                 => (string) ($u?->id ?? $profile->id),
+                'student_profile_id' => $profile->id,
+                'user_id'            => $u?->id,
+                'nisn'               => $profile->nisn ?? '-',
+                'nama'               => $u?->name ?? 'Tanpa Nama',
+                'kelas'              => $profile->classroom?->name ?? 'Belum Ada Kelas',
+                'jenis_kelamin'      => $profile->gender === 'male' ? 'Laki-laki' : ($profile->gender === 'female' ? 'Perempuan' : '-'),
+            ];
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => $formatted,
         ]);
     }
 }

@@ -188,6 +188,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/classrooms/{id}/promote-students', [ClassroomController::class, 'promoteStudents']);
         Route::apiResource('/classrooms', ClassroomController::class);
         Route::apiResource('/teachers', TeacherController::class);
+        Route::get('/extracurriculars/{id}/students', [ExtracurricularController::class, 'getStudents']);
+        Route::post('/extracurriculars/{id}/students', [ExtracurricularController::class, 'addStudents']);
+        Route::post('/extracurriculars/{id}/remove-student', [ExtracurricularController::class, 'removeStudent']);
+        Route::get('/extracurriculars/{id}/available-students', [ExtracurricularController::class, 'getAvailableStudents']);
         Route::apiResource('/extracurriculars', ExtracurricularController::class);
         Route::patch('/subjects/{id}/toggle-status', [SubjectController::class, 'toggleStatus']);
         Route::apiResource('/subjects', SubjectController::class);

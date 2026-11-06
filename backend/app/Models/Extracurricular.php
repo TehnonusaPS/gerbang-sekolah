@@ -12,6 +12,8 @@ class Extracurricular extends Model
         'school_id',
         'name',
         'description',
+        'advisor_id',
+        'coach_name',
         'is_active',
     ];
 
@@ -28,6 +30,14 @@ class Extracurricular extends Model
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);
+    }
+
+    /**
+     * Get the teacher/staff assigned as advisor/pembina for this extracurricular.
+     */
+    public function advisor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'advisor_id');
     }
 
     /**
