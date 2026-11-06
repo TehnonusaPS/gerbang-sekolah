@@ -100,10 +100,17 @@ export const columns = [
   { key: 'masaKerja', label: 'Masa Kerja' },
   {
     key: 'statusKepegawaian', label: 'Status Kepegawaian', badge: true,
+    badgeClass: {
+      Tetap: 'border-blue-200/60 bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400',
+      Kontrak: 'border-amber-200/60 bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
+      Honorer: 'border-purple-200/60 bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400',
+    }
+  },
+  {
+    key: 'status', label: 'Status', badge: true,
     badgeVariant: {
-      Tetap: 'green',
-      Honorer: 'gray',
-      Kontrak: 'amber',
+      Aktif: 'green',
+      Nonaktif: 'gray',
     }
   },
   { key: 'actions', label: 'Aksi' }

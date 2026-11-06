@@ -111,6 +111,13 @@ const resolveBadgeVariant = (column, value) => {
   return column.badgeVariant
 }
 
+const resolveBadgeClass = (column, value) => {
+  if (!column.badgeClass) return ''
+  if (typeof column.badgeClass === 'function') return column.badgeClass(value)
+  if (typeof column.badgeClass === 'object') return column.badgeClass[value] || ''
+  return column.badgeClass
+}
+
 /**
  * Resolve class untuk <TableHead>.
  * Alignment diputuskan otomatis berdasarkan tipe/fitur kolom:
@@ -423,7 +430,10 @@ const toggleAll = checked => {
 
               <!-- BADGE -->
               <template v-else-if="column.badge">
-                <Badge :variant="resolveBadgeVariant(column, item[column.key])">
+                <Badge
+                  :variant="column.badgeClass ? 'outline' : resolveBadgeVariant(column, item[column.key])"
+                  :class="resolveBadgeClass(column, item[column.key])"
+                >
                   {{ item[column.key] }}
                 </Badge>
               </template>

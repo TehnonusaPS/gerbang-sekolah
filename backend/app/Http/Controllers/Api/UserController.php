@@ -151,13 +151,18 @@ class UserController extends Controller
             ], 403);
         }
 
+        if ($request->has('phone')) {
+            $phone = trim((string) $request->input('phone'));
+            $request->merge(['phone' => $phone === '' ? null : $phone]);
+        }
+
         // Determine base validation rules
         $rules = [
             'name'          => 'required|string|max:255',
             'email'         => 'required|email|max:255|unique:users,email',
             'password'      => 'required|string|min:6',
             'role_id'       => 'required|exists:roles,id',
-            'phone'         => 'nullable|string|max:50',
+            'phone'         => 'nullable|string|max:50|unique:users,phone',
             'photo'         => 'nullable|max:2048',
             'is_active'     => 'boolean',
             'profile'       => 'nullable|array',
@@ -175,7 +180,10 @@ class UserController extends Controller
             $rules['school_id']     = 'nullable|in:' . $currentUser->school_id;
         }
 
-        $validator = Validator::make($request->all(), $rules);
+        $validator = Validator::make($request->all(), $rules, [
+            'email.unique' => 'Email sudah digunakan.',
+            'phone.unique' => 'Nomor HP sudah digunakan oleh pengguna lain.',
+        ]);
 
         if ($validator->fails()) {
             return response()->json([
@@ -427,13 +435,18 @@ class UserController extends Controller
             }
         }
 
+        if ($request->has('phone')) {
+            $phone = trim((string) $request->input('phone'));
+            $request->merge(['phone' => $phone === '' ? null : $phone]);
+        }
+
         // Validation rules
         $rules = [
             'name'      => 'required|string|max:255',
             'email'     => 'required|email|max:255|unique:users,email,' . $targetUser->id,
             'password'  => 'nullable|string|min:6',
             'role_id'   => 'required|exists:roles,id',
-            'phone'     => 'nullable|string|max:50',
+            'phone'     => 'nullable|string|max:50|unique:users,phone,' . $targetUser->id,
             'photo'     => 'nullable|max:2048',
             'is_active' => 'boolean',
             'profile'   => 'nullable|array',
@@ -451,7 +464,10 @@ class UserController extends Controller
             $rules['school_id']     = 'nullable|in:' . $currentUser->school_id;
         }
 
-        $validator = Validator::make($request->all(), $rules);
+        $validator = Validator::make($request->all(), $rules, [
+            'email.unique' => 'Email sudah digunakan.',
+            'phone.unique' => 'Nomor HP sudah digunakan oleh pengguna lain.',
+        ]);
 
         if ($validator->fails()) {
             return response()->json([

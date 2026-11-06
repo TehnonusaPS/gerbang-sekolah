@@ -2,7 +2,7 @@
 import { getPhotoUrl } from '@/utils/getPhotoUrl'
 import DataTableCard from '@/components/data-table/DataTableCard.vue'
 import PageHeader from '@/components/page-header/PageHeader.vue'
-import { columns, filters, actions } from './data/guruStaff.js'
+import { columns, actions } from './data/guruStaff.js'
 import StatCard from '@/components/stat-card/StatCard.vue'
 import { useAuthStore } from '@/stores/authStore'
 import { usePagination } from '@/composables/usePagination'
@@ -69,6 +69,7 @@ const stats = computed(() => {
 
 const filterValues = ref({
   search: '',
+  jabatan: 'all',
   status: 'all'
 })
 
@@ -117,21 +118,130 @@ const deleteItem = async (id, item) => {
     })
     fetchTeachers()
   } catch (err) {
-    toast.error('Gagal menghapus guru/staff')
+    const errorMsg = err.response?.data?.message || 'Gagal menghapus guru/staff'
+    toast.error('Gagal menghapus guru/staff', {
+      description: errorMsg
+    })
   }
 }
 
+const CANONICAL_JABATAN_ORDER = [
+  'Kepala Yayasan',
+  'Admin Yayasan',
+  'Kepala Sekolah',
+  'Guru',
+  'Staff Sekolah',
+  'Admin Sekolah'
+]
+
+const getCanonicalJabatan = item => {
+  const j = (item?.jabatan || '').toLowerCase().trim()
+  if (!j || j === '-') return null
+
+  if (j.includes('kepala yayasan')) return 'Kepala Yayasan'
+  if (j.includes('admin yayasan') || j.includes('staff yayasan')) return 'Admin Yayasan'
+  if (j.includes('kepala sekolah')) return 'Kepala Sekolah'
+  if (j.includes('admin sekolah')) return 'Admin Sekolah'
+  if (j.includes('staff') || j.includes('tata usaha')) return 'Staff Sekolah'
+  if (j.includes('guru') || j.includes('wali kelas')) return 'Guru'
+
+  return item.jabatan.trim()
+}
+
+const dynamicJabatanOptions = computed(() => {
+  const existingCanonical = new Set()
+  tableItems.value.forEach(item => {
+    const canonical = getCanonicalJabatan(item)
+    if (canonical) {
+      existingCanonical.add(canonical)
+    }
+  })
+
+  return Array.from(existingCanonical)
+    .sort((a, b) => {
+      const idxA = CANONICAL_JABATAN_ORDER.indexOf(a)
+      const idxB = CANONICAL_JABATAN_ORDER.indexOf(b)
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB
+      if (idxA !== -1) return -1
+      if (idxB !== -1) return 1
+      return a.localeCompare(b)
+    })
+    .map(val => ({ label: val, value: val }))
+})
+
+const dynamicFilters = computed(() => {
+  const result = [
+    {
+      type: 'search',
+      key: 'search',
+      placeholder: 'Cari nama guru/staff disini...'
+    }
+  ]
+
+  if (dynamicJabatanOptions.value.length > 0) {
+    result.push({
+      type: 'select',
+      key: 'jabatan',
+      label: 'Filter Jabatan:',
+      placeholder: 'Semua',
+      options: dynamicJabatanOptions.value
+    })
+  }
+
+  result.push({
+    type: 'select',
+    key: 'status',
+    label: 'Filter Status:',
+    placeholder: 'Semua',
+    options: [
+      { label: 'Tetap', value: 'Tetap' },
+      { label: 'Kontrak', value: 'Kontrak' },
+      { label: 'Honorer', value: 'Honorer' }
+    ]
+  })
+
+  return result
+})
+
+watch(dynamicJabatanOptions, newOptions => {
+  if (
+    filterValues.value.jabatan &&
+    filterValues.value.jabatan !== 'all' &&
+    !newOptions.some(opt => opt.value === filterValues.value.jabatan)
+  ) {
+    filterValues.value.jabatan = 'all'
+  }
+})
+
 const filteredItems = computed(() => {
-  return tableItems.value.filter(item => {
+  const filtered = tableItems.value.filter(item => {
     const searchVal = filterValues.value.search?.trim().toLowerCase() || ''
     const searchMatch =
       !searchVal ||
-      item.nama?.toLowerCase().includes(searchVal)
+      item.nama?.toLowerCase().includes(searchVal) ||
+      item.nip?.toLowerCase().includes(searchVal)
 
     const statusVal = filterValues.value.status
     const statusMatch = !statusVal || statusVal === 'all' || item.statusKepegawaian?.toLowerCase() === statusVal.toLowerCase()
 
-    return searchMatch && statusMatch
+    const jabatanVal = filterValues.value.jabatan
+    const jabatanMatch =
+      !jabatanVal ||
+      jabatanVal === 'all' ||
+      getCanonicalJabatan(item) === jabatanVal
+
+    return searchMatch && statusMatch && jabatanMatch
+  })
+
+  return filtered.sort((a, b) => {
+    const aIsActive = (a.status || a.status_aktif || '').toLowerCase() === 'aktif' ? 1 : 0
+    const bIsActive = (b.status || b.status_aktif || '').toLowerCase() === 'aktif' ? 1 : 0
+
+    if (aIsActive !== bIsActive) {
+      return bIsActive - aIsActive
+    }
+
+    return (a.nama || '').localeCompare(b.nama || '')
   })
 })
 
@@ -182,7 +292,7 @@ const handleViewDetail = id => {
       :columns="columns"
       :items="paginatedItems"
       :loading="isLoading"
-      :filters="filters"
+      :filters="dynamicFilters"
       :actions="actions"
       v-model:filterValues="filterValues"
       v-model:perPage="perPage"
