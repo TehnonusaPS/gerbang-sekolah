@@ -154,9 +154,14 @@ const illustrationUrl = computed(() => {
         />
       </div>
 
+      <!-- Custom Content Slot -->
+      <slot v-if="$slots.default || $slots.sub" name="sub">
+        <slot />
+      </slot>
+
       <!-- Variant Progress -->
       <div
-        v-if="resolvedType === 'progress' && progress !== undefined"
+        v-else-if="resolvedType === 'progress' && progress !== undefined"
         class="space-y-0.5 sm:space-y-1.5 mt-1 sm:mt-3 w-full"
       >
         <div class="flex items-center justify-between text-[9px] sm:text-xs">

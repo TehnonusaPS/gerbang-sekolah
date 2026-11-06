@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import {
   ChartContainer,
   ChartTooltip,
@@ -38,6 +38,38 @@ const props = defineProps({
 // Dynamic accessors for Unovis
 const yAccessors = computed(() => props.categories.map(cat => d => d[cat]))
 const colors = computed(() => props.categories.map(cat => `var(--color-${cat})`))
+
+const isMobile = ref(false)
+
+function handleResize() {
+  if (typeof window !== 'undefined') {
+    isMobile.value = window.innerWidth < 640
+  }
+}
+
+onMounted(() => {
+  handleResize()
+  window.addEventListener('resize', handleResize, { passive: true })
+})
+
+onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('resize', handleResize)
+  }
+})
+
+const xTickFormat = computed(() => {
+  return (i) => {
+    const val = props.data[i]?.[props.index]
+    if (!val) return ''
+    if (isMobile.value) {
+      // Pada mobile, gunakan inisial huruf pertama (J, F, M, A, M, J, J, A, S, O, N, D)
+      // agar tidak bertumpukan di layar sempit
+      return String(val).slice(0, 1)
+    }
+    return val
+  }
+})
 
 function getColorClasses(colorName) {
   const colors = {
@@ -118,7 +150,7 @@ function getColorClasses(colorName) {
           />
           <VisAxis
             type="x"
-            :tickFormat="i => data[i]?.[index]"
+            :tickFormat="xTickFormat"
             :tickValues="data.map((_, i) => i)"
             :grid-line="false"
             :tick-line="false"

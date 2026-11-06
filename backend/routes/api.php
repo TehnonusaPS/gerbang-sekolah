@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\SuperAdmin\FinanceController;
+use App\Http\Controllers\Api\SuperAdmin\DashboardController;
 use App\Http\Controllers\Api\FoundationController;
 use App\Http\Controllers\Api\SchoolController;
 use App\Http\Controllers\Api\UserController;
@@ -132,6 +133,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/chat/messages/{recipient_id}', [\App\Http\Controllers\Api\ChatController::class, 'getMessages']);
     Route::post('/chat/messages', [\App\Http\Controllers\Api\ChatController::class, 'sendMessage']);
     Route::post('/chat/messages/{message_id}/read', [\App\Http\Controllers\Api\ChatController::class, 'markAsRead']);
+    Route::post('/chat/delivered', [\App\Http\Controllers\Api\ChatController::class, 'markAsDelivered']);
 
     // Announcement routes
     Route::apiResource('/announcements', \App\Http\Controllers\Api\AnnouncementController::class);
@@ -149,6 +151,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('/komunikasi/surat-dispensasi', \App\Http\Controllers\Api\StudentDispensationCertificateController::class);
     Route::apiResource('/komunikasi/surat-peringatan', \App\Http\Controllers\Api\StudentWarningCertificateController::class);
     Route::apiResource('/komunikasi/berita-kegiatan', \App\Http\Controllers\Api\ActivityNewsController::class);
+
+    // Super Admin Dashboard Route
+    Route::middleware('role:superadmin')->prefix('superadmin')->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'index']);
+    });
+
+    // Admin Yayasan Dashboard Route
+    Route::middleware('role:admin_yayasan')->prefix('yayasan')->group(function () {
+        Route::get('/dashboard', [\App\Http\Controllers\Api\Yayasan\DashboardController::class, 'index']);
+    });
 
     // Super Admin Finance Routes
     Route::middleware('role:superadmin')->prefix('superadmin/finance')->group(function () {

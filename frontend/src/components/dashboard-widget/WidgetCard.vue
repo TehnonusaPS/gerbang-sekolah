@@ -53,7 +53,7 @@ const illustrationUrl = computed(() => {
     <!-- Background Watermark Illustration (Top-Right) -->
     <div
       v-if="illustration"
-      class="absolute top-[-15px] right-[-18px] size-30 rotate-[-15deg] opacity-[0.15] dark:opacity-[0.22] pointer-events-none select-none bg-primary z-0 transition-transform duration-300 group-hover:scale-105 group-hover:rotate-[-10deg] watermark-illustration"
+      class="absolute top-[-10px] sm:top-[-15px] right-[-14px] sm:right-[-18px] size-20 sm:size-30 rotate-[-15deg] opacity-[0.08] sm:opacity-[0.15] dark:opacity-[0.15] dark:sm:opacity-[0.22] pointer-events-none select-none bg-primary z-0 transition-transform duration-300 group-hover:scale-105 group-hover:rotate-[-10deg] watermark-illustration"
       style="
         mask-size: contain;
         -webkit-mask-size: contain;
@@ -69,20 +69,27 @@ const illustrationUrl = computed(() => {
     />
 
     <CardHeader class="pb-2 relative z-10">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-2">
+        <div class="flex items-center gap-2 min-w-0">
           <component
             v-if="icon"
             :is="icon"
-            class="size-4 text-primary"
+            class="size-4 text-primary shrink-0"
           />
-          <CardTitle class="text-base font-semibold">{{ title }}</CardTitle>
+          <CardTitle class="text-sm sm:text-base font-semibold leading-snug sm:leading-tight">
+            {{ title }}
+          </CardTitle>
         </div>
-        <slot name="header-action" />
+        <div
+          v-if="$slots['header-action']"
+          class="flex items-center gap-2 self-start sm:self-auto shrink-0 w-full sm:w-auto justify-between sm:justify-end"
+        >
+          <slot name="header-action" />
+        </div>
       </div>
       <CardDescription
         v-if="description"
-        class="text-xs mt-0.5"
+        class="text-xs mt-1 sm:mt-0.5"
       >
         {{ description }}
       </CardDescription>

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import * as authService from '@/services/authService'
 import { connectEcho, disconnectEcho, echo } from '@/services/echoService'
-import { getUnreadCount } from '@/services/chatService'
+import { getUnreadCount, markAsDelivered } from '@/services/chatService'
 import { getNotifications } from '@/services/notificationService'
 
 // Auto-connect on page refresh if token is present
@@ -94,10 +94,16 @@ export const useAuthStore = defineStore('auth', {
           // 1. Increment navbar badge only if sender is NOT the active chat
           if (this.activeChatRecipientId !== event.sender_id) {
             this.unreadCount++
+            // Notify sender that message has arrived on recipient's online device (Delivered)
+            markAsDelivered(event.sender_id)
           }
 
           // 2. Relay event to all registered callbacks (e.g. ChatContainer)
           _messageCallbacks.forEach(cb => cb({ type: 'message', data: event }))
+        })
+        .listen('MessageDelivered', (event) => {
+          // Relay MessageDelivered event to registered callbacks (to update checkmark to delivered)
+          _messageCallbacks.forEach(cb => cb({ type: 'delivered', data: event }))
         })
         .listen('MessageRead', (event) => {
           // Relay MessageRead event to registered callbacks (to update checkmarks to read)
