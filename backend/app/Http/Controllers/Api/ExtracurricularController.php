@@ -28,6 +28,22 @@ class ExtracurricularController extends Controller
         return $isActive ? 'aktif' : 'nonaktif';
     }
 
+    private function formatPembinaNama($advisor, ?string $advisorId, ?string $coachName): string
+    {
+        $parts = [];
+        if ($advisor) {
+            $parts[] = $advisor->name;
+        } elseif ($advisorId) {
+            $parts[] = 'Guru';
+        }
+
+        if (!empty($coachName)) {
+            $parts[] = !empty($parts) ? "{$coachName} (Pelatih)" : $coachName;
+        }
+
+        return !empty($parts) ? implode(', ', $parts) : '-';
+    }
+
     /**
      * Helper to get school scope for the current user.
      */
@@ -95,7 +111,7 @@ class ExtracurricularController extends Controller
                 'nama'           => $item->name,
                 'deskripsi'      => $item->description,
                 'advisor_id'     => $item->advisor_id ? (string) $item->advisor_id : null,
-                'pembina_nama'   => $item->advisor?->name ?? ($item->advisor_id ? 'Guru Tidak Dikenal' : '-'),
+                'pembina_nama'   => $this->formatPembinaNama($item->advisor, $item->advisor_id, $item->coach_name),
                 'coach_name'     => $item->coach_name ?? '',
                 'jumlah_anggota' => (int) ($item->students_count ?? 0),
                 'status'         => $this->mapDbToStatus($item->is_active),
@@ -177,7 +193,7 @@ class ExtracurricularController extends Controller
                 'nama'           => $ekskul->name,
                 'deskripsi'      => $ekskul->description,
                 'advisor_id'     => $ekskul->advisor_id ? (string) $ekskul->advisor_id : null,
-                'pembina_nama'   => $ekskul->advisor?->name ?? ($ekskul->advisor_id ? 'Guru Tidak Dikenal' : '-'),
+                'pembina_nama'   => $this->formatPembinaNama($ekskul->advisor, $ekskul->advisor_id, $ekskul->coach_name),
                 'coach_name'     => $ekskul->coach_name ?? '',
                 'jumlah_anggota' => 0,
                 'status'         => $this->mapDbToStatus($ekskul->is_active),
@@ -221,7 +237,7 @@ class ExtracurricularController extends Controller
                 'nama'           => $ekskul->name,
                 'deskripsi'      => $ekskul->description,
                 'advisor_id'     => $ekskul->advisor_id ? (string) $ekskul->advisor_id : null,
-                'pembina_nama'   => $ekskul->advisor?->name ?? ($ekskul->advisor_id ? 'Guru Tidak Dikenal' : '-'),
+                'pembina_nama'   => $this->formatPembinaNama($ekskul->advisor, $ekskul->advisor_id, $ekskul->coach_name),
                 'coach_name'     => $ekskul->coach_name ?? '',
                 'jumlah_anggota' => (int) $ekskul->students()->count(),
                 'status'         => $this->mapDbToStatus($ekskul->is_active),
@@ -302,7 +318,7 @@ class ExtracurricularController extends Controller
                 'nama'           => $ekskul->name,
                 'deskripsi'      => $ekskul->description,
                 'advisor_id'     => $ekskul->advisor_id ? (string) $ekskul->advisor_id : null,
-                'pembina_nama'   => $ekskul->advisor?->name ?? ($ekskul->advisor_id ? 'Guru Tidak Dikenal' : '-'),
+                'pembina_nama'   => $this->formatPembinaNama($ekskul->advisor, $ekskul->advisor_id, $ekskul->coach_name),
                 'coach_name'     => $ekskul->coach_name ?? '',
                 'jumlah_anggota' => (int) $ekskul->students()->count(),
                 'status'         => $this->mapDbToStatus($ekskul->is_active),
@@ -397,6 +413,7 @@ class ExtracurricularController extends Controller
                 'kelas'              => $profile->classroom?->name ?? 'Belum Ada Kelas',
                 'jenis_kelamin'      => $profile->gender === 'male' ? 'Laki-laki' : ($profile->gender === 'female' ? 'Perempuan' : '-'),
                 'join_date'          => $profile->pivot?->created_at ? $profile->pivot->created_at->format('Y-m-d') : null,
+                'tanggal_bergabung'  => $profile->pivot?->created_at ? $profile->pivot->created_at->translatedFormat('d M Y') : '-',
             ];
         });
 

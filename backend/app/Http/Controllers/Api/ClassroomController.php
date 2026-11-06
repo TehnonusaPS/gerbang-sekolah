@@ -577,7 +577,18 @@ class ClassroomController extends Controller
                   ->where('is_active', true)
                   ->whereHas('role', fn($rq) => $rq->where('name', 'siswa'));
             })
-            ->whereIn('user_id', $rawIds)
+            ->where(function ($q) use ($rawIds) {
+                $numericIds = array_filter($rawIds, fn($id) => is_numeric($id));
+                $uuidIds = array_filter($rawIds, fn($id) => !is_numeric($id));
+
+                if (!empty($numericIds) && !empty($uuidIds)) {
+                    $q->whereIn('id', $numericIds)->orWhereIn('user_id', $uuidIds);
+                } elseif (!empty($numericIds)) {
+                    $q->whereIn('id', $numericIds);
+                } else {
+                    $q->whereIn('user_id', $uuidIds);
+                }
+            })
             ->where('status', 'active')
             ->lockForUpdate()
             ->get();
@@ -691,7 +702,7 @@ class ClassroomController extends Controller
             $profile = StudentProfile::where('classroom_id', $classroom->id)
                 ->where(function ($q) use ($studentParam) {
                     if (is_numeric($studentParam)) {
-                        $q->where('id', (int) $studentParam)->orWhere('user_id', $studentParam);
+                        $q->where('id', (int) $studentParam);
                     } else {
                         $q->where('user_id', $studentParam);
                     }

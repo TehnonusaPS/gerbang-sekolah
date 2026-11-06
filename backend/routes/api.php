@@ -106,7 +106,7 @@ Route::post('/broadcasting/auth', [\Illuminate\Broadcasting\BroadcastController:
 use App\Http\Controllers\Api\LandingPageConfigController;
 
 // Public routes
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::get('/landing-page/public/{slug}', [LandingPageConfigController::class, 'getPublicLandingPageBySlug']);
 
 // Protected routes (Sanctum)

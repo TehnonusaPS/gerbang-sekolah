@@ -63,6 +63,20 @@ const members = ref([])
 const isLoadingMembers = ref(false)
 const searchMemberQuery = ref('')
 
+// --- Add Student Dialog State ---
+const isAddDialogOpen = ref(false)
+const availableStudents = ref([])
+const isLoadingAvailable = ref(false)
+const searchAvailableQuery = ref('')
+const selectedStudentIds = ref([])
+const isAdding = ref(false)
+
+// --- Remove Student Dialog State ---
+const isRemoveConfirmOpen = ref(false)
+const studentToRemove = ref(null)
+const isRemoving = ref(false)
+
+// --- Methods & Loaders ---
 const loadMembers = async () => {
   if (!props.ekskul?.id) return
   isLoadingMembers.value = true
@@ -78,49 +92,11 @@ const loadMembers = async () => {
   }
 }
 
-watch(
-  () => [props.open, props.ekskul?.id],
-  ([isOpen, ekskulId]) => {
-    if (isOpen && ekskulId) {
-      searchMemberQuery.value = ''
-      loadMembers()
-    }
-  },
-  { immediate: true }
-)
-
-const filteredMembers = computed(() => {
-  const q = searchMemberQuery.value.trim().toLowerCase()
-  if (!q) return members.value
-  return members.value.filter(m =>
-    m.nama?.toLowerCase().includes(q) ||
-    m.nisn?.toLowerCase().includes(q) ||
-    m.kelas?.toLowerCase().includes(q)
-  )
-})
-
-// --- Add Student Dialog State ---
-const isAddDialogOpen = ref(false)
-const availableStudents = ref([])
-const isLoadingAvailable = ref(false)
-const searchAvailableQuery = ref('')
-const selectedStudentIds = ref([])
-const isAdding = ref(false)
-
-const openAddDialog = async () => {
-  selectedStudentIds.value = []
-  searchAvailableQuery.value = ''
-  isAddDialogOpen.value = true
-  await loadAvailableStudents()
-}
-
 const loadAvailableStudents = async () => {
   if (!props.ekskul?.id) return
   isLoadingAvailable.value = true
   try {
-    const res = await getAvailableEkskulStudents(props.ekskul.id, {
-      search: searchAvailableQuery.value.trim() || undefined
-    })
+    const res = await getAvailableEkskulStudents(props.ekskul.id)
     availableStudents.value = res.data || []
   } catch (err) {
     toast.error('Gagal memuat daftar siswa', {
@@ -131,18 +107,51 @@ const loadAvailableStudents = async () => {
   }
 }
 
-const isAllSelected = computed(() => {
-  return (
-    availableStudents.value.length > 0 &&
-    availableStudents.value.every(s => selectedStudentIds.value.includes(s.id))
+const openAddDialog = async () => {
+  selectedStudentIds.value = []
+  searchAvailableQuery.value = ''
+  isAddDialogOpen.value = true
+  await loadAvailableStudents()
+}
+
+// --- Computed Filters ---
+const filteredMembers = computed(() => {
+  const q = searchMemberQuery.value.trim().toLowerCase()
+  if (!q) return members.value
+  return members.value.filter(m =>
+    m.nama?.toLowerCase().includes(q) ||
+    m.nisn?.toLowerCase().includes(q) ||
+    m.kelas?.toLowerCase().includes(q)
   )
 })
 
-const toggleSelectAll = (checked) => {
-  if (checked) {
-    selectedStudentIds.value = availableStudents.value.map(s => s.id)
+const filteredAvailableStudents = computed(() => {
+  const q = searchAvailableQuery.value.trim().toLowerCase()
+  if (!q) return availableStudents.value
+  return availableStudents.value.filter(s =>
+    s.nama?.toLowerCase().includes(q) ||
+    s.nisn?.toLowerCase().includes(q) ||
+    s.kelas?.toLowerCase().includes(q)
+  )
+})
+
+const isAllSelected = computed(() => {
+  const current = filteredAvailableStudents.value
+  return (
+    current.length > 0 &&
+    current.every(s => selectedStudentIds.value.includes(s.id))
+  )
+})
+
+const toggleSelectAll = () => {
+  const current = filteredAvailableStudents.value
+  if (isAllSelected.value) {
+    const currentIds = new Set(current.map(s => s.id))
+    selectedStudentIds.value = selectedStudentIds.value.filter(id => !currentIds.has(id))
   } else {
-    selectedStudentIds.value = []
+    const set = new Set(selectedStudentIds.value)
+    current.forEach(s => set.add(s.id))
+    selectedStudentIds.value = Array.from(set)
   }
 }
 
@@ -176,11 +185,6 @@ const handleAddStudents = async () => {
   }
 }
 
-// --- Remove Student Dialog State ---
-const isRemoveConfirmOpen = ref(false)
-const studentToRemove = ref(null)
-const isRemoving = ref(false)
-
 const confirmRemove = (student) => {
   studentToRemove.value = student
   isRemoveConfirmOpen.value = true
@@ -207,6 +211,22 @@ const handleRemoveStudent = async () => {
     isRemoving.value = false
   }
 }
+
+// --- Watchers ---
+watch(
+  () => [props.open, props.ekskul?.id],
+  ([isOpen, ekskulId]) => {
+    if (isOpen && ekskulId) {
+      searchMemberQuery.value = ''
+      loadMembers()
+    } else {
+      isAddDialogOpen.value = false
+      isRemoveConfirmOpen.value = false
+      selectedStudentIds.value = []
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <template>
@@ -371,7 +391,6 @@ const handleRemoveStudent = async () => {
             v-model="searchAvailableQuery"
             placeholder="Cari nama, NISN, atau kelas..."
             class="pl-9 text-xs h-9"
-            @input="loadAvailableStudents"
           />
         </div>
       </div>
@@ -380,13 +399,14 @@ const handleRemoveStudent = async () => {
       <div class="border rounded-xl mt-3 max-h-[340px] overflow-y-auto">
         <!-- Header Checkbox -->
         <div
-          v-if="availableStudents.length > 0"
-          class="flex items-center justify-between p-3 border-b bg-muted/40 text-xs font-semibold text-muted-foreground"
+          v-if="filteredAvailableStudents.length > 0"
+          class="flex items-center justify-between p-3 border-b bg-muted/40 text-xs font-semibold text-muted-foreground cursor-pointer select-none"
+          @click="toggleSelectAll"
         >
           <div class="flex items-center gap-2">
             <Checkbox
-              :checked="isAllSelected"
-              @update:checked="toggleSelectAll"
+              :model-value="isAllSelected"
+              class="pointer-events-none"
             />
             <span>Pilih Semua Siswa</span>
           </div>
@@ -400,22 +420,21 @@ const handleRemoveStudent = async () => {
         </div>
 
         <!-- Empty Available -->
-        <div v-else-if="availableStudents.length === 0" class="py-12 text-center text-xs text-muted-foreground">
-          Tidak ada siswa tersedia untuk ditambahkan.
+        <div v-else-if="filteredAvailableStudents.length === 0" class="py-12 text-center text-xs text-muted-foreground">
+          {{ searchAvailableQuery ? 'Tidak ada siswa yang cocok dengan pencarian.' : 'Tidak ada siswa tersedia untuk ditambahkan.' }}
         </div>
 
         <!-- Student Items -->
         <div v-else class="divide-y divide-border">
           <div
-            v-for="st in availableStudents"
+            v-for="st in filteredAvailableStudents"
             :key="st.id"
-            class="flex items-center gap-3 p-3 hover:bg-muted/30 cursor-pointer transition-colors"
+            class="flex items-center gap-3 p-3 hover:bg-muted/30 cursor-pointer transition-colors select-none"
             @click="toggleSelectStudent(st.id)"
           >
             <Checkbox
-              :checked="selectedStudentIds.includes(st.id)"
-              @click.stop
-              @update:checked="toggleSelectStudent(st.id)"
+              :model-value="selectedStudentIds.includes(st.id)"
+              class="pointer-events-none"
             />
             <Avatar class="size-8 border shrink-0">
               <AvatarImage v-if="getPhotoUrl(st.avatar)" :src="getPhotoUrl(st.avatar)" :alt="st.nama" />

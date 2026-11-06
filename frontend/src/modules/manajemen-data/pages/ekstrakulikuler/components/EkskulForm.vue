@@ -50,6 +50,8 @@ defineProps({
                 v-model="form.advisor_id"
                 label="Guru Pembina"
                 placeholder="Pilih guru pembina (opsional)"
+                searchable
+                search-placeholder="Cari nama guru atau NIP..."
                 :error="errors.advisor_id"
                 :options="teacherOptions"
               />

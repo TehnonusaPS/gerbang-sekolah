@@ -76,10 +76,18 @@ const loadTeachers = async () => {
   try {
     const res = await getTeachers({ per_page: 100 })
     const list = res.data || []
-    teacherOptions.value = list.map(t => ({
-      label: t.name ? `${t.name}${t.nip ? ` (${t.nip})` : ''}` : 'Guru',
-      value: t.id
-    }))
+    teacherOptions.value = [
+      { label: '-- Tanpa Guru Pembina --', value: '' },
+      ...list.map(t => {
+        const name = t.nama || t.name || 'Guru'
+        const nip = t.nip || t.nip_nuptk
+        const jab = t.jabatan ? ` (${t.jabatan})` : ''
+        return {
+          label: `${name}${nip ? ` - NIP: ${nip}` : ''}${jab}`,
+          value: t.id
+        }
+      })
+    ]
   } catch (err) {
     console.error('Gagal memuat daftar guru:', err)
   }
