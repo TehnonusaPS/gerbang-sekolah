@@ -287,6 +287,13 @@ class TeacherController extends Controller
             });
         }
 
+        if ($request->has('role') && $request->role !== 'all') {
+            $roleVal = $request->input('role');
+            $query->whereHas('user.role', function ($rq) use ($roleVal) {
+                $rq->where('name', $roleVal);
+            });
+        }
+
         if ($request->has('status') && $request->status !== 'all') {
             $statusVal = $request->input('status');
             // If SK01, SK02 etc are used

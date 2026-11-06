@@ -74,16 +74,34 @@ const loadEkskuls = async () => {
 const teacherOptions = ref([])
 const loadTeachers = async () => {
   try {
-    const res = await getTeachers({ per_page: 100 })
-    const list = res.data || []
+    const res = await getTeachers({ role: 'guru', per_page: 100 })
+    const rawList = res.data || []
+
+    // Filter ketat: Hanya user yang berstatus Guru (bukan Kepala Sekolah, Tata Usaha, atau Admin)
+    const teachersOnly = rawList.filter(t => {
+      const role = (t.role || '').toLowerCase()
+      const jab = (t.jabatan || '').toLowerCase()
+      if (['admin_sekolah', 'admin_yayasan', 'superadmin', 'tata_usaha', 'kepala_sekolah'].includes(role)) {
+        return false
+      }
+      if (jab.includes('tata usaha') || jab.includes('staff') || jab.includes('admin') || jab.includes('kepala')) {
+        return false
+      }
+      return true
+    })
+
     teacherOptions.value = [
       { label: '-- Tanpa Guru Pembina --', value: '' },
-      ...list.map(t => {
-        const name = t.nama || t.name || 'Guru'
+      ...teachersOnly.map(t => {
+        // Pastikan nama lengkap guru selalu di posisi paling awal
+        const rawName = t.nama || t.name || 'Guru'
+        const front = t.gelar_depan ? `${t.gelar_depan.trim()} ` : ''
+        const back = t.gelar_belakang ? `, ${t.gelar_belakang.trim()}` : ''
+        const fullName = `${front}${rawName}${back}`.trim()
         const nip = t.nip || t.nip_nuptk
-        const jab = t.jabatan ? ` (${t.jabatan})` : ''
+
         return {
-          label: `${name}${nip ? ` - NIP: ${nip}` : ''}${jab}`,
+          label: `${fullName}${nip ? ` (NIP: ${nip})` : ''}`,
           value: t.id
         }
       })
