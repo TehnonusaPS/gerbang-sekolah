@@ -3,6 +3,8 @@ import { v } from '@/utils/validators'
 
 export const ekskulSchema = z.object({
   nama: v.requiredString('Nama ekstrakulikuler', { min: 2, max: 100 }),
+  advisor_id: v.optionalString({ max: 50 }),
+  coach_name: v.optionalString({ max: 100 }),
   deskripsi: v.optionalString({ max: 500 }),
   status: v.requiredSelect('Status').default('aktif')
 })

@@ -63,9 +63,16 @@ export const siswaSheetSections = [
     title: 'Informasi Akademik',
     fields: [
       { label: 'Tahun Masuk', key: 'tahun_masuk' },
-      { label: 'Kelas', key: 'kelas' },
+      { label: 'Kelas Saat Ini', key: 'kelas' },
       { label: 'Ekstrakurikuler', key: 'ekskul_label' },
       { label: 'Status', key: 'status' }
+    ]
+  },
+  {
+    id: 'riwayat-kelas',
+    title: 'Riwayat Kelas & Angkatan',
+    fields: [
+      { label: 'Rekam Jejak Kelas Siswa', key: 'riwayat_kelas_text', textarea: true }
     ]
   },
   {

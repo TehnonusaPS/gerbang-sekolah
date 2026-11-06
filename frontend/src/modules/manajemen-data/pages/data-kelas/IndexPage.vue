@@ -20,6 +20,7 @@ import {
 import KelasStatCards from './components/KelasStatCards.vue'
 import KelasTable from './components/KelasTable.vue'
 import KelasForm from './components/KelasForm.vue'
+import { useRoute } from 'vue-router'
 import router from '@/router/index.js'
 import { getClassrooms, createClassroom, updateClassroom, deleteClassroom, getClassroomTeacherOptions } from '@/services/managementService'
 import { fetchAllAcademicYears } from '@/services/academicYearService'
@@ -102,10 +103,18 @@ const defaultAcademicYearId = computed(() => {
   return academicYearOptions.value[0]?.value || ''
 })
 
-onMounted(() => {
-  fetchClassrooms()
-  fetchTeachers()
-  fetchAcademicYears()
+const route = useRoute()
+
+onMounted(async () => {
+  await Promise.all([
+    fetchClassrooms(),
+    fetchTeachers(),
+    fetchAcademicYears()
+  ])
+
+  if (route.query.tambah === 'true' || route.query.action === 'create') {
+    handleCreate()
+  }
 })
 
 // --- Form Sheet State & Methods ---

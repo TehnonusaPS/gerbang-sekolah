@@ -312,8 +312,7 @@ const loadSubjectOptions = async () => {
       confirm-button-label="Ya, Simpan Perubahan"
       :entity-name="`${form.nama_depan || ''} ${form.nama_belakang || ''}`.trim()"
       :summary-items="[
-        { label: 'Email Login', value: form.emailLogin },
-        { label: 'No. HP Login', value: form.noHpLogin }
+        { label: 'Email Login', value: form.emailLogin }
       ]"
       :before-confirm="onBeforeConfirm"
       @submit="handleSubmit"

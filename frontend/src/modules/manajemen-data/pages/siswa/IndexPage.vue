@@ -135,10 +135,14 @@ onMounted(async () => {
 
     const classFilter = filters.find(f => f.key === 'kelasId')
 
-    const classroomOptions = activeClassrooms.value.map(c => ({
-      label: c.name,
-      value: String(c.id)
-    }))
+    const classroomOptions = [
+      { label: 'Semua Kelas', value: 'all' },
+      { label: 'Belum Ada Kelas', value: 'unassigned' },
+      ...activeClassrooms.value.map(c => ({
+        label: c.name,
+        value: String(c.id)
+      }))
+    ]
 
     if (!classFilter) {
       filters.push({
@@ -238,10 +242,15 @@ const handleViewDetail = async id => {
     const ekskulNames = Array.isArray(res.data.ekskul_detail) && res.data.ekskul_detail.length > 0
       ? res.data.ekskul_detail.map(e => e.nama).join(', ')
       : '-'
+    const riwayatList = Array.isArray(res.data.riwayat_kelas) && res.data.riwayat_kelas.length > 0
+      ? res.data.riwayat_kelas.map(r => `• ${r.academic_year} (${r.semester}) - Kelas ${r.name} (Wali: ${r.wali_kelas}) [${r.status_keanggotaan === 'active' ? 'Aktif' : (r.status_keanggotaan === 'promoted' ? 'Naik Kelas' : (r.status_keanggotaan === 'graduated' ? 'Lulus' : 'Pindah'))}]`).join('\n')
+      : 'Belum ada riwayat kelas tercatat'
+
     selectedItemForDetail.value = {
       ...res.data,
       kelas: res.data.kelas_nama || '-',
-      ekskul_label: ekskulNames
+      ekskul_label: ekskulNames,
+      riwayat_kelas_text: riwayatList
     }
   } catch (err) {
     isDetailSheetOpen.value = false

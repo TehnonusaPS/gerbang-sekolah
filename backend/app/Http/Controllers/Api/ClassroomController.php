@@ -577,7 +577,18 @@ class ClassroomController extends Controller
                   ->where('is_active', true)
                   ->whereHas('role', fn($rq) => $rq->where('name', 'siswa'));
             })
-            ->whereIn('user_id', $rawIds)
+            ->where(function ($q) use ($rawIds) {
+                $numericIds = array_filter($rawIds, fn($id) => is_numeric($id));
+                $uuidIds = array_filter($rawIds, fn($id) => !is_numeric($id));
+
+                if (!empty($numericIds) && !empty($uuidIds)) {
+                    $q->whereIn('id', $numericIds)->orWhereIn('user_id', $uuidIds);
+                } elseif (!empty($numericIds)) {
+                    $q->whereIn('id', $numericIds);
+                } else {
+                    $q->whereIn('user_id', $uuidIds);
+                }
+            })
             ->where('status', 'active')
             ->lockForUpdate()
             ->get();
@@ -608,13 +619,292 @@ class ClassroomController extends Controller
                 ], 422);
             }
 
-            // Eksekusi pemindahan siswa
-            StudentProfile::whereIn('id', $studentsToMove->pluck('id'))
-                ->update(['classroom_id' => $classroom->id]);
+            // Eksekusi pemindahan siswa secara transaksional
+            $now = now();
+            foreach ($studentsToMove as $sp) {
+                // Jika siswa sebelumnya berada di kelas lain, tandai record lama sebagai 'transferred'
+                if ($sp->classroom_id && $sp->classroom_id != $classroom->id) {
+                    \App\Models\ClassroomStudent::where('student_profile_id', $sp->id)
+                        ->where('classroom_id', $sp->classroom_id)
+                        ->where('status', 'active')
+                        ->update([
+                            'status'   => 'transferred',
+                            'end_date' => $now->toDateString(),
+                            'notes'    => "Pindah ke kelas {$classroom->name}",
+                        ]);
+                }
+
+                // Daftarkan atau update record di kelas tujuan menjadi 'active'
+                \App\Models\ClassroomStudent::updateOrCreate(
+                    [
+                        'classroom_id'       => $classroom->id,
+                        'student_profile_id' => $sp->id,
+                    ],
+                    [
+                        'academic_year_id' => $classroom->academic_year_id,
+                        'status'           => 'active',
+                        'start_date'       => $now->toDateString(),
+                        'end_date'         => null,
+                        'notes'            => 'Penempatan kelas',
+                    ]
+                );
+
+                // Update pointer kelas aktif pada student_profile
+                $sp->update(['classroom_id' => $classroom->id]);
+            }
 
             return response()->json([
                 'status'  => 'success',
                 'message' => "{$incomingCount} siswa berhasil ditempatkan ke kelas {$classroom->name}.",
+            ]);
+        });
+    }
+
+    /**
+     * Mengeluarkan atau membatalkan penempatan siswa dari kelas.
+     */
+    public function removeStudent(Request $request, string $id): JsonResponse
+    {
+        $user = $request->user();
+
+        $validator = Validator::make($request->all(), [
+            'student_id' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Validasi gagal.',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        return DB::transaction(function () use ($user, $id, $request) {
+            $classroom = Classroom::lockForUpdate()->find($id);
+            if (!$classroom) {
+                return response()->json(['status' => 'error', 'message' => 'Kelas tidak ditemukan.'], 404);
+            }
+
+            // Otorisasi Scope Sekolah
+            if (!$user->isSuperAdmin()) {
+                if ($user->hasRole('admin_yayasan')) {
+                    if (!$classroom->school || $classroom->school->foundation_id != $user->foundation_id) {
+                        return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+                    }
+                } else {
+                    if ($classroom->school_id != $user->school_id) {
+                        return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+                    }
+                }
+            }
+
+            $studentParam = (string) $request->input('student_id');
+            $profile = StudentProfile::where('classroom_id', $classroom->id)
+                ->where(function ($q) use ($studentParam) {
+                    if (is_numeric($studentParam)) {
+                        $q->where('id', (int) $studentParam);
+                    } else {
+                        $q->where('user_id', $studentParam);
+                    }
+                })
+                ->lockForUpdate()
+                ->first();
+
+            if (!$profile) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Siswa tidak ditemukan di kelas ini.',
+                ], 404);
+            }
+
+            // Update status keanggotaan di tabel riwayat
+            \App\Models\ClassroomStudent::where('classroom_id', $classroom->id)
+                ->where('student_profile_id', $profile->id)
+                ->where('status', 'active')
+                ->update([
+                    'status'   => 'transferred',
+                    'end_date' => now()->toDateString(),
+                    'notes'    => 'Dikeluarkan / dibatalkan dari kelas',
+                ]);
+
+            // Kosongkan pointer kelas aktif
+            $profile->update(['classroom_id' => null]);
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Siswa berhasil dikeluarkan dari kelas.',
+            ]);
+        });
+    }
+
+    /**
+     * Mengambil daftar riwayat seluruh siswa yang pernah terdaftar di kelas ini.
+     */
+    public function getHistoryStudents(Request $request, string $id): JsonResponse
+    {
+        $classroom = Classroom::find($id);
+        if (!$classroom) {
+            return response()->json(['status' => 'error', 'message' => 'Kelas tidak ditemukan.'], 404);
+        }
+
+        $records = \App\Models\ClassroomStudent::with(['studentProfile.user'])
+            ->where('classroom_id', $classroom->id)
+            ->orderByDesc('created_at')
+            ->get();
+
+        $data = $records->map(function ($record) {
+            $profile = $record->studentProfile;
+            $user = $profile?->user;
+            return [
+                'id'                 => $record->id,
+                'student_profile_id' => $profile?->id,
+                'user_id'            => $user?->id,
+                'nisn'               => $profile?->nisn ?? '-',
+                'nama'               => $user?->name ?? '-',
+                'jenis_kelamin'      => $profile?->gender === 'male' ? 'Laki-laki' : ($profile?->gender === 'female' ? 'Perempuan' : '-'),
+                'status_keanggotaan' => $record->status,
+                'start_date'         => $record->start_date?->format('Y-m-d'),
+                'end_date'           => $record->end_date?->format('Y-m-d'),
+                'notes'              => $record->notes,
+            ];
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => $data,
+        ]);
+    }
+
+    /**
+     * Kenaikan kelas masal (Bulk Student Promotion) dari kelas ini ke kelas berikutnya.
+     */
+    public function promoteStudents(Request $request, string $id): JsonResponse
+    {
+        $user = $request->user();
+
+        $validator = Validator::make($request->all(), [
+            'target_classroom_id'  => 'required|exists:classrooms,id|different:id',
+            'retained_student_ids' => 'nullable|array',
+            'retained_student_ids.*' => 'string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Validasi gagal.',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        return DB::transaction(function () use ($user, $id, $request) {
+            $sourceClass = Classroom::lockForUpdate()->find($id);
+            $targetClass = Classroom::lockForUpdate()->find($request->input('target_classroom_id'));
+
+            if (!$sourceClass || !$targetClass) {
+                return response()->json(['status' => 'error', 'message' => 'Kelas tidak ditemukan.'], 404);
+            }
+
+            // Otorisasi Scope
+            if (!$user->isSuperAdmin()) {
+                if ($user->hasRole('admin_yayasan')) {
+                    if ($sourceClass->school->foundation_id != $user->foundation_id || $targetClass->school->foundation_id != $user->foundation_id) {
+                        return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+                    }
+                } else {
+                    if ($sourceClass->school_id != $user->school_id || $targetClass->school_id != $user->school_id) {
+                        return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+                    }
+                }
+            }
+
+            // Ambil semua siswa aktif di kelas asal
+            $activeStudents = StudentProfile::where('classroom_id', $sourceClass->id)
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->get();
+
+            if ($activeStudents->isEmpty()) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => "Tidak ada siswa aktif di kelas {$sourceClass->name} untuk dinaikkan.",
+                ], 422);
+            }
+
+            $retainedIds = collect($request->input('retained_student_ids', []))->map(fn($v) => (string) $v)->toArray();
+
+            $promoted = $activeStudents->filter(fn($sp) => !in_array((string)$sp->id, $retainedIds) && !in_array((string)$sp->user_id, $retainedIds));
+            $retained = $activeStudents->filter(fn($sp) => in_array((string)$sp->id, $retainedIds) || in_array((string)$sp->user_id, $retainedIds));
+
+            if ($promoted->isEmpty()) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Semua siswa ditandai tinggal kelas. Tidak ada siswa yang dinaikkan.',
+                ], 422);
+            }
+
+            // Validasi Kapasitas Kelas Tujuan
+            $targetActiveCount = StudentProfile::where('classroom_id', $targetClass->id)->where('status', 'active')->count();
+            if ($targetClass->capacity && ($targetActiveCount + $promoted->count()) > $targetClass->capacity) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => "Kapasitas kelas tujuan ({$targetClass->name}) tidak mencukupi! Kapasitas: {$targetClass->capacity}, Terisi: {$targetActiveCount}, Siswa Naik: {$promoted->count()}.",
+                ], 422);
+            }
+
+            $now = now();
+
+            // 1. Proses Siswa yang Tinggal Kelas (Retained)
+            foreach ($retained as $sp) {
+                \App\Models\ClassroomStudent::where('classroom_id', $sourceClass->id)
+                    ->where('student_profile_id', $sp->id)
+                    ->where('status', 'active')
+                    ->update([
+                        'status' => 'retained',
+                        'notes'  => "Tinggal kelas di {$sourceClass->name}",
+                    ]);
+            }
+
+            // 2. Proses Siswa yang Naik Kelas (Promoted)
+            foreach ($promoted as $sp) {
+                // Tandai kelas lama sebagai 'promoted'
+                \App\Models\ClassroomStudent::where('classroom_id', $sourceClass->id)
+                    ->where('student_profile_id', $sp->id)
+                    ->where('status', 'active')
+                    ->update([
+                        'status'   => 'promoted',
+                        'end_date' => $now->toDateString(),
+                        'notes'    => "Naik ke kelas {$targetClass->name}",
+                    ]);
+
+                // Buat record baru di kelas tujuan
+                \App\Models\ClassroomStudent::updateOrCreate(
+                    [
+                        'classroom_id'       => $targetClass->id,
+                        'student_profile_id' => $sp->id,
+                    ],
+                    [
+                        'academic_year_id' => $targetClass->academic_year_id,
+                        'status'           => 'active',
+                        'start_date'       => $now->toDateString(),
+                        'end_date'         => null,
+                        'notes'            => "Kenaikan kelas dari {$sourceClass->name}",
+                    ]
+                );
+
+                // Update pointer kelas aktif pada student_profile
+                $sp->update(['classroom_id' => $targetClass->id]);
+            }
+
+            $message = "Sebanyak {$promoted->count()} siswa berhasil dinaikkan ke kelas {$targetClass->name}.";
+            if ($retained->isNotEmpty()) {
+                $message .= " ({$retained->count()} siswa tinggal kelas).";
+            }
+
+            return response()->json([
+                'status'         => 'success',
+                'message'        => $message,
+                'promoted_count' => $promoted->count(),
+                'retained_count' => $retained->count(),
             ]);
         });
     }

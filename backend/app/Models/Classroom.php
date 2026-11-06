@@ -53,11 +53,48 @@ class Classroom extends Model
     }
 
     /**
-     * Get all students in this classroom.
+     * Get all students directly assigned to this classroom.
      */
     public function students(): HasMany
     {
         return $this->hasMany(StudentProfile::class);
+    }
+
+    /**
+     * Get all classroom membership records (history & active).
+     */
+    public function classroomStudents(): HasMany
+    {
+        return $this->hasMany(ClassroomStudent::class);
+    }
+
+    /**
+     * Get active classroom membership records.
+     */
+    public function activeClassroomStudents(): HasMany
+    {
+        return $this->hasMany(ClassroomStudent::class)->where('status', 'active');
+    }
+
+    /**
+     * Get active students via pivot.
+     */
+    public function activeStudents(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(StudentProfile::class, 'classroom_students')
+            ->wherePivot('status', 'active')
+            ->withPivot('status', 'notes', 'start_date', 'end_date')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get all students who ever attended this classroom (history).
+     */
+    public function historyStudents(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(StudentProfile::class, 'classroom_students')
+            ->withPivot('status', 'notes', 'start_date', 'end_date')
+            ->withTimestamps();
     }
 
     public function materials(): HasMany

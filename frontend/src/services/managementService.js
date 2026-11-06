@@ -147,6 +147,23 @@ export async function assignClassroomStudents(classroomId, studentIds) {
   return response.data
 }
 
+export async function removeClassroomStudent(classroomId, studentId) {
+  const response = await api.post(`/management/classrooms/${classroomId}/remove-student`, {
+    student_id: studentId
+  })
+  return response.data
+}
+
+export async function getClassroomHistoryStudents(classroomId) {
+  const response = await api.get(`/management/classrooms/${classroomId}/history-students`)
+  return response.data
+}
+
+export async function promoteClassroomStudents(classroomId, payload) {
+  const response = await api.post(`/management/classrooms/${classroomId}/promote-students`, payload)
+  return response.data
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 //  Guru & Staff (Teachers & Staff) API
 // ─────────────────────────────────────────────────────────────────────────

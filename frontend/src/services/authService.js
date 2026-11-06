@@ -20,7 +20,7 @@ export async function logout() {
  * Get User — ambil profil user yang sedang login.
  */
 export async function getUser() {
-  const response = await api.get('/user')
+  const response = await api.get('/user', { __skipGlobalLoading: true })
   return response.data
 }
 

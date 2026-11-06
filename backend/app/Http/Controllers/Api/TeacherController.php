@@ -287,12 +287,29 @@ class TeacherController extends Controller
             });
         }
 
+        if ($request->has('role') && $request->role !== 'all') {
+            $roleVal = $request->input('role');
+            $query->whereHas('user.role', function ($rq) use ($roleVal) {
+                $rq->where('name', $roleVal);
+            });
+        }
+
         if ($request->has('status') && $request->status !== 'all') {
             $statusVal = $request->input('status');
             // If SK01, SK02 etc are used
             $query->where(function ($q) use ($statusVal) {
                 $q->where('employment_status', $statusVal)
                   ->orWhere('employment_status', $this->mapStatusKepegawaianToFe($statusVal));
+            });
+        }
+
+        if ($request->filled('jabatan') && $request->input('jabatan') !== 'all') {
+            $jabatanVal = $request->input('jabatan');
+            $query->where(function ($q) use ($jabatanVal) {
+                $q->where('position', 'like', "%{$jabatanVal}%")
+                  ->orWhereHas('user.role', function ($rq) use ($jabatanVal) {
+                      $rq->where('name', 'like', "%{$jabatanVal}%");
+                  });
             });
         }
 
@@ -406,14 +423,39 @@ class TeacherController extends Controller
             ], 403);
         }
 
+        $phone = $request->input('noHpLogin') ?: $request->input('no_hp');
+        if ($phone !== null) {
+            $phone = trim((string) $phone);
+            if ($phone === '') {
+                $phone = null;
+            }
+        }
+
+        $nip = $request->input('nip_nuptk') ?: $request->input('nip');
+        if ($nip !== null) {
+            $nip = trim((string) $nip);
+            if ($nip === '' || $nip === '-') {
+                $nip = null;
+            }
+        }
+
+        $request->merge([
+            'noHpLogin' => $phone,
+            'no_hp'     => $phone,
+            'nip_nuptk' => $nip,
+            'nip'       => $nip,
+        ]);
+
         $validator = Validator::make($request->all(), [
             'nama_depan'         => 'required|string|max:100',
             'nama_belakang'      => 'nullable|string|max:100',
             'emailLogin'         => 'required|email|unique:users,email',
-            'noHpLogin'          => 'nullable|string',
+            'noHpLogin'          => 'nullable|string|unique:users,phone',
+            'no_hp'              => 'nullable|string|unique:users,phone',
             'password'           => 'nullable|string|min:6',
             'nik'                => 'nullable|string|max:50',
-            'nip_nuptk'          => 'nullable|string|max:50',
+            'nip_nuptk'          => 'nullable|string|max:50|unique:teacher_profiles,nip_nuptk',
+            'nip'                => 'nullable|string|max:50|unique:teacher_profiles,nip_nuptk',
             'tempat_lahir'       => 'nullable|string',
             'tanggal_lahir'      => 'nullable|date',
             'jenis_kelamin'      => 'nullable|string',
@@ -444,6 +486,12 @@ class TeacherController extends Controller
                     $query->where('is_active', true);
                 }),
             ],
+        ], [
+            'emailLogin.unique' => 'Email login sudah digunakan.',
+            'noHpLogin.unique'  => 'Nomor HP sudah digunakan oleh pengguna lain.',
+            'no_hp.unique'      => 'Nomor HP sudah digunakan oleh pengguna lain.',
+            'nip_nuptk.unique'  => 'NIP / NUPTK sudah digunakan oleh guru/staff lain.',
+            'nip.unique'        => 'NIP / NUPTK sudah digunakan oleh guru/staff lain.',
         ]);
 
         if ($validator->fails()) {
@@ -552,13 +600,11 @@ class TeacherController extends Controller
                         ->where('is_active', true)
                         ->value('id') ?: AcademicYear::where('school_id', $subjSchoolId)->latest('id')->value('id');
 
-                    $classroomId = Classroom::where('school_id', $subjSchoolId)->value('id');
-
                     TeacherSubjectAssignment::create([
                         'school_id'        => $subjSchoolId,
                         'teacher_id'       => $newUser->id,
                         'subject_id'       => $subjectId,
-                        'classroom_id'     => $classroomId,
+                        'classroom_id'     => $request->input('classroom_id', null),
                         'academic_year_id' => $academicYearId,
                         'is_active'        => true,
                     ]);
@@ -717,14 +763,44 @@ class TeacherController extends Controller
             }
         }
 
+        if ($request->has('noHpLogin') || $request->has('no_hp')) {
+            $phone = $request->input('noHpLogin') ?: $request->input('no_hp');
+            if ($phone !== null) {
+                $phone = trim((string) $phone);
+                if ($phone === '') {
+                    $phone = null;
+                }
+            }
+            $request->merge([
+                'noHpLogin' => $phone,
+                'no_hp'     => $phone,
+            ]);
+        }
+
+        if ($request->has('nip_nuptk') || $request->has('nip')) {
+            $nip = $request->input('nip_nuptk') ?: $request->input('nip');
+            if ($nip !== null) {
+                $nip = trim((string) $nip);
+                if ($nip === '' || $nip === '-') {
+                    $nip = null;
+                }
+            }
+            $request->merge([
+                'nip_nuptk' => $nip,
+                'nip'       => $nip,
+            ]);
+        }
+
         $validator = Validator::make($request->all(), [
             'nama_depan'         => 'sometimes|required|string|max:100',
             'nama_belakang'      => 'nullable|string|max:100',
             'emailLogin'         => 'sometimes|required|email|unique:users,email,' . $u->id,
-            'noHpLogin'          => 'nullable|string',
+            'noHpLogin'          => 'sometimes|nullable|string|unique:users,phone,' . $u->id,
+            'no_hp'              => 'sometimes|nullable|string|unique:users,phone,' . $u->id,
             'password'           => 'nullable|string|min:6',
             'nik'                => 'nullable|string|max:50',
-            'nip_nuptk'          => 'nullable|string|max:50',
+            'nip_nuptk'          => 'sometimes|nullable|string|max:50|unique:teacher_profiles,nip_nuptk,' . $teacher->id,
+            'nip'                => 'sometimes|nullable|string|max:50|unique:teacher_profiles,nip_nuptk,' . $teacher->id,
             'tempat_lahir'       => 'nullable|string',
             'tanggal_lahir'      => 'nullable|date',
             'jenis_kelamin'      => 'nullable|string',
@@ -741,6 +817,12 @@ class TeacherController extends Controller
             'foto'               => 'nullable|image|max:2048',
             'subject_ids'   => 'nullable|array',
             'subject_ids.*' => 'integer|distinct|exists:subjects,id',
+        ], [
+            'emailLogin.unique' => 'Email login sudah digunakan.',
+            'noHpLogin.unique'  => 'Nomor HP sudah digunakan oleh pengguna lain.',
+            'no_hp.unique'      => 'Nomor HP sudah digunakan oleh pengguna lain.',
+            'nip_nuptk.unique'  => 'NIP / NUPTK sudah digunakan oleh guru/staff lain.',
+            'nip.unique'        => 'NIP / NUPTK sudah digunakan oleh guru/staff lain.',
         ]);
 
         if ($validator->fails()) {
@@ -892,13 +974,11 @@ class TeacherController extends Controller
                         ->where('is_active', true)
                         ->value('id') ?: AcademicYear::where('school_id', $subjSchoolId)->latest('id')->value('id');
 
-                    $classroomId = Classroom::where('school_id', $subjSchoolId)->value('id');
-
                     TeacherSubjectAssignment::create([
                         'school_id'        => $subjSchoolId,
                         'teacher_id'       => $u->id,
                         'subject_id'       => $subjectId,
-                        'classroom_id'     => $classroomId,
+                        'classroom_id'     => $request->input('classroom_id', null),
                         'academic_year_id' => $academicYearId,
                         'is_active'        => true,
                     ]);
@@ -947,8 +1027,28 @@ class TeacherController extends Controller
             }
         }
 
+        // Proteksi jika guru masih menjabat sebagai wali kelas aktif
+        $assignedClass = Classroom::where('homeroom_teacher_id', $u->id)->first();
+        if ($assignedClass) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => "Guru tidak dapat dihapus karena masih bertugas sebagai wali kelas di kelas \"{$assignedClass->name}\". Silakan ganti wali kelas terlebih dahulu.",
+            ], 422);
+        }
+
+        // Proteksi jika guru masih memiliki jadwal mengajar
+        $scheduleCount = \App\Models\Schedule::where('teacher_id', $u->id)->count();
+        if ($scheduleCount > 0) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => "Guru tidak dapat dihapus karena masih memiliki {$scheduleCount} jadwal mengajar aktif. Silakan hapus atau alihkan jadwal mengajar terlebih dahulu.",
+            ], 422);
+        }
+
         DB::beginTransaction();
         try {
+            // Bersihkan penugasan mata pelajaran
+            TeacherSubjectAssignment::where('teacher_id', $u->id)->delete();
             // Delete TeacherProfile first
             TeacherProfile::where('user_id', $u->id)->delete();
             // Delete User

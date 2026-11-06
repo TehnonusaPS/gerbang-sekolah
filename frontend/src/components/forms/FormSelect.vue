@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { Check, ChevronDown } from 'lucide-vue-next'
+import { Check, ChevronDown, Plus, ExternalLink } from 'lucide-vue-next'
 import { Field, FieldContent, FieldError, FieldLabel } from '@/components/ui/field'
 import {
   Popover,
@@ -45,10 +45,22 @@ const props = defineProps({
   emptyText: {
     type: String,
     default: 'Data tidak ditemukan.'
+  },
+  actionLabel: {
+    type: String,
+    default: ''
+  },
+  actionTo: {
+    type: String,
+    default: ''
+  },
+  actionTarget: {
+    type: String,
+    default: '_blank'
   }
 })
 
-defineEmits(['update:modelValue'])
+defineEmits(['update:modelValue', 'action'])
 
 const isOpen = ref(false)
 
@@ -72,14 +84,39 @@ const sanitizedOptions = computed(() => {
 
 <template>
   <Field :data-invalid="!!error">
-    <FieldLabel v-if="label">
-      {{ label }}
-      <span
-        v-if="required"
-        class="text-destructive"
-        >*</span
+    <div v-if="label || actionLabel" class="flex items-center justify-between gap-2 mb-1.5">
+      <FieldLabel v-if="label" class="mb-0 text-xs font-semibold text-foreground">
+        {{ label }}
+        <span
+          v-if="required"
+          class="text-destructive"
+          >*</span
+        >
+      </FieldLabel>
+
+      <!-- Action Button / Link (e.g. + Tambah Guru Baru) -->
+      <a
+        v-if="actionLabel && actionTo"
+        :href="actionTo"
+        :target="actionTarget"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer group"
+        @click="$emit('action')"
       >
-    </FieldLabel>
+        <Plus class="size-3 transition-transform group-hover:scale-110" />
+        <span>{{ actionLabel }}</span>
+        <ExternalLink v-if="actionTarget === '_blank'" class="size-2.5 opacity-60 group-hover:opacity-100" />
+      </a>
+      <button
+        v-else-if="actionLabel"
+        type="button"
+        class="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer group"
+        @click="$emit('action')"
+      >
+        <Plus class="size-3 transition-transform group-hover:scale-110" />
+        <span>{{ actionLabel }}</span>
+      </button>
+    </div>
 
     <FieldContent>
       <!-- SEARCHABLE MODE (Popover + Command) -->
@@ -109,15 +146,27 @@ const sanitizedOptions = computed(() => {
         </PopoverTrigger>
 
         <PopoverContent
-          class="w-[var(--reka-popover-trigger-width)] rounded-xl p-0 shadow-xl border border-border"
+          class="w-[var(--reka-popover-trigger-width)] min-w-[280px] sm:min-w-[340px] max-w-[calc(100vw-2rem)] rounded-xl p-0 shadow-xl border border-border z-[70] overflow-hidden"
           align="start"
           :side-offset="4"
         >
           <Command class="rounded-xl">
             <CommandInput :placeholder="searchPlaceholder" class="h-9" />
             <CommandList class="max-h-[250px] overflow-y-auto">
-              <CommandEmpty class="py-4 text-center text-sm text-muted-foreground">
-                {{ emptyText }}
+              <CommandEmpty class="py-4 px-3 text-center text-sm text-muted-foreground space-y-2">
+                <p>{{ emptyText }}</p>
+                <div v-if="actionLabel && actionTo">
+                  <a
+                    :href="actionTo"
+                    :target="actionTarget"
+                    rel="noopener noreferrer"
+                    class="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                    @click="isOpen = false; $emit('action')"
+                  >
+                    <Plus class="size-3" />
+                    <span>{{ actionLabel }}</span>
+                  </a>
+                </div>
               </CommandEmpty>
               <CommandGroup>
                 <CommandItem
@@ -130,14 +179,29 @@ const sanitizedOptions = computed(() => {
                   }"
                   class="flex items-center justify-between cursor-pointer py-2 px-3 text-sm"
                 >
-                  <span class="truncate">{{ item.label }}</span>
+                  <span class="line-clamp-2 leading-snug pr-2 text-left">{{ item.label }}</span>
                   <Check
                     v-if="String(item.value) === String(modelValue)"
-                    class="h-4 w-4 text-primary shrink-0 ml-2"
+                    class="h-4 w-4 text-primary shrink-0 ml-auto"
                   />
                 </CommandItem>
               </CommandGroup>
             </CommandList>
+
+            <!-- Bottom Action Footer -->
+            <div v-if="actionLabel && actionTo" class="p-1.5 border-t border-border bg-muted/20">
+              <a
+                :href="actionTo"
+                :target="actionTarget"
+                rel="noopener noreferrer"
+                class="flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold text-primary hover:bg-primary/10 transition-colors w-full cursor-pointer"
+                @click="isOpen = false; $emit('action')"
+              >
+                <Plus class="size-3.5" />
+                <span>{{ actionLabel }}</span>
+                <ExternalLink v-if="actionTarget === '_blank'" class="size-3 opacity-60" />
+              </a>
+            </div>
           </Command>
         </PopoverContent>
       </Popover>

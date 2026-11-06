@@ -80,7 +80,6 @@ const showSuccessModal = ref(false)
 
 const generatedAccount = ref({
   email: '',
-  phone: '',
   password: ''
 })
 
@@ -159,7 +158,6 @@ const handleSubmit = async () => {
     if (res.status === 'success') {
       generatedAccount.value = {
         email: res.data.email,
-        phone: res.data.phone || '-',
         password: res.data.password
       }
       showSuccessModal.value = true
@@ -234,8 +232,7 @@ const loadSubjectOptions = async () => {
       confirm-title="Konfirmasi Simpan Data Guru/Staff"
       :entity-name="`${form.nama_depan || ''} ${form.nama_belakang || ''}`.trim()"
       :summary-items="[
-        { label: 'Email Login', value: form.emailLogin },
-        { label: 'No. HP Login', value: form.noHpLogin }
+        { label: 'Email Login', value: form.emailLogin }
       ]"
       :before-confirm="onBeforeConfirm"
       @submit="handleSubmit"
@@ -247,7 +244,6 @@ const loadSubjectOptions = async () => {
     title="Guru/Staff Berhasil Ditambahkan"
     description="Data guru/staff berhasil disimpan dan akun pengguna telah dibuat."
     :email="generatedAccount.email"
-    :phone="generatedAccount.phone"
     :password="generatedAccount.password"
     @close="goToList"
   />

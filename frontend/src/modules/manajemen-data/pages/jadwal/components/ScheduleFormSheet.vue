@@ -6,7 +6,7 @@ import FormFooter from '@/components/forms/FormFooter.vue'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AlertCircle, Calendar, Clock, Trash2, BookOpen, UserCheck, Sparkles } from 'lucide-vue-next'
+import { AlertCircle, Calendar, Clock, Trash2, BookOpen, UserCheck, Sparkles, Plus, ExternalLink } from 'lucide-vue-next'
 import { fetchAllSubjects } from '@/services/subjectService'
 import { getTeachers } from '@/services/managementService'
 import { createSchedule, updateSchedule, deleteSchedule, checkTeacherConflicts } from '@/services/scheduleService'
@@ -51,6 +51,7 @@ async function loadFormOptions() {
 watch(() => props.open, (newVal) => {
   if (newVal) {
     loadFormOptions()
+    window.addEventListener('focus', loadFormOptions)
     if (props.isEditMode && props.editItem) {
       formItem.value = {
         subject_id: String(props.editItem.subject_id),
@@ -63,6 +64,8 @@ watch(() => props.open, (newVal) => {
       }
     }
     conflictWarning.value = ''
+  } else {
+    window.removeEventListener('focus', loadFormOptions)
   }
 })
 
@@ -222,10 +225,22 @@ async function handleDelete() {
           
           <!-- Subject Select Form (Full Width w-full) -->
           <div class="space-y-1.5 text-left w-full">
-            <label class="text-xs font-bold text-foreground flex items-center gap-1.5">
-              <BookOpen class="size-3.5 text-primary" />
-              Mata Pelajaran <span class="text-rose-500">*</span>
-            </label>
+            <div class="flex items-center justify-between gap-2">
+              <label class="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <BookOpen class="size-3.5 text-primary" />
+                Mata Pelajaran <span class="text-rose-500">*</span>
+              </label>
+              <a
+                href="/manajemen-data/mata-pelajaran?tambah=true"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer group"
+              >
+                <Plus class="size-3 transition-transform group-hover:scale-110" />
+                <span>Tambah Mapel Baru</span>
+                <ExternalLink class="size-2.5 opacity-60 group-hover:opacity-100" />
+              </a>
+            </div>
             
             <Select v-model="formItem.subject_id">
               <SelectTrigger class="w-full h-11 rounded-xl bg-background border-border/80 focus:ring-2 focus:ring-primary/20 text-xs font-semibold px-3.5">
@@ -248,10 +263,22 @@ async function handleDelete() {
 
           <!-- Teacher Select Form (Full Width w-full) -->
           <div class="space-y-1.5 text-left w-full">
-            <label class="text-xs font-bold text-foreground flex items-center gap-1.5">
-              <UserCheck class="size-3.5 text-primary" />
-              Guru Pengajar <span class="text-rose-500">*</span>
-            </label>
+            <div class="flex items-center justify-between gap-2">
+              <label class="text-xs font-bold text-foreground flex items-center gap-1.5">
+                <UserCheck class="size-3.5 text-primary" />
+                Guru Pengajar <span class="text-rose-500">*</span>
+              </label>
+              <a
+                href="/manajemen-data/guru-staff/tambah"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors cursor-pointer group"
+              >
+                <Plus class="size-3 transition-transform group-hover:scale-110" />
+                <span>Tambah Guru Baru</span>
+                <ExternalLink class="size-2.5 opacity-60 group-hover:opacity-100" />
+              </a>
+            </div>
             
             <Select v-model="formItem.teacher_id">
               <SelectTrigger class="w-full h-11 rounded-xl bg-background border-border/80 focus:ring-2 focus:ring-primary/20 text-xs font-semibold px-3.5">

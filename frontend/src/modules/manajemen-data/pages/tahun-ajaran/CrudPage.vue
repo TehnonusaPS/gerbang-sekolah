@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { toast } from 'vue-sonner'
 import DataTableCard from '@/components/data-table/DataTableCard.vue'
 import PageHeader from '@/components/page-header/PageHeader.vue'
@@ -41,8 +42,13 @@ const {
   executeDelete
 } = useAcademicYear()
 
-onMounted(() => {
-  fetchData()
+const route = useRoute()
+
+onMounted(async () => {
+  await fetchData()
+  if (route.query.tambah === 'true' || route.query.action === 'create') {
+    handleCreate()
+  }
 })
 
 // --- Form Sheet State & Zod ---

@@ -17,6 +17,10 @@ defineProps({
   errors: {
     type: Object,
     default: () => ({})
+  },
+  teacherOptions: {
+    type: Array,
+    default: () => []
   }
 })
 </script>
@@ -40,6 +44,23 @@ defineProps({
               placeholder="Contoh: Pramuka, Futsal, Paduan Suara"
               :error="errors.nama"
               required
+            />
+            <FormSelect
+              v-model="form.advisor_id"
+              label="Guru Pembina"
+              placeholder="Pilih guru pembina dari sekolah (opsional)"
+              searchable
+              search-placeholder="Cari nama guru atau NIP..."
+              :error="errors.advisor_id"
+              :options="teacherOptions"
+              action-label="Tambah Guru Baru"
+              action-to="/manajemen-data/guru-staff/tambah"
+            />
+            <FormInput
+              v-model="form.coach_name"
+              label="Pelatih / Instruktur Luar"
+              placeholder="Contoh: Coach Hendra (opsional jika pembina dari luar)"
+              :error="errors.coach_name"
             />
             <FormTextArea
               v-model="form.deskripsi"

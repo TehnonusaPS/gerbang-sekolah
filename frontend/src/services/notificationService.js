@@ -4,7 +4,7 @@ import api from './api'
  * Fetch all notifications for the authenticated user.
  */
 export async function getNotifications() {
-  const response = await api.get('/notifications')
+  const response = await api.get('/notifications', { __skipGlobalLoading: true })
   return response.data.data
 }
 
