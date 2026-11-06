@@ -32,7 +32,8 @@ class ExtracurricularController extends Controller
     {
         $parts = [];
         if ($advisor) {
-            $parts[] = $advisor->name;
+            $nip = $advisor->teacherProfile?->nip_nuptk;
+            $parts[] = $nip ? "{$advisor->name} (NIP: {$nip})" : $advisor->name;
         } elseif ($advisorId) {
             $parts[] = 'Guru';
         }
@@ -70,7 +71,7 @@ class ExtracurricularController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $query = Extracurricular::with(['advisor'])->withCount('students');
+        $query = Extracurricular::with(['advisor.teacherProfile'])->withCount('students');
 
         if ($user->isSuperAdmin()) {
             if ($request->has('school_id')) {
@@ -185,6 +186,8 @@ class ExtracurricularController extends Controller
             'is_active'   => $this->mapStatusToDb($request->input('status', 'aktif')),
         ]);
 
+        $ekskul->load(['advisor.teacherProfile']);
+
         return response()->json([
             'status'  => 'success',
             'message' => 'Ekstrakulikuler berhasil ditambahkan.',
@@ -208,7 +211,7 @@ class ExtracurricularController extends Controller
     public function show(Request $request, string $id): JsonResponse
     {
         $user = $request->user();
-        $ekskul = Extracurricular::with(['advisor'])->find($id);
+        $ekskul = Extracurricular::with(['advisor.teacherProfile'])->find($id);
 
         if (!$ekskul) {
             return response()->json([
@@ -309,6 +312,7 @@ class ExtracurricularController extends Controller
         if ($request->has('status')) $updateData['is_active'] = $this->mapStatusToDb($request->input('status'));
 
         $ekskul->update($updateData);
+        $ekskul->load(['advisor.teacherProfile']);
 
         return response()->json([
             'status'  => 'success',
