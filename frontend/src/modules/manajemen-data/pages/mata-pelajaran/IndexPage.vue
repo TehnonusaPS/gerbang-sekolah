@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { toast } from 'vue-sonner'
 import DataTableCard from '@/components/data-table/DataTableCard.vue'
 import PageHeader from '@/components/page-header/PageHeader.vue'
@@ -83,8 +84,13 @@ async function fetchSubjectsData() {
   }
 }
 
-onMounted(() => {
-  fetchSubjectsData()
+const route = useRoute()
+
+onMounted(async () => {
+  await fetchSubjectsData()
+  if (route.query.tambah === 'true' || route.query.action === 'create') {
+    handleCreate()
+  }
 })
 
 // --- Computed Stats ---

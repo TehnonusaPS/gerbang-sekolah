@@ -92,6 +92,8 @@ const isSMA = computed(() => {
               placeholder="Pilih tahun ajaran"
               :options="academicYearOptions"
               :error="errors.academic_year_id"
+              action-label="Tambah Tahun Ajaran"
+              action-to="/manajemen-data/tahun-ajaran?tambah=true"
               required
             />
 
@@ -122,27 +124,15 @@ const isSMA = computed(() => {
               />
             </div>
 
-            <div>
-              <FormSelect
-                v-model="form.homeroom_teacher_id"
-                label="Wali Kelas"
-                placeholder="Pilih wali kelas"
-                :options="teacherOptions"
-                :error="errors.homeroom_teacher_id"
-              />
-              <div class="flex items-center justify-between text-xs text-muted-foreground px-0.5 mt-1.5">
-                <span v-if="!form.homeroom_teacher_id || form.homeroom_teacher_id === 'none'">Belum ada wali kelas terpilih</span>
-                <span v-else class="text-emerald-600 dark:text-emerald-400 font-medium">Wali kelas terpilih</span>
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1 font-medium text-primary hover:underline cursor-pointer"
-                  @click="router.push('/manajemen-data/guru-staff/tambah')"
-                >
-                  <Plus class="size-3.5" />
-                  <span>Tambah Guru Baru</span>
-                </button>
-              </div>
-            </div>
+            <FormSelect
+              v-model="form.homeroom_teacher_id"
+              label="Wali Kelas"
+              placeholder="Pilih wali kelas"
+              :options="teacherOptions"
+              :error="errors.homeroom_teacher_id"
+              action-label="Tambah Guru Baru"
+              action-to="/manajemen-data/guru-staff/tambah"
+            />
 
             <div class="grid grid-cols-2 gap-4">
               <FormInput

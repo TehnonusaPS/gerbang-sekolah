@@ -226,6 +226,8 @@ const hasWaliErrors = computed(() =>
               label="Yayasan"
               placeholder="Pilih yayasan terlebih dahulu"
               :options="yayasanOptions"
+              action-label="Tambah Yayasan"
+              action-to="/manajemen-data/yayasan/tambah"
               required
               :error="errors.foundation_id"
             />
@@ -235,6 +237,8 @@ const hasWaliErrors = computed(() =>
               :placeholder="!form.foundation_id ? 'Pilih yayasan terlebih dahulu' : 'Pilih sekolah'"
               :options="filteredSekolahOptions"
               :disabled="!form.foundation_id"
+              action-label="Tambah Sekolah"
+              action-to="/manajemen-data/sekolah/tambah"
               required
               :error="errors.sekolahId"
             />
@@ -246,6 +250,8 @@ const hasWaliErrors = computed(() =>
             :placeholder="isSuperAdmin && !form.sekolahId ? 'Pilih sekolah terlebih dahulu' : 'Pilih kelas'"
             :options="filteredKelasOptions"
             :disabled="isReadOnlyAcademic || (isSuperAdmin && !form.sekolahId)"
+            action-label="Tambah Kelas Baru"
+            action-to="/manajemen-data/kelas?tambah=true"
             :error="errors.kelas"
           />
           <FormMultiSelect

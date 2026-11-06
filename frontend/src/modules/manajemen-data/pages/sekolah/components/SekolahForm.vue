@@ -176,6 +176,8 @@ const handleImageChange = (file) => {
             :options="foundationOptions"
             searchable
             search-placeholder="Cari nama yayasan..."
+            action-label="Tambah Yayasan Baru"
+            action-to="/manajemen-data/yayasan/tambah"
             :disabled="isReadOnlyInstitutional || !isSuperAdmin"
             :error="errors.foundation_id || errors.yayasan"
             :required="!isReadOnlyInstitutional && isSuperAdmin"

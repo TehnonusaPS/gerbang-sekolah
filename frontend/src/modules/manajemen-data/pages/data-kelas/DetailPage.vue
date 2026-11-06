@@ -521,6 +521,8 @@ watch(
           placeholder="Pilih kelas tingkat berikutnya..."
           :options="availableClasses"
           v-model="targetClassroomId"
+          action-label="Tambah Kelas Baru"
+          action-to="/manajemen-data/kelas?tambah=true"
           required
         />
 

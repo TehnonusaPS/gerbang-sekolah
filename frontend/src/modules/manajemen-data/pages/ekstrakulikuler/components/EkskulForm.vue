@@ -53,6 +53,8 @@ defineProps({
               search-placeholder="Cari nama guru atau NIP..."
               :error="errors.advisor_id"
               :options="teacherOptions"
+              action-label="Tambah Guru Baru"
+              action-to="/manajemen-data/guru-staff/tambah"
             />
             <FormInput
               v-model="form.coach_name"

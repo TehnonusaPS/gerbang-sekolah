@@ -359,6 +359,8 @@ watch(
             label="Yayasan Naungan"
             placeholder="Pilih yayasan terlebih dahulu"
             :options="yayasanOptions"
+            action-label="Tambah Yayasan"
+            action-to="/manajemen-data/yayasan/tambah"
             required
             :error="errors.foundation_id"
           />
