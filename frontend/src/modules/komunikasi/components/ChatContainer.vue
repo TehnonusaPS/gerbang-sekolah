@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { Check, CheckCheck, Search, ArrowLeft, User } from 'lucide-vue-next'
+import { Check, CheckCheck, Search, ArrowLeft, User, Loader2 } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
@@ -46,6 +46,9 @@ const activeConversationMessages = ref([])
 
 const isLoadingContacts = ref(false)
 const isLoadingMessages = ref(false)
+const isLoadingOlder = ref(false)
+const hasMoreMessages = ref(false)
+const nextCursor = ref(null)
 
 // Mobile responsiveness detail panel status
 const isChatDetailOpen = ref(false)
@@ -124,16 +127,21 @@ async function loadContacts(selectFirst = true) {
   }
 }
 
-// Fetch thread
+// Fetch thread (Initial load: latest 20 messages)
 async function loadMessages(recipientId) {
   if (!recipientId) return
   isLoadingMessages.value = true
+  hasMoreMessages.value = false
+  nextCursor.value = null
   try {
-    const msgs = await getMessages(recipientId)
+    const data = await getMessages(recipientId, { limit: 20 })
+    const msgs = data.messages || []
     activeConversationMessages.value = msgs.map(m => ({
       ...m,
       time: formatTime(m.created_at) || m.time
     }))
+    hasMoreMessages.value = Boolean(data.has_more)
+    nextCursor.value = data.next_cursor || null
     
     // Clear unread count locally for this contact
     const convo = conversations.value.find(c => c.id === recipientId)
@@ -148,6 +156,50 @@ async function loadMessages(recipientId) {
     console.error('Gagal mengambil pesan:', error)
   } finally {
     isLoadingMessages.value = false
+  }
+}
+
+// Load older messages on scroll-up (Cursor pagination)
+async function loadOlderMessages() {
+  if (!activeConversationId.value || isLoadingOlder.value || !hasMoreMessages.value || !nextCursor.value) return
+
+  const el = messagesContainer.value
+  if (!el) return
+
+  isLoadingOlder.value = true
+  const prevScrollHeight = el.scrollHeight
+  const prevScrollTop = el.scrollTop
+
+  try {
+    const data = await getMessages(activeConversationId.value, {
+      limit: 20,
+      before_id: nextCursor.value
+    })
+
+    const olderMsgs = (data.messages || []).map(m => ({
+      ...m,
+      time: formatTime(m.created_at) || m.time
+    }))
+
+    // Prepend older messages to top of active list
+    activeConversationMessages.value = [...olderMsgs, ...activeConversationMessages.value]
+    hasMoreMessages.value = Boolean(data.has_more)
+    nextCursor.value = data.next_cursor || null
+
+    // Restore scroll position (Anti-Jumping)
+    await nextTick()
+    el.scrollTop = el.scrollHeight - prevScrollHeight + prevScrollTop
+  } catch (error) {
+    console.error('Gagal memuat pesan terdahulu:', error)
+  } finally {
+    isLoadingOlder.value = false
+  }
+}
+
+function handleScroll() {
+  if (!messagesContainer.value || isLoadingOlder.value || !hasMoreMessages.value) return
+  if (messagesContainer.value.scrollTop <= 60) {
+    loadOlderMessages()
   }
 }
 
@@ -180,6 +232,18 @@ function handleIncomingMessage(wrapper) {
       activeConversationMessages.value.forEach(msg => {
         if (msg.from === 'me') {
           msg.status = 'read'
+        }
+      })
+    }
+    return
+  }
+
+  if (type === 'delivered') {
+    // If the active conversation is with this recipient, mark our sent messages as delivered (status = 'delivered')
+    if (activeConversationId.value === event.reader_id) {
+      activeConversationMessages.value.forEach(msg => {
+        if (msg.from === 'me' && msg.status === 'sent') {
+          msg.status = 'delivered'
         }
       })
     }
@@ -430,7 +494,7 @@ async function send() {
       </header>
 
       <!-- MESSAGE BUBBLES LIST -->
-      <div ref="messagesContainer" class="flex-1 overflow-auto p-4 sm:p-6">
+      <div ref="messagesContainer" class="flex-1 overflow-auto p-4 sm:p-6" @scroll.passive="handleScroll">
         <template v-if="isLoadingMessages">
           <div class="flex h-full items-center justify-center text-sm text-muted-foreground">
             Memuat obrolan...
@@ -439,6 +503,24 @@ async function send() {
 
         <template v-else-if="activeConversationId">
           <div class="space-y-5">
+            <!-- Indikator Loading Pesan Terdahulu -->
+            <div
+              v-if="isLoadingOlder"
+              class="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground animate-pulse"
+            >
+              <Loader2 class="h-3.5 w-3.5 animate-spin text-primary" />
+              <span>Memuat pesan terdahulu...</span>
+            </div>
+
+            <!-- Penanda Awal Percakapan (Ketika seluruh riwayat sudah termuat) -->
+            <div
+              v-else-if="!hasMoreMessages && activeConversationMessages.length > 0"
+              class="flex items-center justify-center my-2"
+            >
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-medium text-muted-foreground bg-muted/50 border border-border/50">
+                Awal percakapan
+              </span>
+            </div>
             <div
               v-for="message in activeConversationMessages"
               :key="message.id"
@@ -477,15 +559,20 @@ async function send() {
                   >
                     <span>{{ message.time }}</span>
                     <template v-if="message.from === 'me'">
-                      <!-- Message Read indicator -->
+                      <!-- Message Read indicator (Ceklis 2 Biru) -->
                       <CheckCheck
                         v-if="message.status === 'read'"
-                        class="h-3 w-3 text-emerald-500"
+                        class="h-3.5 w-3.5 text-sky-500"
                       />
-                      <!-- Message Sent indicator -->
+                      <!-- Message Delivered indicator (Ceklis 2 Abu-abu saat Penerima Online) -->
+                      <CheckCheck
+                        v-else-if="message.status === 'delivered'"
+                        class="h-3.5 w-3.5 text-muted-foreground/80"
+                      />
+                      <!-- Message Sent indicator (Ceklis 1 Abu-abu saat Penerima Offline) -->
                       <Check
                         v-else-if="message.status === 'sent'"
-                        class="h-3 w-3 text-muted-foreground/80"
+                        class="h-3.5 w-3.5 text-muted-foreground/80"
                       />
                       <!-- Message Failed indicator -->
                       <span v-else-if="message.status === 'failed'" class="text-[9px] text-red-500 font-sans">

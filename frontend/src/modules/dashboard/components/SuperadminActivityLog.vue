@@ -1,11 +1,15 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { AlertCircle, CheckCircle2, PlusCircle, Settings } from 'lucide-vue-next'
 import WidgetList from '@/components/dashboard-widget/WidgetList.vue'
-import { activitiesData } from '../data/superadminActivityLogData'
+import { activitiesData as fallbackData } from '../data/superadminActivityLogData'
 
-const props = defineProps({
-  delay: { type: Number, default: 0 }
-})
+const props = defineProps<{
+  delay?: number
+  activities?: Array<{ id: number; title: string; desc: string; time: string; type: string }>
+}>()
+
+const activeItems = computed(() => (props.activities && props.activities.length > 0 ? props.activities : fallbackData))
 
 interface ActivityItem {
   title: string
@@ -45,10 +49,12 @@ const getActivityConfig = (type: string) => {
   <WidgetList
     title="Aktivitas Sistem"
     description="Log aktivitas terbaru dari seluruh pengguna"
+    emptyText="Belum ada aktivitas sistem terbaru."
     footerText="Lihat semua log"
-    :items="activitiesData"
-    cardClass="lg:col-span-2"
-    :delay="delay"
+    :items="activeItems"
+    cardClass="lg:col-span-2 flex flex-col justify-between"
+    listClass="h-[230px] px-4 sm:px-6"
+    :delay="delay || 0"
     illustration="paper_plane"
   >
     <template #item="{ item }">

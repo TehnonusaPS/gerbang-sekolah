@@ -3,15 +3,15 @@
 use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
-    return (int) $user->id === (int) $id;
+    return (string) $user->id === (string) $id;
 });
 
 Broadcast::channel('chat.{userId}', function ($user, $userId) {
-    return (int) $user->id === (int) $userId;
+    return (string) $user->id === (string) $userId;
 });
 
 Broadcast::channel('notification.{userId}', function ($user, $userId) {
-    return (int) $user->id === (int) $userId;
+    return (string) $user->id === (string) $userId;
 });
 
 Broadcast::channel('feedback.{schoolId}', function ($user, $schoolId) {

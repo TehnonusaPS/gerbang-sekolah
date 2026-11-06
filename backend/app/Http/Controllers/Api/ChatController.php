@@ -2,21 +2,34 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\MessageDelivered;
 use App\Events\MessageSent;
 use App\Http\Controllers\Controller;
 use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class ChatController extends Controller
 {
     /**
-     * Get list of eligible contacts for the logged-in user.
-     * Contacts are filtered by sharing the same school_id or foundation_id.
+     * Check if a user is currently online (active in cache or active token in last 3 minutes).
      */
+    private function isUserOnline(string $userId): bool
+    {
+        if (Cache::has('user_online_' . $userId)) {
+            return true;
+        }
+
+        return DB::table('personal_access_tokens')
+            ->where('tokenable_id', $userId)
+            ->where('last_used_at', '>=', now()->subMinutes(3))
+            ->exists();
+    }
+
     /**
      * Get list of eligible contacts for the logged-in user.
      * Contacts are filtered by sharing the same school_id or foundation_id.
@@ -24,6 +37,7 @@ class ChatController extends Controller
     public function getContacts(Request $request): JsonResponse
     {
         $user = $request->user();
+        Cache::put('user_online_' . $user->id, true, now()->addMinutes(3));
         $eligibleIds = $this->getEligibleContactIds($user);
 
         $contacts = User::with('role')
@@ -69,6 +83,7 @@ class ChatController extends Controller
     public function getMessages(Request $request, $recipientId): JsonResponse
     {
         $user = $request->user();
+        Cache::put('user_online_' . $user->id, true, now()->addMinutes(3));
         $eligibleIds = $this->getEligibleContactIds($user);
 
         if (!in_array($recipientId, $eligibleIds)) {
@@ -78,43 +93,69 @@ class ChatController extends Controller
         }
 
         $userId = $user->id;
+        $limit = min(max((int)$request->input('limit', 20), 1), 100);
+        $beforeId = $request->input('before_id');
 
-        // Fetch thread
-        $messages = Message::where(function ($q) use ($userId, $recipientId) {
+        // Fetch thread query
+        $query = Message::where(function ($q) use ($userId, $recipientId) {
             $q->where('sender_id', $userId)->where('receiver_id', $recipientId);
         })->orWhere(function ($q) use ($userId, $recipientId) {
             $q->where('sender_id', $recipientId)->where('receiver_id', $userId);
-        })
-        ->orderBy('created_at', 'asc')
-        ->get();
+        });
 
-        // Mark incoming messages as read
-        $affectedRows = Message::where('sender_id', $recipientId)
-            ->where('receiver_id', $userId)
-            ->where('is_read', false)
-            ->update(['is_read' => true]);
+        if ($beforeId) {
+            $query->where('id', '<', $beforeId);
+        }
 
-        if ($affectedRows > 0) {
-            try {
-                broadcast(new \App\Events\MessageRead($userId, (int)$recipientId))->toOthers();
-            } catch (\Exception $e) {
-                \Log::warning('WebSocket MessageRead broadcast failed: ' . $e->getMessage());
+        // Fetch limit + 1 items ordered by id DESC to detect has_more
+        $rawMessages = $query->orderBy('id', 'desc')->limit($limit + 1)->get();
+        $hasMore = $rawMessages->count() > $limit;
+        $slice = $hasMore ? $rawMessages->slice(0, $limit) : $rawMessages;
+
+        // Reverse back to chronological order (asc)
+        $messages = $slice->reverse()->values();
+        $nextCursor = $hasMore && $messages->isNotEmpty() ? $messages->first()->id : null;
+
+        // Mark incoming messages as read only on initial load (not on paging older messages)
+        if (!$beforeId) {
+            $affectedRows = Message::where('sender_id', $recipientId)
+                ->where('receiver_id', $userId)
+                ->where('is_read', false)
+                ->update(['is_read' => true]);
+
+            if ($affectedRows > 0) {
+                try {
+                    broadcast(new \App\Events\MessageRead((string)$userId, (string)$recipientId))->toOthers();
+                } catch (\Throwable $e) {
+                    \Log::warning('WebSocket MessageRead broadcast failed: ' . $e->getMessage());
+                }
             }
         }
 
-        $mappedMessages = $messages->map(function ($message) use ($userId) {
+        $isRecipientOnline = $this->isUserOnline((string)$recipientId);
+
+        $mappedMessages = $messages->map(function ($message) use ($userId, $isRecipientOnline) {
+            $status = 'sent';
+            if ($message->is_read) {
+                $status = 'read';
+            } elseif ($message->sender_id == $userId && $isRecipientOnline) {
+                $status = 'delivered';
+            }
+
             return [
                 'id' => $message->id,
                 'from' => $message->sender_id == $userId ? 'me' : 'other',
                 'text' => $message->message,
                 'time' => $message->created_at->format('H:i'),
-                'status' => $message->is_read ? 'read' : 'sent',
+                'status' => $status,
                 'created_at' => $message->created_at->toISOString(),
             ];
         });
 
         return response()->json([
-            'messages' => $mappedMessages
+            'messages' => $mappedMessages,
+            'has_more' => $hasMore,
+            'next_cursor' => $nextCursor,
         ]);
     }
 
@@ -136,6 +177,7 @@ class ChatController extends Controller
         }
 
         $sender = $request->user();
+        Cache::put('user_online_' . $sender->id, true, now()->addMinutes(3));
         $eligibleIds = $this->getEligibleContactIds($sender);
 
         // Security check: ensure they are in the list of eligible contacts
@@ -156,7 +198,7 @@ class ChatController extends Controller
         // Broadcast event
         try {
             broadcast(new MessageSent($message))->toOthers();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             // Log warning but don't crash, message is still saved in DB
             \Log::warning('WebSocket broadcast failed: ' . $e->getMessage());
         }
@@ -170,6 +212,8 @@ class ChatController extends Controller
             }
         }
 
+        $isRecipientOnline = $this->isUserOnline((string)$request->recipient_id);
+
         return response()->json([
             'message' => 'Pesan berhasil dikirim.',
             'data' => [
@@ -177,10 +221,30 @@ class ChatController extends Controller
                 'from' => 'me',
                 'text' => $message->message,
                 'time' => $message->created_at->format('H:i'),
-                'status' => 'sent',
+                'status' => $isRecipientOnline ? 'delivered' : 'sent',
                 'created_at' => $message->created_at->toISOString(),
             ]
         ], 201);
+    }
+
+    /**
+     * Mark messages from a sender as delivered to the logged-in recipient.
+     */
+    public function markAsDelivered(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        Cache::put('user_online_' . $user->id, true, now()->addMinutes(3));
+
+        $senderId = $request->input('sender_id');
+        if ($senderId) {
+            try {
+                broadcast(new MessageDelivered((string)$senderId, (string)$user->id))->toOthers();
+            } catch (\Throwable $e) {
+                \Log::warning('WebSocket MessageDelivered broadcast failed: ' . $e->getMessage());
+            }
+        }
+
+        return response()->json(['status' => 'success']);
     }
 
     /**
@@ -363,8 +427,8 @@ class ChatController extends Controller
             $message->update(['is_read' => true]);
             
             try {
-                broadcast(new \App\Events\MessageRead($userId, (int)$message->sender_id))->toOthers();
-            } catch (\Exception $e) {
+                broadcast(new \App\Events\MessageRead((string)$userId, (string)$message->sender_id))->toOthers();
+            } catch (\Throwable $e) {
                 \Log::warning('WebSocket MessageRead broadcast failed in markAsRead: ' . $e->getMessage());
             }
 

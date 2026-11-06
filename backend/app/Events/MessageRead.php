@@ -19,7 +19,7 @@ class MessageRead implements ShouldBroadcastNow
     /**
      * Create a new event instance.
      */
-    public function __construct(int $readerId, int $senderId)
+    public function __construct(string $readerId, string $senderId)
     {
         $this->readerId = $readerId;
         $this->senderId = $senderId;
